@@ -4,12 +4,12 @@ compatibility_date = "2024-12-30"
 
 [[kv_namespaces]]
 binding = "RATE_LIMIT"
-id = "PLACEHOLDER_KV_ID"
+id = "cccd807ee9d64f3d84ace82529092566"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "edgerelay-db"
-database_id = "PLACEHOLDER_D1_ID"
+database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
 
 [durable_objects]
 bindings = [

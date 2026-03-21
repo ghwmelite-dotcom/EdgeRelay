@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/* ── Design Tokens ──────────────────────────────────────────── */
+@theme {
+  --color-terminal-bg: #0a0e14;
+  --color-terminal-surface: #0f1419;
+  --color-terminal-card: #141a22;
+  --color-terminal-border: #1e2832;
+  --color-terminal-border-hover: #2a3644;
+  --color-terminal-muted: #4a5568;
+
+  --color-neon-cyan: #00d4ff;
+  --color-neon-cyan-dim: #00d4ff33;
+  --color-neon-green: #10b981;
+  --color-neon-green-dim: #10b98133;
+  --color-neon-amber: #f0b429;
+  --color-neon-amber-dim: #f0b42933;
+  --color-neon-red: #ef4444;
+  --color-neon-red-dim: #ef444433;
+  --color-neon-purple: #a78bfa;
+
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Space Grotesk', sans-serif;
+}
+
+/* ── Base ───────────────────────────────────────────────────── */
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-terminal-bg);
+  color: #e2e8f0;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-terminal-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-terminal-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-terminal-border-hover);
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 4px currentColor; opacity: 1; }
+  50% { box-shadow: 0 0 12px currentColor; opacity: 0.7; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes grid-scroll {
+  from { background-position: 0 0; }
+  to { background-position: 0 40px; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+/* ── Grid Background ────────────────────────────────────────── */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, #1e283210 1px, transparent 1px),
+    linear-gradient(to bottom, #1e283210 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Glow Effects ───────────────────────────────────────────── */
+.glow-cyan {
+  box-shadow: 0 0 20px #00d4ff22, 0 0 40px #00d4ff11;
+}
+
+.glow-cyan-strong {
+  box-shadow: 0 0 20px #00d4ff44, 0 0 60px #00d4ff22, inset 0 0 20px #00d4ff11;
+}
+
+/* ── Card Hover Lift ────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: var(--color-terminal-border-hover);
+}
+
+/* ── Noise Texture Overlay ──────────────────────────────────── */
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 9999;
+}
+
+/* ── Mono Numbers ───────────────────────────────────────────── */
+.font-mono-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}

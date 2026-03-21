@@ -59,7 +59,8 @@ app.get('/health', (c) => {
 // ── Public Routes ───────────────────────────────────────────────
 app.route('/v1/auth', auth);
 
-// Stripe webhook is public (verified via its own signature, not JWT)
+// Paystack webhook + plans are public (verified via signature, not JWT)
+// Auth-required routes (initialize, verify, subscription, cancel) apply authMiddleware internally
 app.route('/v1/billing', billing);
 
 // ── Protected Routes ────────────────────────────────────────────

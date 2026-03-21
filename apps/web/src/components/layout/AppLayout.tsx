@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Activity, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, CreditCard, LogOut, Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
   { label: 'Accounts', icon: Users, to: '/accounts' },
   { label: 'Signal Log', icon: Activity, to: '/signals' },
+  { label: 'Billing', icon: CreditCard, to: '/billing' },
 ] as const;
 
 const planBadgeVariant = (plan: string) => {

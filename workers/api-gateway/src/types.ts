@@ -17,8 +17,8 @@ export interface Env {
   /** JWT secret (set via wrangler secret) */
   JWT_SECRET: string;
 
-  /** Stripe webhook secret (set via wrangler secret) */
-  STRIPE_WEBHOOK_SECRET: string;
+  /** Paystack secret key (set via wrangler secret) */
+  PAYSTACK_SECRET_KEY: string;
 
   /** JWT expiry in hours */
   JWT_EXPIRY_HOURS: string;

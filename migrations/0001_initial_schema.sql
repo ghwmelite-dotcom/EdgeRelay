@@ -6,8 +6,8 @@ CREATE TABLE users (
   password_hash TEXT NOT NULL,
   name TEXT,
   plan TEXT DEFAULT 'free' CHECK(plan IN ('free','starter','pro','unlimited','provider')),
-  stripe_customer_id TEXT,
-  stripe_subscription_id TEXT,
+  paystack_customer_code TEXT,
+  paystack_subscription_code TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );

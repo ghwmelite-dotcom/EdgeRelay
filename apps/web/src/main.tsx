@@ -11,6 +11,8 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { AccountsPage } from '@/pages/AccountsPage';
 import { SignalLogPage } from '@/pages/SignalLogPage';
+import { BillingPage } from '@/pages/BillingPage';
+import { BillingCallbackPage } from '@/pages/BillingCallbackPage';
 import { LandingPage } from '@/pages/LandingPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -40,6 +42,8 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/signals" element={<SignalLogPage />} />
+          <Route path="/billing" element={<BillingPage />} />
+          <Route path="/billing/callback" element={<BillingCallbackPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

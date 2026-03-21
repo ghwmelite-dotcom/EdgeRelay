@@ -1,0 +1,2 @@
+# Copy this to .dev.vars for local development
+# No secrets needed — signal-ingestion uses bindings only

@@ -1,0 +1,35 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck all packages
+        run: |
+          pnpm --filter @edgerelay/shared typecheck
+          pnpm --filter @edgerelay/signal-ingestion typecheck
+          pnpm --filter @edgerelay/account-relay typecheck
+          pnpm --filter @edgerelay/api-gateway typecheck
+          pnpm --filter @edgerelay/web typecheck
+
+      - name: Build frontend
+        working-directory: apps/web
+        run: pnpm exec vite build

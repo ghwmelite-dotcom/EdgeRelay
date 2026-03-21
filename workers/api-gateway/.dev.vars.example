@@ -1,0 +1,7 @@
+# Copy this to .dev.vars and fill in your values
+# These are used by `wrangler dev` for local development
+
+JWT_SECRET=dev-secret-change-me-in-production
+PAYSTACK_SECRET_KEY=sk_test_your_paystack_test_key
+CORS_ORIGINS=http://localhost:3000
+JWT_EXPIRY_HOURS=24

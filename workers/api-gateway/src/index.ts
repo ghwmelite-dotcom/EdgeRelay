@@ -44,7 +44,7 @@ app.onError((err, c) => {
         message: status === 500 ? 'An internal error occurred' : err.message,
       },
     },
-    { status },
+    status as 400 | 401 | 403 | 404 | 500,
   );
 });
 

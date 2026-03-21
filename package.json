@@ -1,0 +1,24 @@
+{
+  "name": "edgerelay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Edge-native trade signal copier built on Cloudflare — the VPS killer",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "deploy": "turbo deploy",
+    "db:migrate": "wrangler d1 migrations apply edgerelay-db --local"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^3.99.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

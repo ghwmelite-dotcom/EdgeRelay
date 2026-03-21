@@ -1,0 +1,25 @@
+name = "edgerelay-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[vars]
+CORS_ORIGINS = "https://edgerelay.com,https://app.edgerelay.com"
+JWT_EXPIRY_HOURS = "24"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "PLACEHOLDER_KV_SESSIONS_ID"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edgerelay-db"
+database_id = "PLACEHOLDER_D1_ID"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "edgerelay-storage"
+
+[durable_objects]
+bindings = [
+  { name = "ACCOUNT_RELAY", class_name = "AccountRelay", script_name = "edgerelay-account-relay" }
+]

@@ -1,0 +1,17 @@
+name = "edgerelay-account-relay"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[durable_objects]
+bindings = [
+  { name = "ACCOUNT_RELAY", class_name = "AccountRelay" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["AccountRelay"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edgerelay-db"
+database_id = "PLACEHOLDER_D1_ID"

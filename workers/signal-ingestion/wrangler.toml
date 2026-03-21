@@ -1,0 +1,17 @@
+name = "edgerelay-signal-ingestion"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "PLACEHOLDER_KV_ID"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edgerelay-db"
+database_id = "PLACEHOLDER_D1_ID"
+
+[durable_objects]
+bindings = [
+  { name = "ACCOUNT_RELAY", class_name = "AccountRelay", script_name = "edgerelay-account-relay" }
+]

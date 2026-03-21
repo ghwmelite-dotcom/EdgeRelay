@@ -387,4 +387,51 @@ accounts.post('/:id/regenerate-keys', async (c) => {
   });
 });
 
+// ── GET /accounts/:id/ea-download/:type ─────────────────────
+// Serves the compiled .ex5 EA file from R2
+accounts.get('/:id/ea-download/:type', async (c) => {
+  const userId = c.get('userId');
+  const accountId = c.req.param('id');
+  const eaType = c.req.param('type'); // 'master' or 'follower'
+
+  if (eaType !== 'master' && eaType !== 'follower') {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'VALIDATION_ERROR', message: 'Type must be master or follower' } },
+      400,
+    );
+  }
+
+  // Verify ownership
+  const account = await c.env.DB.prepare(
+    'SELECT id, role FROM accounts WHERE id = ? AND user_id = ? AND is_active = true',
+  )
+    .bind(accountId, userId)
+    .first();
+
+  if (!account) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Account not found' } },
+      404,
+    );
+  }
+
+  const key = `ea-builds/EdgeRelay_${eaType === 'master' ? 'Master' : 'Follower'}.ex5`;
+  const object = await c.env.STORAGE.get(key);
+
+  if (!object) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'EA file not yet available. Please check back soon.' } },
+      404,
+    );
+  }
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="EdgeRelay_${eaType === 'master' ? 'Master' : 'Follower'}.ex5"`,
+      'Cache-Control': 'private, max-age=3600',
+    },
+  });
+});
+
 export { accounts };

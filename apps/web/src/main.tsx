@@ -13,6 +13,9 @@ import { AccountsPage } from '@/pages/AccountsPage';
 import { SignalLogPage } from '@/pages/SignalLogPage';
 import { BillingPage } from '@/pages/BillingPage';
 import { BillingCallbackPage } from '@/pages/BillingCallbackPage';
+import { DownloadsPage } from '@/pages/DownloadsPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { SettingsPage } from '@/pages/SettingsPage';
 import { LandingPage } from '@/pages/LandingPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -42,6 +45,9 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/signals" element={<SignalLogPage />} />
+          <Route path="/downloads" element={<DownloadsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/billing/callback" element={<BillingCallbackPage />} />
         </Route>

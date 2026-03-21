@@ -226,7 +226,7 @@ export function LandingPage() {
             style={{ animationDelay: '160ms' }}
           >
             <a
-              href="#pricing"
+              href="/register"
               className="inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-8 py-3.5 text-base font-semibold text-terminal-bg shadow-[0_0_24px_rgba(0,212,255,0.35)] transition-all hover:shadow-[0_0_40px_rgba(0,212,255,0.55)]"
             >
               Start Free Trial <ArrowRight className="h-4 w-4" />
@@ -557,7 +557,7 @@ export function LandingPage() {
               <span className="text-neon-cyan">Relay</span>
             </a>
             <p className="mt-1 text-xs text-terminal-muted">
-              &copy; 2025 Hodges &amp; Co. Limited
+              &copy; 2026 Hodges &amp; Co. Limited
             </p>
           </div>
 

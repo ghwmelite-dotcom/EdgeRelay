@@ -65,6 +65,88 @@ struct Heartbeat
    int               signals_sent;
   };
 
+//--- PropGuard drawdown type enum
+enum ENUM_DD_TYPE
+  {
+   DD_STATIC       = 0,  // Static (from initial balance)
+   DD_TRAILING     = 1,  // Trailing (from equity high water mark)
+   DD_EOD_TRAILING = 2   // EOD Trailing (updates at end of day only)
+  };
+
+//--- PropGuard daily loss calculation enum
+enum ENUM_DAILY_LOSS_CALC
+  {
+   DL_BALANCE_START_OF_DAY  = 0,  // From balance at day start
+   DL_EQUITY_HIGH_OF_DAY   = 1,  // From highest equity today (strictest)
+   DL_PREVIOUS_DAY_BALANCE = 2   // From yesterday's closing balance
+  };
+
+//--- PropGuard evaluation verdict
+struct PropGuardVerdict
+  {
+   bool              allowed;
+   string            blocked_rule;
+   string            blocked_reason;
+   double            current_daily_loss_pct;
+   double            current_drawdown_pct;
+   double            projected_daily_loss_pct;
+   double            projected_drawdown_pct;
+  };
+
+//--- PropGuard equity state
+struct EquityState
+  {
+   double            balance;
+   double            equity;
+   double            floating_pnl;
+   double            daily_pnl;
+   double            daily_pnl_percent;
+   double            high_water_mark;
+   double            total_drawdown_pct;
+   double            balance_start_of_day;
+   double            equity_high_of_day;
+   datetime          day_start_time;
+   int               trades_today;
+   int               positions_open;
+  };
+
+//--- PropGuard rule configuration (loaded from cloud or local inputs)
+struct PropGuardRules
+  {
+   double            initial_balance;
+   double            profit_target_percent;
+   double            max_daily_loss_percent;
+   ENUM_DAILY_LOSS_CALC daily_loss_calculation;
+   double            max_total_drawdown_percent;
+   ENUM_DD_TYPE      drawdown_type;
+   bool              trailing_dd_lock_at_breakeven;
+   double            max_lot_size;
+   int               max_open_positions;
+   int               max_daily_trades;
+   int               min_trading_days;
+   bool              consistency_rule_enabled;
+   double            max_profit_single_day_pct;
+   string            allowed_trading_start;
+   string            allowed_trading_end;
+   bool              block_weekend_holding;
+   bool              block_during_news;
+   int               news_minutes_before;
+   int               news_minutes_after;
+   double            warning_threshold_pct;
+   double            critical_threshold_pct;
+   bool              auto_close_at_critical;
+  };
+
+//--- PropGuard status enum
+enum ENUM_PROPGUARD_STATUS
+  {
+   PG_PROTECTED   = 0,
+   PG_WARNING     = 1,
+   PG_CRITICAL    = 2,
+   PG_LOCKED      = 3,
+   PG_DISABLED    = 4
+  };
+
 //+------------------------------------------------------------------+
 //| Convert signal action to string                                   |
 //+------------------------------------------------------------------+

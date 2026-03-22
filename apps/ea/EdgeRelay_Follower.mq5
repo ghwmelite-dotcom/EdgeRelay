@@ -12,6 +12,10 @@
 #include <Trade\Trade.mqh>
 #include <EdgeRelay_Common.mqh>
 #include <EdgeRelay_JsonParser.mqh>
+#include <EdgeRelay_Http.mqh>
+#include <EdgeRelay_Equity.mqh>
+#include <EdgeRelay_PropGuard.mqh>
+#include <EdgeRelay_PropGuardDisplay.mqh>
 
 //+------------------------------------------------------------------+
 //| Lot sizing mode                                                   |
@@ -45,6 +49,29 @@ input bool     CopyBuys             = true;                           // Copy BU
 input bool     CopySells            = true;                           // Copy SELL orders
 input bool     CopyPendings         = true;                           // Copy pending orders
 input bool     InvertDirection      = false;                          // Invert trade direction
+
+//--- PropGuard Settings
+input bool     PropGuard_Enabled       = true;                        // Enable PropGuard protection
+input bool     PropGuard_UseCloudRules = true;                         // Fetch rules from dashboard
+input string   PropGuard_Preset        = "Custom";                     // Preset name
+input double   PropGuard_InitialBalance = 0;                           // 0 = auto-detect
+input double   PropGuard_MaxDailyLoss  = 5.0;                          // % max daily loss
+input double   PropGuard_MaxDrawdown   = 10.0;                          // % max total drawdown
+input double   PropGuard_ProfitTarget  = 10.0;                          // % profit target
+input ENUM_DD_TYPE PropGuard_DDType    = DD_STATIC;                    // Drawdown type
+input double   PropGuard_MaxLotSize    = 100.0;                        // Max lot size
+input int      PropGuard_MaxPositions  = 50;                           // Max open positions
+input int      PropGuard_MaxDailyTrades = 0;                            // 0 = unlimited
+input bool     PropGuard_BlockNews     = false;                        // Block during news
+input int      PropGuard_NewsMinBefore = 5;                            // Minutes before news
+input int      PropGuard_NewsMinAfter  = 5;                            // Minutes after news
+input bool     PropGuard_BlockWeekend  = false;                        // Block weekend holding
+input double   PropGuard_WarnThreshold = 80.0;                         // Warning threshold %
+input double   PropGuard_CritThreshold = 95.0;                         // Critical threshold %
+input bool     PropGuard_AutoClose     = true;                         // Auto-close at critical
+input bool     PropGuard_ShowPanel     = true;                         // Show PropGuard panel
+input int      PropGuard_PanelX        = 10;                           // Panel X position
+input int      PropGuard_PanelY        = 30;                           // Panel Y position
 
 //+------------------------------------------------------------------+
 //| Execution result structure                                        |
@@ -89,6 +116,12 @@ int      g_consecutiveErrors     = 0;
 ENUM_CONNECTION_STATUS g_connStatus = STATUS_DISCONNECTED;
 
 CTrade   g_trade;
+
+//--- PropGuard globals
+CEquityTracker    g_equityTracker;
+CPropGuard        g_propGuard;
+CPropGuardDisplay g_pgDisplay;
+bool              g_propGuardReady = false;
 
 //+------------------------------------------------------------------+
 //| Expert initialization                                             |
@@ -143,6 +176,55 @@ int OnInit()
          " LotValue=", DoubleToString(LotValue, 2),
          " PollMs=", PollIntervalMs);
 
+   //--- Initialize PropGuard
+   if(PropGuard_Enabled)
+     {
+      PropGuardRules pgRules;
+      pgRules.initial_balance = (PropGuard_InitialBalance > 0)
+                                 ? PropGuard_InitialBalance
+                                 : AccountInfoDouble(ACCOUNT_BALANCE);
+      pgRules.profit_target_percent = PropGuard_ProfitTarget;
+      pgRules.max_daily_loss_percent = PropGuard_MaxDailyLoss;
+      pgRules.daily_loss_calculation = DL_BALANCE_START_OF_DAY;
+      pgRules.max_total_drawdown_percent = PropGuard_MaxDrawdown;
+      pgRules.drawdown_type = PropGuard_DDType;
+      pgRules.trailing_dd_lock_at_breakeven = false;
+      pgRules.max_lot_size = PropGuard_MaxLotSize;
+      pgRules.max_open_positions = PropGuard_MaxPositions;
+      pgRules.max_daily_trades = PropGuard_MaxDailyTrades;
+      pgRules.min_trading_days = 0;
+      pgRules.consistency_rule_enabled = false;
+      pgRules.max_profit_single_day_pct = 30.0;
+      pgRules.allowed_trading_start = "00:00";
+      pgRules.allowed_trading_end = "23:59";
+      pgRules.block_weekend_holding = PropGuard_BlockWeekend;
+      pgRules.block_during_news = PropGuard_BlockNews;
+      pgRules.news_minutes_before = PropGuard_NewsMinBefore;
+      pgRules.news_minutes_after = PropGuard_NewsMinAfter;
+      pgRules.warning_threshold_pct = PropGuard_WarnThreshold;
+      pgRules.critical_threshold_pct = PropGuard_CritThreshold;
+      pgRules.auto_close_at_critical = PropGuard_AutoClose;
+
+      g_equityTracker.Init(pgRules);
+      g_propGuard.Init(pgRules, GetPointer(g_equityTracker));
+      g_propGuardReady = true;
+
+      if(PropGuard_ShowPanel)
+         g_pgDisplay.Init(PropGuard_PanelX, PropGuard_PanelY, C'26,26,46');
+
+      if(PropGuard_UseCloudRules)
+        {
+         string rulesResponse;
+         int rc = FetchPropGuardRules(API_Endpoint, API_Key, AccountID, rulesResponse);
+         if(rc == 200 && StringLen(rulesResponse) > 5)
+            Print("[PropGuard] Cloud rules fetched successfully.");
+         else
+            Print("[PropGuard] Using local fallback rules.");
+        }
+
+      Print("[PropGuard] Initialized. Preset=", PropGuard_Preset);
+     }
+
    return INIT_SUCCEEDED;
   }
 
@@ -151,6 +233,8 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
+   if(PropGuard_ShowPanel)
+      g_pgDisplay.Deinit();
    EventKillTimer();
    CleanupDisplayPanel();
    Print("[EdgeRelay] Follower EA shutdown. Reason=", reason,
@@ -172,6 +256,48 @@ void OnTimer()
       g_startingEquityToday = AccountInfoDouble(ACCOUNT_EQUITY);
       g_lastDayReset = TimeCurrent();
       Print("[EdgeRelay] Daily equity reset: ", DoubleToString(g_startingEquityToday, 2));
+     }
+
+   //--- Update PropGuard equity state
+   if(g_propGuardReady)
+     {
+      g_equityTracker.Update();
+
+      //--- Check for critical threshold — emergency close
+      ENUM_PROPGUARD_STATUS pgStatus = g_equityTracker.GetStatus();
+      if(pgStatus == PG_CRITICAL && PropGuard_AutoClose && !g_propGuard.IsLocked())
+        {
+         string reason = "Critical threshold breached. DD=" +
+            DoubleToString(g_equityTracker.GetTotalDrawdownPercent(), 2) + "%";
+         int closed = g_propGuard.EmergencyCloseAll(reason);
+
+         PostEmergencyClose(API_Endpoint, API_Key, AccountID, reason,
+                            AccountInfoDouble(ACCOUNT_EQUITY), closed);
+
+         PlaySound("alert2.wav");
+         Alert("[PropGuard] EMERGENCY CLOSE: ", reason);
+        }
+
+      //--- Cloud sync every 30 seconds
+      if(g_equityTracker.ShouldSync())
+        {
+         string eqJson = g_equityTracker.ToJson();
+         SyncEquityToCloud(API_Endpoint, API_Key, AccountID, eqJson);
+        }
+
+      //--- Refresh news cache if needed
+      if(g_propGuard.ShouldRefreshNews())
+        {
+         string newsResponse;
+         int rc = FetchNewsEvents(API_Endpoint, API_Key, "USD,EUR,GBP,JPY,CHF,AUD,NZD,CAD", newsResponse);
+         if(rc == 200 && StringLen(newsResponse) > 5)
+            g_propGuard.UpdateNewsCache(newsResponse);
+        }
+
+      //--- Update PropGuard display
+      if(PropGuard_ShowPanel)
+         g_pgDisplay.Update(GetPointer(g_equityTracker), GetPointer(g_propGuard),
+                            PropGuard_Preset, (int)g_connStatus, -1);
      }
 
    //--- Poll for signals
@@ -229,27 +355,61 @@ void OnTimer()
          continue;
         }
 
-      //--- Check equity guard
-      EquityGuardResult guard = CheckEquityGuard();
-      if(!guard.allowed)
-        {
-         Print("[EdgeRelay] Equity guard blocked: ", guard.reason);
-         ExecutionResult exRes;
-         exRes.signal_id     = signals[i].signal_id;
-         exRes.success       = false;
-         exRes.error_message = "Equity guard: " + guard.reason;
-         exRes.retcode       = 0;
-         exRes.ticket        = 0;
-         exRes.executed_price = 0;
-         exRes.executed_volume = 0;
-         exRes.slippage      = 0;
-         ReportExecution(exRes);
-         g_signalsFailed++;
-         continue;
-        }
-
-      //--- Calculate lot size
+      //--- Calculate lot size (needed before PropGuard check)
       double lot = CalculateLotSize(signals[i]);
+
+      //--- Check PropGuard
+      if(g_propGuardReady)
+        {
+         double evalPrice = (signals[i].price > 0) ? signals[i].price : SymbolInfoDouble(mappedSymbol, SYMBOL_ASK);
+         PropGuardVerdict pgVerdict = g_propGuard.EvaluateTrade(
+            mappedSymbol, signals[i].order_type, lot, evalPrice, signals[i].sl, signals[i].tp);
+
+         if(!pgVerdict.allowed)
+           {
+            Print("[PropGuard] BLOCKED: ", pgVerdict.blocked_rule, " - ", pgVerdict.blocked_reason);
+
+            PostBlockedTrade(API_Endpoint, API_Key, AccountID,
+               pgVerdict.blocked_rule, pgVerdict.blocked_reason,
+               ActionToString(signals[i].action), mappedSymbol, lot, evalPrice,
+               pgVerdict.current_daily_loss_pct, pgVerdict.current_drawdown_pct,
+               AccountInfoDouble(ACCOUNT_EQUITY));
+
+            ExecutionResult exRes;
+            exRes.signal_id     = signals[i].signal_id;
+            exRes.success       = false;
+            exRes.error_message = "PropGuard: " + pgVerdict.blocked_reason;
+            exRes.retcode       = 0;
+            exRes.ticket        = 0;
+            exRes.executed_price = 0;
+            exRes.executed_volume = 0;
+            exRes.slippage      = 0;
+            ReportExecution(exRes);
+            g_signalsFailed++;
+            continue;
+           }
+        }
+      else
+        {
+         //--- Fallback to simple equity guard if PropGuard not initialized
+         EquityGuardResult guard = CheckEquityGuard();
+         if(!guard.allowed)
+           {
+            Print("[EdgeRelay] Equity guard blocked: ", guard.reason);
+            ExecutionResult exRes;
+            exRes.signal_id     = signals[i].signal_id;
+            exRes.success       = false;
+            exRes.error_message = "Equity guard: " + guard.reason;
+            exRes.retcode       = 0;
+            exRes.ticket        = 0;
+            exRes.executed_price = 0;
+            exRes.executed_volume = 0;
+            exRes.slippage      = 0;
+            ReportExecution(exRes);
+            g_signalsFailed++;
+            continue;
+           }
+        }
 
       //--- Invert direction if enabled
       if(InvertDirection)
@@ -269,6 +429,37 @@ void OnTimer()
 
    //--- Update display
    UpdateDisplayPanel();
+  }
+
+//+------------------------------------------------------------------+
+//| Trade transaction handler — detect manual trades                  |
+//+------------------------------------------------------------------+
+void OnTradeTransaction(const MqlTradeTransaction &trans,
+                        const MqlTradeRequest &request,
+                        const MqlTradeResult &result)
+  {
+   if(!g_propGuardReady || !PropGuard_Enabled)
+      return;
+
+   if(trans.type == TRADE_TRANSACTION_DEAL_ADD)
+     {
+      g_equityTracker.Update();
+      g_equityTracker.OnTradeExecuted();
+
+      ENUM_PROPGUARD_STATUS status = g_equityTracker.GetStatus();
+      if(status == PG_CRITICAL && PropGuard_AutoClose && !g_propGuard.IsLocked())
+        {
+         string reason = "Manual trade triggered critical threshold. DD=" +
+            DoubleToString(g_equityTracker.GetTotalDrawdownPercent(), 2) + "%";
+         int closed = g_propGuard.EmergencyCloseAll(reason);
+
+         PostEmergencyClose(API_Endpoint, API_Key, AccountID, reason,
+                            AccountInfoDouble(ACCOUNT_EQUITY), closed);
+
+         PlaySound("alert2.wav");
+         Alert("[PropGuard] EMERGENCY: ", reason);
+        }
+     }
   }
 
 //+------------------------------------------------------------------+

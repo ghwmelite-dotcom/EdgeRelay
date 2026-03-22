@@ -8,6 +8,8 @@ import { auth } from './routes/auth.js';
 import { accounts } from './routes/accounts.js';
 import { signals } from './routes/signals.js';
 import { billing } from './routes/billing.js';
+import { propguard } from './routes/propguard.js';
+import { news } from './routes/news.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -70,6 +72,8 @@ protectedApp.use('*', rateLimitMiddleware);
 
 protectedApp.route('/accounts', accounts);
 protectedApp.route('/signals', signals);
+protectedApp.route('/propguard', propguard);
+protectedApp.route('/news', news);
 
 app.route('/v1', protectedApp);
 

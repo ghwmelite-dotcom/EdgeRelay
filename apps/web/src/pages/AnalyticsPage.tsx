@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 
-// ── Types ──────────────────────────────────────────────────────
+// -- Types ----------------------------------------------------------
 // TODO: wire to real API
 
 type TimeRange = '24h' | '7d' | '30d' | 'all';
@@ -48,8 +48,8 @@ interface FollowerRow {
   avgLatency: number;
 }
 
-// ── Mock Data Generator ────────────────────────────────────────
-// TODO: wire to real API — replace this function with real fetches
+// -- Mock Data Generator --------------------------------------------
+// TODO: wire to real API -- replace this function with real fetches
 
 function generateMockData(range: TimeRange) {
   const multiplier: Record<TimeRange, number> = {
@@ -127,7 +127,7 @@ function generateMockData(range: TimeRange) {
   };
 }
 
-// ── Stat Card ──────────────────────────────────────────────────
+// -- Stat Card ------------------------------------------------------
 
 interface StatCardProps {
   label: string;
@@ -140,29 +140,32 @@ interface StatCardProps {
 function StatCard({ label, value, valueClass, sub, delay }: StatCardProps) {
   return (
     <div
-      className="animate-fade-in-up rounded-xl border border-terminal-border bg-terminal-card p-4 flex-1 min-w-0"
+      className="glass rounded-2xl p-5 flex-1 min-w-0 animate-fade-in-up"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <p className="text-xs text-terminal-muted uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-2xl font-mono-nums font-semibold ${valueClass ?? 'text-white'}`}>{value}</p>
-      {sub && <div className="mt-1">{sub}</div>}
+      <p className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5 mb-2">
+        <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+        {label}
+      </p>
+      <p className={`text-2xl font-mono-nums font-bold ${valueClass ?? 'text-white glow-text-cyan'}`}>{value}</p>
+      {sub && <div className="mt-1.5">{sub}</div>}
     </div>
   );
 }
 
-// ── Tooltip for Bar Chart ──────────────────────────────────────
+// -- Tooltip for Bar Chart ------------------------------------------
 
 function BarTooltip({ executed, failed }: { executed: number; failed: number }) {
   return (
     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
-      <div className="bg-terminal-surface border border-terminal-border rounded-lg px-3 py-2 text-xs shadow-lg">
+      <div className="glass rounded-xl px-3 py-2 text-xs shadow-2xl">
         <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-neon-green" />
+          <span className="h-2 w-2 rounded-full bg-neon-green shadow-[0_0_4px_#00ff9d]" />
           <span className="text-slate-400">Executed:</span>
           <span className="font-mono-nums text-white">{executed}</span>
         </div>
         <div className="flex items-center gap-2 mt-1">
-          <span className="h-2 w-2 rounded-full bg-neon-red" />
+          <span className="h-2 w-2 rounded-full bg-neon-red shadow-[0_0_4px_#ff3d57]" />
           <span className="text-slate-400">Failed:</span>
           <span className="font-mono-nums text-white">{failed}</span>
         </div>
@@ -172,12 +175,12 @@ function BarTooltip({ executed, failed }: { executed: number; failed: number }) 
   );
 }
 
-// ── Main Component ─────────────────────────────────────────────
+// -- Main Component -------------------------------------------------
 
 export function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
 
-  // TODO: wire to real API — replace mock generator with actual data fetching
+  // TODO: wire to real API -- replace mock generator with actual data fetching
   const data = generateMockData(timeRange);
 
   const timeRanges: { key: TimeRange; label: string }[] = [
@@ -192,18 +195,21 @@ export function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      {/* ── Header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="font-display text-2xl font-semibold text-white">Analytics</h1>
-        <div className="flex items-center gap-1 rounded-lg border border-terminal-border bg-terminal-card p-1">
+      {/* -- Header -------------------------------------------------- */}
+      <div
+        className="flex items-center justify-between flex-wrap gap-4 animate-fade-in-up"
+        style={{ animationDelay: '0ms' }}
+      >
+        <h1 className="text-3xl font-black tracking-tight text-white font-display">Analytics</h1>
+        <div className="flex items-center gap-1 glass rounded-2xl p-1">
           {timeRanges.map((tr) => (
             <button
               key={tr.key}
               onClick={() => setTimeRange(tr.key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 ${
+              className={`px-4 py-2 text-xs font-medium rounded-xl transition-all duration-300 focus-ring ${
                 timeRange === tr.key
-                  ? 'bg-neon-cyan text-terminal-bg shadow-[0_0_12px_rgba(0,212,255,0.25)]'
-                  : 'text-slate-400 hover:text-white hover:bg-terminal-surface'
+                  ? 'bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan shadow-[0_0_12px_rgba(0,229,255,0.2)]'
+                  : 'text-slate-400 hover:text-white hover:bg-terminal-surface border border-transparent'
               }`}
             >
               {tr.label}
@@ -212,7 +218,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      {/* ── Stats Summary Row ───────────────────────────────────── */}
+      {/* -- Stats Summary Row --------------------------------------- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Signals"
@@ -228,8 +234,8 @@ export function AnalyticsPage() {
         <StatCard
           label="Copy Success Rate"
           value={`${data.successRate}%`}
-          valueClass="text-neon-green"
-          delay={50}
+          valueClass="text-neon-green glow-text-green"
+          delay={60}
           sub={
             <span className="text-xs text-terminal-muted font-mono-nums">
               {data.successCount.toLocaleString()} / {data.totalSignals.toLocaleString()}
@@ -239,7 +245,7 @@ export function AnalyticsPage() {
         <StatCard
           label="Avg Latency"
           value={`${data.avgLatency}ms`}
-          delay={100}
+          delay={120}
           sub={
             <span className="inline-flex items-center gap-1 text-xs text-neon-green">
               <TrendingDown size={12} />
@@ -251,7 +257,7 @@ export function AnalyticsPage() {
           label="Blocked Trades"
           value={String(data.totalBlocked)}
           valueClass="text-neon-amber"
-          delay={150}
+          delay={180}
           sub={
             <span className="text-xs text-terminal-muted font-mono-nums">
               {((data.totalBlocked / data.totalSignals) * 100).toFixed(1)}% of total
@@ -260,22 +266,22 @@ export function AnalyticsPage() {
         />
       </div>
 
-      {/* ── Copy Success Rate Bar Chart ─────────────────────────── */}
+      {/* -- Copy Success Rate Bar Chart ----------------------------- */}
       <section
         className="animate-fade-in-up"
-        style={{ animationDelay: '200ms' }}
+        style={{ animationDelay: '240ms' }}
       >
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 size={16} className="text-neon-cyan" />
-              Copy Success Rate — Last 7 Days
+              Copy Success Rate \u2014 Last 7 Days
             </CardTitle>
           </CardHeader>
 
           <div className="flex items-end gap-3 justify-between px-2">
             {/* Y-axis labels */}
-            <div className="flex flex-col justify-between h-48 text-xs text-terminal-muted font-mono-nums pr-2 pb-6 shrink-0">
+            <div className="flex flex-col justify-between h-48 text-[10px] text-terminal-muted font-mono-nums pr-2 pb-6 shrink-0 uppercase tracking-[0.15em]">
               <span>100%</span>
               <span>50%</span>
               <span>0%</span>
@@ -293,20 +299,20 @@ export function AnalyticsPage() {
                     <div className="relative group flex flex-col items-center">
                       <BarTooltip executed={bar.executed} failed={bar.failed} />
                       <div
-                        className="w-10 flex flex-col-reverse rounded-t overflow-hidden"
+                        className="w-10 flex flex-col-reverse rounded-t-sm overflow-hidden"
                         style={{ height: '192px' }}
                       >
                         <div
-                          className="bg-neon-green transition-all duration-300"
+                          className="bg-neon-green transition-all duration-300 shadow-[0_0_8px_#00ff9d20]"
                           style={{ height: `${successPct}%` }}
                         />
                         <div
-                          className="bg-neon-red transition-all duration-300"
+                          className="bg-neon-red transition-all duration-300 shadow-[0_0_8px_#ff3d5720]"
                           style={{ height: `${failPct}%` }}
                         />
                       </div>
                     </div>
-                    <span className="text-xs text-terminal-muted mt-1">{bar.day}</span>
+                    <span className="text-xs text-terminal-muted mt-1 font-mono-nums">{bar.day}</span>
                   </div>
                 );
               })}
@@ -315,12 +321,12 @@ export function AnalyticsPage() {
         </Card>
       </section>
 
-      {/* ── Two-Column: Latency + Blocked Reasons ───────────────── */}
+      {/* -- Two-Column: Latency + Blocked Reasons ------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ── Latency Distribution ───────────────────────────────── */}
+        {/* -- Latency Distribution ---------------------------------- */}
         <section
           className="animate-fade-in-up"
-          style={{ animationDelay: '250ms' }}
+          style={{ animationDelay: '300ms' }}
         >
           <Card>
             <CardHeader>
@@ -336,10 +342,17 @@ export function AnalyticsPage() {
                   <span className="text-xs text-slate-400 w-20 shrink-0 text-right font-mono-nums">
                     {bucket.label}
                   </span>
-                  <div className="flex-1 h-8 bg-terminal-border/30 rounded-r overflow-hidden relative">
+                  <div className="flex-1 h-8 bg-terminal-border/20 rounded-r overflow-hidden relative">
                     <div
                       className={`h-full rounded-r ${bucket.color} transition-all duration-500`}
-                      style={{ width: `${(bucket.percentage / maxLatency) * 100}%` }}
+                      style={{
+                        width: `${(bucket.percentage / maxLatency) * 100}%`,
+                        background: bucket.color.includes('cyan')
+                          ? 'linear-gradient(90deg, #00e5ff, #00e5ff99)'
+                          : bucket.color.includes('amber')
+                            ? 'linear-gradient(90deg, #ffb800, #ffb80099)'
+                            : undefined,
+                      }}
                     />
                   </div>
                   <span className="text-xs font-mono-nums text-slate-300 w-10 text-right">
@@ -351,10 +364,10 @@ export function AnalyticsPage() {
           </Card>
         </section>
 
-        {/* ── Blocked Trade Reasons ──────────────────────────────── */}
+        {/* -- Blocked Trade Reasons --------------------------------- */}
         <section
           className="animate-fade-in-up"
-          style={{ animationDelay: '300ms' }}
+          style={{ animationDelay: '360ms' }}
         >
           <Card>
             <CardHeader>
@@ -374,11 +387,11 @@ export function AnalyticsPage() {
                   <div key={reason.label} className="relative">
                     {/* Background percentage bar */}
                     <div
-                      className={`absolute inset-0 ${reason.dotClass}/10 rounded-lg transition-all duration-500`}
+                      className={`absolute inset-0 ${reason.dotClass}/10 rounded-xl transition-all duration-500`}
                       style={{ width: `${(reason.count / data.totalBlocked) * 100}%` }}
                     />
-                    <div className="relative flex items-center gap-3 px-3 py-2.5">
-                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${reason.dotClass}`} />
+                    <div className="relative flex items-center gap-3 px-4 py-2.5">
+                      <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${reason.dotClass} shadow-[0_0_4px_currentColor]`} />
                       <span className="text-sm text-slate-300 flex-1">{reason.label}</span>
                       <span className="font-mono-nums text-sm text-white">{reason.count}</span>
                       <span className="font-mono-nums text-xs text-terminal-muted w-10 text-right">
@@ -393,10 +406,10 @@ export function AnalyticsPage() {
         </section>
       </div>
 
-      {/* ── Most Active Symbols ─────────────────────────────────── */}
+      {/* -- Most Active Symbols ------------------------------------- */}
       <section
         className="animate-fade-in-up"
-        style={{ animationDelay: '350ms' }}
+        style={{ animationDelay: '420ms' }}
       >
         <Card>
           <CardHeader>
@@ -412,12 +425,14 @@ export function AnalyticsPage() {
                 <span className="text-xs font-mono-nums text-slate-300 w-16 shrink-0">
                   {sym.symbol}
                 </span>
-                <div className="flex-1 h-6 bg-terminal-border/20 rounded overflow-hidden">
+                <div className="flex-1 h-6 bg-terminal-border/20 rounded-r overflow-hidden">
                   <div
-                    className="h-full bg-neon-cyan/70 rounded transition-all duration-500"
+                    className="h-full rounded-r transition-all duration-500"
                     style={{
                       width: `${(sym.count / maxSymbolCount) * 100}%`,
                       opacity: 1 - i * 0.08,
+                      background: 'linear-gradient(90deg, #00e5ff, #00e5ff99)',
+                      boxShadow: '0 0 8px #00e5ff20',
                     }}
                   />
                 </div>
@@ -430,10 +445,10 @@ export function AnalyticsPage() {
         </Card>
       </section>
 
-      {/* ── Follower Performance Table ──────────────────────────── */}
+      {/* -- Follower Performance Table ------------------------------ */}
       <section
         className="animate-fade-in-up"
-        style={{ animationDelay: '400ms' }}
+        style={{ animationDelay: '480ms' }}
       >
         <Card className="overflow-hidden p-0">
           <div className="px-5 pt-5 pb-3">
@@ -448,7 +463,7 @@ export function AnalyticsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-terminal-border bg-terminal-card text-terminal-muted text-xs uppercase tracking-wider">
+                <tr className="border-b border-terminal-border bg-terminal-surface/80 text-[10px] uppercase tracking-[0.15em] text-terminal-muted">
                   <th className="px-5 py-3 text-left font-medium">Account</th>
                   <th className="px-5 py-3 text-right font-medium">Signals</th>
                   <th className="px-5 py-3 text-right font-medium">Executed</th>
@@ -467,11 +482,18 @@ export function AnalyticsPage() {
                         ? 'text-neon-amber'
                         : 'text-neon-red';
 
+                  const rateBg =
+                    row.successRate >= 95
+                      ? 'bg-neon-green/5'
+                      : row.successRate >= 80
+                        ? 'bg-neon-amber/5'
+                        : 'bg-neon-red/5';
+
                   return (
                     <tr
                       key={row.account}
-                      className="border-b border-terminal-border/50 last:border-0 hover:bg-terminal-surface/50 transition-colors"
-                      style={{ animationDelay: `${450 + i * 40}ms` }}
+                      className="border-b border-terminal-border/50 last:border-0 data-row transition-colors"
+                      style={{ animationDelay: `${540 + i * 40}ms` }}
                     >
                       <td className="px-5 py-3 text-slate-200 font-medium">{row.account}</td>
                       <td className="px-5 py-3 text-right font-mono-nums text-slate-300">
@@ -487,7 +509,9 @@ export function AnalyticsPage() {
                         {row.failed.toLocaleString()}
                       </td>
                       <td className={`px-5 py-3 text-right font-mono-nums font-semibold ${rateColor}`}>
-                        {row.successRate}%
+                        <span className={`inline-block rounded-lg px-2 py-0.5 ${rateBg}`}>
+                          {row.successRate}%
+                        </span>
                       </td>
                       <td className="px-5 py-3 text-right font-mono-nums text-slate-300">
                         {row.avgLatency}ms

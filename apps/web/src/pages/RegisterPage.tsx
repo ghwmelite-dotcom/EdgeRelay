@@ -38,10 +38,10 @@ export function RegisterPage() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <h2 className="font-display text-xl font-semibold text-white">Create Account</h2>
+      <h2 className="text-3xl font-black tracking-tight text-white font-display">Create Account</h2>
 
       {displayError && (
-        <div className="rounded-lg border border-neon-red/30 bg-neon-red/10 px-4 py-3 text-sm text-neon-red">
+        <div className="glass rounded-2xl border border-neon-red/30 bg-neon-red/5 px-4 py-3 text-sm text-neon-red">
           {displayError}
         </div>
       )}
@@ -86,7 +86,7 @@ export function RegisterPage() {
         autoComplete="new-password"
       />
 
-      <Button type="submit" isLoading={isLoading} className="w-full">
+      <Button type="submit" isLoading={isLoading} className="w-full shadow-[0_0_20px_#00e5ff25]">
         Create Account
       </Button>
     </form>

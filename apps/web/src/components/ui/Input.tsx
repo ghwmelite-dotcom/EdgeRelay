@@ -11,9 +11,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
 
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-medium text-slate-400 uppercase tracking-wider">
+          <label
+            htmlFor={inputId}
+            className="block text-[11px] font-medium text-terminal-muted uppercase tracking-[0.1em]"
+          >
             {label}
           </label>
         )}
@@ -21,15 +24,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={clsx(
-            'w-full rounded-lg border bg-terminal-card px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-terminal-muted',
-            'border-terminal-border focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan/30 focus:outline-none',
-            'transition-colors duration-200',
-            error && 'border-neon-red focus:border-neon-red focus:ring-neon-red/30',
+            'w-full rounded-xl border bg-terminal-card/80 backdrop-blur-sm px-3.5 py-2.5 text-sm text-slate-100',
+            'placeholder:text-terminal-muted/60',
+            'border-terminal-border',
+            'focus:border-neon-cyan focus:shadow-[0_0_15px_#00e5ff20,0_0_30px_#00e5ff08] focus:outline-none',
+            'transition-all duration-300 ease-out',
+            error && 'border-neon-red focus:border-neon-red focus:shadow-[0_0_15px_#ff3d5720,0_0_30px_#ff3d5708]',
             className,
           )}
           {...props}
         />
-        {error && <p className="text-xs text-neon-red">{error}</p>}
+        {error && (
+          <p className="text-[11px] text-neon-red tracking-wide">{error}</p>
+        )}
       </div>
     );
   },

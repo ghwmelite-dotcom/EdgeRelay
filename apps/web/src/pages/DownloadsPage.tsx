@@ -42,15 +42,15 @@ const setupSteps: SetupStep[] = [
         <p className="text-sm text-slate-300">Enable WebRequest in your MT5 terminal:</p>
         <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
           <li>
-            Go to <span className="font-mono-nums text-neon-cyan">Tools → Options → Expert Advisors</span>
+            Go to <span className="font-mono-nums text-neon-cyan">Tools \u2192 Options \u2192 Expert Advisors</span>
           </li>
           <li>
             Check <span className="font-mono-nums text-neon-cyan">"Allow WebRequest for listed URL"</span>
           </li>
           <li>Add the following URL:</li>
         </ol>
-        <div className="rounded-lg border border-terminal-border bg-terminal-bg px-4 py-3">
-          <code className="font-mono-nums text-sm text-neon-green">https://signal.edgerelay.io</code>
+        <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50">
+          <code className="text-sm text-neon-green">https://signal.edgerelay.io</code>
         </div>
         <p className="text-sm text-slate-400">Click OK to save the settings.</p>
       </div>
@@ -63,15 +63,15 @@ const setupSteps: SetupStep[] = [
         <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
           <li>Copy the downloaded <span className="font-mono-nums text-neon-cyan">.ex5</span> file to:</li>
         </ol>
-        <div className="rounded-lg border border-terminal-border bg-terminal-bg px-4 py-3">
-          <code className="font-mono-nums text-sm text-neon-green">[MT5 Data Folder]\MQL5\Experts\</code>
+        <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50">
+          <code className="text-sm text-neon-green">[MT5 Data Folder]\MQL5\Experts\</code>
         </div>
         <p className="text-sm text-slate-400">
-          Tip: In MT5, go to <span className="font-mono-nums text-neon-cyan">File → Open Data Folder</span> to find
+          Tip: In MT5, go to <span className="font-mono-nums text-neon-cyan">File \u2192 Open Data Folder</span> to find
           the path.
         </p>
         <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside" start={3}>
-          <li>Restart MT5 or right-click in Navigator → Refresh</li>
+          <li>Restart MT5 or right-click in Navigator \u2192 Refresh</li>
           <li>Drag "EdgeRelay_Master" onto any chart</li>
         </ol>
       </div>
@@ -82,32 +82,32 @@ const setupSteps: SetupStep[] = [
     content: (
       <div className="space-y-3">
         <p className="text-sm text-slate-300">Set the following input parameters when attaching the EA:</p>
-        <div className="overflow-x-auto rounded-lg border border-terminal-border">
+        <div className="glass rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-terminal-border bg-terminal-bg">
-                <th className="px-4 py-2.5 text-left font-medium text-slate-400">Parameter</th>
-                <th className="px-4 py-2.5 text-left font-medium text-slate-400">Description</th>
-                <th className="px-4 py-2.5 text-left font-medium text-slate-400">Example</th>
+              <tr className="bg-terminal-surface/80">
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Parameter</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Description</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Example</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-terminal-border">
-              <tr>
+            <tbody>
+              <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Key</td>
                 <td className="px-4 py-2.5 text-slate-300">Your API key from dashboard</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">er_abc123...</td>
               </tr>
-              <tr>
+              <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Secret</td>
                 <td className="px-4 py-2.5 text-slate-300">Your API secret</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">(shown once at creation)</td>
               </tr>
-              <tr>
+              <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Endpoint</td>
                 <td className="px-4 py-2.5 text-slate-300">EdgeRelay server</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">https://signal.edgerelay.io</td>
               </tr>
-              <tr>
+              <tr className="data-row">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">AccountID</td>
                 <td className="px-4 py-2.5 text-slate-300">Your master account ID</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">(from dashboard)</td>
@@ -126,28 +126,28 @@ const setupSteps: SetupStep[] = [
           Follow the same installation process as the Master EA, but use the Follower EA file instead.
         </p>
         <p className="text-sm text-slate-300">Additional input parameters for the Follower EA:</p>
-        <div className="overflow-x-auto rounded-lg border border-terminal-border">
+        <div className="glass rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-terminal-border bg-terminal-bg">
-                <th className="px-4 py-2.5 text-left font-medium text-slate-400">Parameter</th>
-                <th className="px-4 py-2.5 text-left font-medium text-slate-400">Description</th>
+              <tr className="bg-terminal-surface/80">
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Parameter</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Description</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-terminal-border">
-              <tr>
+            <tbody>
+              <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">MasterAccountID</td>
                 <td className="px-4 py-2.5 text-slate-300">The master account this follower is linked to</td>
               </tr>
-              <tr>
+              <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">LotMode</td>
                 <td className="px-4 py-2.5 text-slate-300">How to calculate lot size (mirror, fixed, multiplier, risk_percent)</td>
               </tr>
-              <tr>
+              <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">MaxDailyLossPercent</td>
                 <td className="px-4 py-2.5 text-slate-300">Maximum daily loss before stopping (e.g. 5.0)</td>
               </tr>
-              <tr>
+              <tr className="data-row">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">SymbolSuffix</td>
                 <td className="px-4 py-2.5 text-slate-300">Broker-specific suffix (e.g. ".m" or "_raw")</td>
               </tr>
@@ -162,7 +162,7 @@ const setupSteps: SetupStep[] = [
     content: (
       <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
         <li>
-          Check the on-chart display panel — <span className="text-neon-green">green dot</span> = connected
+          Check the on-chart display panel \u2014 <span className="text-neon-green">green dot</span> = connected
         </li>
         <li>Send a test trade on master account</li>
         <li>Verify it appears in the Signal Log on the dashboard</li>
@@ -187,7 +187,7 @@ const troubleshootingItems = [
   },
   {
     problem: 'Error 4060 in Experts tab',
-    solution: 'The URL is not whitelisted. Go to Tools → Options → Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
+    solution: 'The URL is not whitelisted. Go to Tools \u2192 Options \u2192 Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
   },
   {
     problem: "'Trade context busy' error",
@@ -204,27 +204,36 @@ function AccordionItem({
   children,
   isOpen,
   onToggle,
+  variant = 'default',
 }: {
   title: string;
   children: React.ReactNode;
   isOpen: boolean;
   onToggle: () => void;
+  variant?: 'default' | 'warning';
 }) {
   return (
-    <Card className="overflow-hidden">
+    <div className={`glass rounded-2xl p-5 transition-all duration-300 ${
+      isOpen && variant === 'default' ? 'border-l-2 border-l-neon-cyan' : ''
+    } ${variant === 'warning' ? 'border-l-2 border-l-neon-amber' : ''}`}>
       <button
         onClick={onToggle}
-        className="flex w-full items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-neon-cyan/40 rounded-lg"
+        className="flex w-full items-center justify-between text-left focus-ring rounded-lg"
       >
         <span className="text-sm font-medium text-slate-200">{title}</span>
         {isOpen ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-neon-cyan transition-transform" />
         ) : (
           <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform" />
         )}
       </button>
-      {isOpen && <div className="mt-4 border-t border-terminal-border pt-4">{children}</div>}
-    </Card>
+      {isOpen && (
+        <div className="mt-4 pt-4">
+          <div className="divider mb-4" />
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -246,7 +255,9 @@ function EADownloadCard({
   const isMaster = type === 'master';
   const Icon = isMaster ? Upload : Download;
   const iconColor = isMaster ? 'text-neon-cyan' : 'text-neon-green';
-  const iconBg = isMaster ? 'bg-neon-cyan/10' : 'bg-neon-green/10';
+  const iconGlow = isMaster
+    ? 'shadow-[0_0_15px_#00e5ff25,0_0_30px_#00e5ff10]'
+    : 'shadow-[0_0_15px_#00ff9d25,0_0_30px_#00ff9d10]';
 
   const matchingAccount = accounts.find((a) => a.role === type && a.is_active);
 
@@ -288,9 +299,9 @@ function EADownloadCard({
   };
 
   return (
-    <Card className="flex flex-col">
+    <Card hover className="flex flex-col">
       <div className="flex items-start gap-4">
-        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full glass ${iconGlow}`}>
           <Icon className={`h-6 w-6 ${iconColor}`} />
         </div>
         <div className="flex-1 space-y-1">
@@ -307,7 +318,7 @@ function EADownloadCard({
 
       <div className="mt-4 flex items-center gap-3">
         <Badge variant={isMaster ? 'cyan' : 'green'}>v1.0.0</Badge>
-        <span className="text-xs text-slate-500">{isMaster ? '~45 KB' : '~52 KB'}</span>
+        <span className="text-xs text-slate-500 font-mono-nums">{isMaster ? '~45 KB' : '~52 KB'}</span>
       </div>
 
       <div className="mt-4">
@@ -324,7 +335,7 @@ function EADownloadCard({
       </div>
 
       {error && (
-        <div className="mt-3 flex items-start gap-2 rounded-lg border border-neon-amber/20 bg-neon-amber-dim px-3 py-2">
+        <div className="mt-3 flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-neon-amber" />
           <p className="text-xs text-neon-amber">{error}</p>
         </div>
@@ -373,22 +384,36 @@ export function DownloadsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="font-display text-2xl font-bold text-slate-100">Downloads &amp; Setup</h1>
-        <p className="mt-1 text-sm text-slate-400">
+      <div
+        className="animate-fade-in-up"
+        style={{ animationDelay: '0ms' }}
+      >
+        <h1 className="text-3xl font-black tracking-tight text-white font-display">
+          Downloads & Setup
+        </h1>
+        <p className="mt-1 text-sm text-terminal-muted">
           Get your Expert Advisors configured and running in minutes
         </p>
       </div>
 
       {/* EA Download Cards */}
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div
+        className="grid gap-6 sm:grid-cols-2 animate-fade-in-up"
+        style={{ animationDelay: '60ms' }}
+      >
         <EADownloadCard type="master" accounts={accounts} />
         <EADownloadCard type="follower" accounts={accounts} />
       </div>
 
       {/* Setup Guide */}
-      <div className="space-y-3">
-        <h2 className="font-display text-lg font-semibold text-slate-200">Setup Guide</h2>
+      <div
+        className="space-y-3 animate-fade-in-up"
+        style={{ animationDelay: '120ms' }}
+      >
+        <h2 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+          <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+          Setup Guide
+        </h2>
         <div className="space-y-2">
           {setupSteps.map((step, i) => (
             <AccordionItem key={i} title={step.title} isOpen={openSteps.has(i)} onToggle={() => toggleStep(i)}>
@@ -399,11 +424,17 @@ export function DownloadsPage() {
       </div>
 
       {/* Troubleshooting */}
-      <div className="space-y-3">
-        <h2 className="font-display text-lg font-semibold text-slate-200">Troubleshooting</h2>
+      <div
+        className="space-y-3 animate-fade-in-up"
+        style={{ animationDelay: '180ms' }}
+      >
+        <h2 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+          <span className="h-1 w-1 rounded-full bg-neon-amber" />
+          Troubleshooting
+        </h2>
         <div className="space-y-2">
           {troubleshootingItems.map((item, i) => (
-            <AccordionItem key={i} title={item.problem} isOpen={openFAQ.has(i)} onToggle={() => toggleFAQ(i)}>
+            <AccordionItem key={i} title={item.problem} isOpen={openFAQ.has(i)} onToggle={() => toggleFAQ(i)} variant="warning">
               <p className="text-sm text-slate-300">{item.solution}</p>
             </AccordionItem>
           ))}

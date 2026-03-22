@@ -48,7 +48,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-terminal-muted hover:text-neon-cyan hover:bg-terminal-card transition-colors"
+      className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all duration-200 focus-ring"
       aria-label="Copy to clipboard"
     >
       {copied ? <Check size={14} className="text-neon-green" /> : <Copy size={14} />}
@@ -120,17 +120,20 @@ function AddAccountModal({
     <Modal open={open} onClose={handleClose} title={createdAccount ? 'Account Created' : 'Add Account'}>
       {createdAccount ? (
         <div className="space-y-5">
-          <div className="rounded-xl border border-neon-green/30 bg-neon-green/5 p-4 space-y-3">
+          <div className="glass rounded-2xl glow-cyan p-5 space-y-4">
             <div className="flex items-center gap-2 text-neon-green text-sm font-medium">
               <Check size={16} />
               Account "{createdAccount.alias}" created successfully
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div>
-                <span className="text-xs text-terminal-muted uppercase tracking-wider">API Key</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="font-mono-nums text-sm text-slate-200 bg-terminal-bg rounded px-2 py-1 flex-1 truncate">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+                  API Key
+                </span>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
                     {createdAccount.api_key}
                   </code>
                   <CopyButton text={createdAccount.api_key} />
@@ -138,9 +141,12 @@ function AddAccountModal({
               </div>
 
               <div>
-                <span className="text-xs text-terminal-muted uppercase tracking-wider">API Secret</span>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="font-mono-nums text-sm text-slate-200 bg-terminal-bg rounded px-2 py-1 flex-1 truncate">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+                  API Secret
+                </span>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
                     {createdAccount.api_secret}
                   </code>
                   <CopyButton text={createdAccount.api_secret} />
@@ -149,7 +155,7 @@ function AddAccountModal({
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-4">
+          <div className="flex items-start gap-2 rounded-2xl border border-neon-amber/30 bg-neon-amber/5 p-4">
             <AlertTriangle size={16} className="text-neon-amber mt-0.5 shrink-0" />
             <p className="text-sm text-neon-amber">
               Save your API Secret now — it won't be shown again.
@@ -163,18 +169,21 @@ function AddAccountModal({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Role toggle */}
-          <div className="space-y-1.5">
-            <span className="block text-xs font-medium text-slate-400 uppercase tracking-wider">Role</span>
+          <div className="space-y-2">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+              Role
+            </span>
             <div className="grid grid-cols-2 gap-2">
               {(['master', 'follower'] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRole(r)}
-                  className={`rounded-lg border px-4 py-3 text-sm font-medium transition-all ${
+                  className={`glass rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 focus-ring ${
                     role === r
-                      ? 'border-neon-cyan bg-neon-cyan/10 text-neon-cyan shadow-[0_0_12px_rgba(0,212,255,0.15)]'
-                      : 'border-terminal-border bg-terminal-card text-slate-400 hover:border-terminal-border-hover hover:text-slate-200'
+                      ? 'bg-neon-cyan/15 border-neon-cyan text-neon-cyan shadow-[0_0_15px_rgba(0,229,255,0.15)]'
+                      : 'border-terminal-border text-slate-400 hover:border-terminal-border-hover hover:text-slate-200'
                   }`}
                 >
                   {r === 'master' ? 'Master' : 'Follower'}
@@ -296,7 +305,7 @@ function ConfigureFollowerModal({
   if (!account) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title={`Configure — ${account.alias}`}>
+    <Modal open={open} onClose={onClose} title={`Configure \u2014 ${account.alias}`}>
       <form onSubmit={handleSave} className="space-y-5">
         <Select
           label="Lot Mode"
@@ -341,8 +350,9 @@ function ConfigureFollowerModal({
         />
 
         {/* Checkboxes */}
-        <div className="space-y-1.5">
-          <span className="block text-xs font-medium text-slate-400 uppercase tracking-wider">
+        <div className="space-y-2">
+          <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-neon-purple" />
             Copy Settings
           </span>
           <div className="grid grid-cols-2 gap-3">
@@ -354,7 +364,7 @@ function ConfigureFollowerModal({
             ].map(({ label, checked, set }) => (
               <label
                 key={label}
-                className="flex items-center gap-2 cursor-pointer select-none rounded-lg border border-terminal-border bg-terminal-card px-3 py-2.5 text-sm text-slate-300 hover:border-terminal-border-hover transition-colors"
+                className="flex items-center gap-2 cursor-pointer select-none glass rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:border-terminal-border-hover transition-all duration-200"
               >
                 <input
                   type="checkbox"
@@ -405,7 +415,7 @@ function DeleteConfirmModal({
   return (
     <Modal open={open} onClose={onClose} title="Delete Account">
       <div className="space-y-5">
-        <div className="flex items-start gap-3 rounded-xl border border-neon-red/30 bg-neon-red/5 p-4">
+        <div className="flex items-start gap-3 rounded-2xl border border-neon-red/30 bg-neon-red/5 p-4">
           <AlertTriangle size={18} className="text-neon-red mt-0.5 shrink-0" />
           <div className="text-sm text-slate-300">
             <p>
@@ -447,7 +457,7 @@ function MasterCard({
   onDelete: (a: Account) => void;
 }) {
   return (
-    <Card hover className="group">
+    <Card hover className="group border-l-2 border-l-neon-cyan">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-3">
           {/* Header row */}
@@ -455,25 +465,25 @@ function MasterCard({
             <StatusDot status={connectionStatus(account)} />
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-white truncate">{account.alias}</h3>
-              <p className="text-xs text-terminal-muted">{account.broker_name ?? '—'}</p>
+              <p className="text-xs text-terminal-muted">{account.broker_name ?? '\u2014'}</p>
             </div>
           </div>
 
           {/* Details */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
             <div>
-              <span className="text-terminal-muted">MT5 Login</span>
-              <p className="font-mono-nums text-slate-300">{account.mt5_login ?? '—'}</p>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">MT5 Login</span>
+              <p className="font-mono-nums text-slate-300">{account.mt5_login ?? '\u2014'}</p>
             </div>
             <div>
-              <span className="text-terminal-muted">Signals Today</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">Signals Today</span>
               <p className="font-mono-nums text-slate-300">{account.signals_today}</p>
             </div>
           </div>
 
           {/* API Key */}
           <div className="flex items-center gap-2">
-            <code className="rounded bg-terminal-bg px-2 py-1 text-xs font-mono-nums text-terminal-muted">
+            <code className="font-mono-nums text-xs text-terminal-muted bg-terminal-bg/50 rounded-lg px-3 py-2 border border-terminal-border/50">
               {maskApiKey(account.api_key)}
             </code>
             <CopyButton text={account.api_key} />
@@ -482,10 +492,10 @@ function MasterCard({
 
         {/* Actions */}
         <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className="focus-ring">
             <Eye size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDelete(account)}>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(account)} className="focus-ring">
             <Trash2 size={14} className="text-neon-red" />
           </Button>
         </div>
@@ -513,7 +523,7 @@ function FollowerCard({
   const lotLabel = LOT_MODE_OPTIONS.find((o) => o.value === config?.lot_mode)?.label ?? 'Mirror';
 
   return (
-    <Card hover className="group">
+    <Card hover className="group border-l-2 border-l-neon-purple">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-3">
           {/* Header */}
@@ -521,7 +531,7 @@ function FollowerCard({
             <StatusDot status={connectionStatus(account)} />
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-white truncate">{account.alias}</h3>
-              <p className="text-xs text-terminal-muted">{account.broker_name ?? '—'}</p>
+              <p className="text-xs text-terminal-muted">{account.broker_name ?? '\u2014'}</p>
             </div>
           </div>
 
@@ -545,10 +555,10 @@ function FollowerCard({
 
         {/* Actions */}
         <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="sm" onClick={() => onConfigure(account)}>
+          <Button variant="ghost" size="sm" onClick={() => onConfigure(account)} className="focus-ring">
             <Settings size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDelete(account)}>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(account)} className="focus-ring">
             <Trash2 size={14} className="text-neon-red" />
           </Button>
         </div>
@@ -580,9 +590,12 @@ export function AccountsPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-white tracking-tight">Accounts</h1>
-        <Button onClick={() => setAddOpen(true)}>
+      <div
+        className="flex items-center justify-between animate-fade-in-up"
+        style={{ animationDelay: '0ms' }}
+      >
+        <h1 className="text-3xl font-black tracking-tight text-white font-display">Accounts</h1>
+        <Button onClick={() => setAddOpen(true)} className="shadow-[0_0_20px_#00e5ff25]">
           <Plus size={16} />
           Add Account
         </Button>
@@ -590,21 +603,28 @@ export function AccountsPage() {
 
       {isLoading && accounts.length === 0 ? (
         <div className="flex items-center justify-center py-20 text-terminal-muted text-sm">
-          Loading accounts...
+          <div className="flex items-center gap-3">
+            <span className="h-2 w-2 rounded-full bg-neon-cyan animate-pulse shadow-[0_0_6px_#00e5ff]" />
+            Loading accounts...
+          </div>
         </div>
       ) : (
         <>
           {/* Master Accounts */}
-          <section className="space-y-4">
+          <section
+            className="space-y-4 animate-fade-in-up"
+            style={{ animationDelay: '60ms' }}
+          >
             <div className="flex items-center gap-3">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              <h2 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-neon-cyan" />
                 Master Accounts
               </h2>
               <Badge variant="cyan">{masters.length}</Badge>
             </div>
 
             {masters.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-terminal-border p-8 text-center text-sm text-terminal-muted">
+              <div className="glass rounded-2xl border border-dashed border-terminal-border p-8 text-center text-sm text-terminal-muted">
                 No master accounts yet. Create one to start relaying signals.
               </div>
             ) : (
@@ -617,16 +637,20 @@ export function AccountsPage() {
           </section>
 
           {/* Follower Accounts */}
-          <section className="space-y-4">
+          <section
+            className="space-y-4 animate-fade-in-up"
+            style={{ animationDelay: '120ms' }}
+          >
             <div className="flex items-center gap-3">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              <h2 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-neon-purple" />
                 Follower Accounts
               </h2>
               <Badge variant="purple">{followers.length}</Badge>
             </div>
 
             {followers.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-terminal-border p-8 text-center text-sm text-terminal-muted">
+              <div className="glass rounded-2xl border border-dashed border-terminal-border p-8 text-center text-sm text-terminal-muted">
                 No follower accounts yet. Add one and link it to a master.
               </div>
             ) : (

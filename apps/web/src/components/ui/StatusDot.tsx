@@ -8,11 +8,18 @@ interface StatusDotProps {
   className?: string;
 }
 
-const colors: Record<Status, string> = {
-  connected: 'bg-neon-green text-neon-green',
-  disconnected: 'bg-neon-red text-neon-red',
-  connecting: 'bg-neon-amber text-neon-amber',
+const dotStyles: Record<Status, string> = {
+  connected: 'bg-neon-green text-neon-green shadow-[0_0_4px_#00ff9d,0_0_8px_#00ff9d60]',
+  disconnected: 'bg-neon-red text-neon-red shadow-[0_0_4px_#ff3d57,0_0_8px_#ff3d5760]',
+  connecting: 'bg-neon-amber text-neon-amber shadow-[0_0_4px_#ffb800,0_0_8px_#ffb80060]',
   idle: 'bg-terminal-muted text-terminal-muted',
+};
+
+const dotAnimations: Record<Status, string> = {
+  connected: 'status-pulse',
+  disconnected: '',
+  connecting: 'animate-pulse',
+  idle: '',
 };
 
 export function StatusDot({ status, label, className }: StatusDotProps) {
@@ -21,13 +28,14 @@ export function StatusDot({ status, label, className }: StatusDotProps) {
       <span
         className={clsx(
           'h-2 w-2 rounded-full',
-          colors[status],
-          status === 'connected' && 'animate-pulse-glow',
-          status === 'connecting' && 'animate-pulse',
+          dotStyles[status],
+          dotAnimations[status],
         )}
       />
       {label && (
-        <span className="text-xs font-medium text-slate-400 capitalize">{label ?? status}</span>
+        <span className="font-mono text-[11px] tracking-wide text-slate-400">
+          {label ?? status}
+        </span>
       )}
     </span>
   );

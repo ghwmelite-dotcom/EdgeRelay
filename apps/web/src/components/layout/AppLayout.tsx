@@ -37,7 +37,7 @@ export function AppLayout() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/80 backdrop-blur-sm lg:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -45,21 +45,28 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-terminal-surface border-r border-terminal-border
+          fixed inset-y-0 left-0 z-40 flex w-64 flex-col
+          backdrop-blur-xl bg-terminal-surface/80
           transition-transform duration-300 ease-out
           lg:static lg:translate-x-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
+        {/* Left edge gradient border */}
+        <div className="absolute top-0 left-0 bottom-0 w-px bg-gradient-to-b from-neon-cyan/40 via-neon-cyan/10 to-transparent" />
+
+        {/* Right border */}
+        <div className="absolute top-0 right-0 bottom-0 w-px bg-terminal-border/60" />
+
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between px-5 border-b border-terminal-border">
-          <span className="font-display text-xl font-bold tracking-tight">
-            <span className="text-white">Edge</span>
-            <span className="text-neon-cyan">Relay</span>
+        <div className="flex h-16 items-center justify-between px-5 border-b border-terminal-border/40">
+          <span className="text-xl tracking-tighter">
+            <span className="text-white font-black">EDGE</span>
+            <span className="text-neon-cyan font-black glow-text-cyan">RELAY</span>
           </span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-terminal-card hover:text-slate-200 lg:hidden focus:outline-none focus:ring-2 focus:ring-neon-cyan/40"
+            className="rounded-xl p-1.5 text-slate-400 hover:bg-terminal-card/50 hover:text-slate-200 lg:hidden focus-ring"
           >
             <X className="h-5 w-5" />
           </button>
@@ -75,15 +82,16 @@ export function AppLayout() {
                 to={to}
                 onClick={() => setSidebarOpen(false)}
                 className={`
-                  flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-200
-                  hover:bg-terminal-card focus:outline-none focus:ring-2 focus:ring-neon-cyan/40
+                  flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+                  transition-all duration-200 ease-out
+                  focus-ring
                   ${isActive
-                    ? 'border-l-2 border-neon-cyan bg-terminal-card text-neon-cyan'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'border-l-2 border-neon-cyan bg-neon-cyan/8 text-neon-cyan glow-text-cyan'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50'
                   }
                 `}
               >
-                <Icon className="h-5 w-5 shrink-0" />
+                <Icon className="h-[18px] w-[18px] shrink-0" />
                 {label}
               </NavLink>
             );
@@ -91,20 +99,23 @@ export function AppLayout() {
         </nav>
 
         {/* Bottom section */}
-        <div className="border-t border-terminal-border p-4 space-y-3">
+        <div className="p-4 space-y-3">
+          {/* Gradient divider */}
+          <div className="divider mb-3" />
+
           {user && (
             <div className="space-y-2">
-              <p className="truncate text-sm text-slate-300">{user.email}</p>
-              <Badge variant={planBadgeVariant(user.plan)}>
+              <p className="truncate text-sm text-slate-400">{user.email}</p>
+              <Badge variant={planBadgeVariant(user.plan)} className="chip">
                 {user.plan}
               </Badge>
             </div>
           )}
           <button
             onClick={logout}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 transition-colors duration-200 hover:bg-terminal-card hover:text-neon-red focus:outline-none focus:ring-2 focus:ring-neon-cyan/40"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-500 transition-all duration-200 ease-out hover:bg-terminal-card/50 hover:text-neon-red hover:glow-text-red focus-ring group"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 transition-colors duration-200 group-hover:drop-shadow-[0_0_6px_#ff3d5760]" />
             Logout
           </button>
         </div>
@@ -113,22 +124,28 @@ export function AppLayout() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile top bar */}
-        <header className="flex h-14 items-center border-b border-terminal-border bg-terminal-surface px-4 lg:hidden">
+        <header className="flex h-14 items-center border-b border-terminal-border/40 backdrop-blur-xl bg-terminal-surface/80 px-4 lg:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2 text-slate-400 hover:bg-terminal-card hover:text-slate-200 focus:outline-none focus:ring-2 focus:ring-neon-cyan/40"
+            className="rounded-xl p-2 text-slate-500 backdrop-blur-sm bg-terminal-card/30 hover:bg-terminal-card/60 hover:text-neon-cyan transition-all duration-200 focus-ring"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="ml-3 font-display text-lg font-bold tracking-tight">
-            <span className="text-white">Edge</span>
-            <span className="text-neon-cyan">Relay</span>
+          <span className="ml-3 text-lg tracking-tighter">
+            <span className="text-white font-black">EDGE</span>
+            <span className="text-neon-cyan font-black glow-text-cyan">RELAY</span>
           </span>
         </header>
 
         {/* Page content */}
-        <main className="relative flex-1 overflow-y-auto bg-terminal-bg">
+        <main className="scan-line relative flex-1 overflow-y-auto bg-terminal-bg">
+          {/* Grid overlay */}
           <div className="bg-grid absolute inset-0 pointer-events-none" />
+
+          {/* Ambient glow orbs */}
+          <div className="ambient-glow" />
+
+          {/* Content */}
           <div className="relative z-10 p-6">
             <Outlet />
           </div>

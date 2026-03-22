@@ -21,15 +21,17 @@ function ToggleSwitch({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between cursor-pointer select-none rounded-lg border border-terminal-border bg-terminal-card px-4 py-3 hover:border-terminal-border-hover transition-colors">
+    <label className="flex items-center justify-between cursor-pointer select-none glass rounded-2xl px-4 py-3 hover:border-terminal-border-hover transition-all duration-200">
       <span className="text-sm text-slate-300">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-neon-cyan/40 focus:ring-offset-2 focus:ring-offset-terminal-bg ${
-          checked ? 'bg-neon-cyan' : 'bg-terminal-border'
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-all duration-300 focus-ring ${
+          checked
+            ? 'bg-neon-cyan shadow-[0_0_8px_#00e5ff40]'
+            : 'bg-terminal-border'
         }`}
       >
         <span
@@ -75,7 +77,7 @@ function DeleteAccountModal({
   return (
     <Modal open={open} onClose={handleClose} title="Delete Account">
       <div className="space-y-5">
-        <div className="flex items-start gap-3 rounded-xl border border-neon-red/30 bg-neon-red/5 p-4">
+        <div className="flex items-start gap-3 rounded-2xl border border-neon-red/30 bg-neon-red/5 p-4">
           <AlertTriangle size={18} className="text-neon-red mt-0.5 shrink-0" />
           <p className="text-sm text-slate-300">
             This will permanently delete your account, all trading accounts, and
@@ -83,12 +85,19 @@ function DeleteAccountModal({
           </p>
         </div>
 
-        <Input
-          label='Type "DELETE" to confirm'
-          placeholder="DELETE"
-          value={confirmText}
-          onChange={(e) => setConfirmText(e.target.value)}
-        />
+        <div>
+          <Input
+            label='Type "DELETE" to confirm'
+            placeholder="DELETE"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            className={
+              canDelete
+                ? 'border-neon-red focus:border-neon-red focus:shadow-[0_0_15px_#ff3d5720,0_0_30px_#ff3d5708]'
+                : ''
+            }
+          />
+        </div>
 
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={handleClose}>
@@ -215,7 +224,7 @@ export function SettingsPage() {
 
   const handleNotifSave = async () => {
     setNotifSaving(true);
-    // Placeholder — just simulate success
+    // Placeholder -- just simulate success
     await new Promise((r) => setTimeout(r, 300));
     setNotifSaving(false);
     setNotifMsg('Preferences saved successfully.');
@@ -224,13 +233,20 @@ export function SettingsPage() {
   return (
     <div className="space-y-8 max-w-2xl">
       {/* Page Title */}
-      <h1 className="font-display text-2xl font-bold text-white tracking-tight">Settings</h1>
+      <h1
+        className="text-3xl font-black tracking-tight text-white font-display animate-fade-in-up"
+        style={{ animationDelay: '0ms' }}
+      >
+        Settings
+      </h1>
 
       {/* ---- Profile ---- */}
       <Card className="animate-fade-in-up" style={{ animationDelay: '0ms' }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-display">
-            <User size={16} className="text-neon-cyan" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-neon-cyan/10">
+              <User size={16} className="text-neon-cyan" />
+            </span>
             Profile
           </CardTitle>
         </CardHeader>
@@ -258,10 +274,12 @@ export function SettingsPage() {
       </Card>
 
       {/* ---- Security ---- */}
-      <Card className="animate-fade-in-up" style={{ animationDelay: '80ms' }}>
+      <Card className="animate-fade-in-up" style={{ animationDelay: '60ms' }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-display">
-            <Lock size={16} className="text-neon-cyan" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-neon-cyan/10">
+              <Lock size={16} className="text-neon-cyan" />
+            </span>
             Security
           </CardTitle>
         </CardHeader>
@@ -303,10 +321,12 @@ export function SettingsPage() {
       </Card>
 
       {/* ---- Notifications ---- */}
-      <Card className="animate-fade-in-up" style={{ animationDelay: '160ms' }}>
+      <Card className="animate-fade-in-up" style={{ animationDelay: '120ms' }}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-display">
-            <Bell size={16} className="text-neon-cyan" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-neon-cyan/10">
+              <Bell size={16} className="text-neon-cyan" />
+            </span>
             Notifications
           </CardTitle>
         </CardHeader>
@@ -348,12 +368,14 @@ export function SettingsPage() {
 
       {/* ---- Danger Zone ---- */}
       <Card
-        className="animate-fade-in-up border-neon-red/30"
-        style={{ animationDelay: '240ms' }}
+        className="animate-fade-in-up border border-neon-red/20 shadow-[0_0_30px_#ff3d5708]"
+        style={{ animationDelay: '180ms' }}
       >
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-display text-neon-red">
-            <AlertTriangle size={16} />
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-neon-red/10">
+              <AlertTriangle size={16} />
+            </span>
             Danger Zone
           </CardTitle>
         </CardHeader>

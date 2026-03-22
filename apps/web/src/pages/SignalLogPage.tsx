@@ -150,74 +150,96 @@ function StatusBadge({ status }: { status: Signal['status'] }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Latency display helper                                            */
+/* ------------------------------------------------------------------ */
+
+function LatencyDisplay({ ms }: { ms: number }) {
+  const color = ms < 50 ? 'text-neon-green' : ms <= 200 ? 'text-neon-amber' : 'text-neon-red';
+  return <span className={`font-mono-nums ${color}`}>{ms}ms</span>;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Expandable Row                                                    */
 /* ------------------------------------------------------------------ */
 
 function ExpandedDetails({ signal }: { signal: Signal }) {
   return (
     <tr>
-      <td colSpan={9} className="border-b border-terminal-border bg-terminal-surface/50 px-4 py-4">
-        <div className="space-y-4 max-w-3xl">
-          {/* Signal metadata */}
-          <div className="grid grid-cols-3 gap-4 text-xs">
-            <div>
-              <span className="text-terminal-muted">Signal ID</span>
-              <p className="font-mono-nums text-slate-300 mt-0.5">{signal.signal_id}</p>
+      <td colSpan={10} className="border-b border-terminal-border p-0">
+        <div className="bg-terminal-surface/50 border-l-2 border-neon-cyan px-6 py-5">
+          <div className="space-y-4 max-w-3xl">
+            {/* Signal metadata */}
+            <div className="grid grid-cols-3 gap-4 text-xs">
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+                  Signal ID
+                </span>
+                <p className="font-mono-nums text-slate-300 mt-1">{signal.signal_id}</p>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+                  Sequence
+                </span>
+                <p className="font-mono-nums text-slate-300 mt-1">{signal.sequence_num}</p>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+                  Magic Number
+                </span>
+                <p className="font-mono-nums text-slate-300 mt-1">{signal.magic_number}</p>
+              </div>
             </div>
-            <div>
-              <span className="text-terminal-muted">Sequence</span>
-              <p className="font-mono-nums text-slate-300 mt-0.5">{signal.sequence_num}</p>
-            </div>
-            <div>
-              <span className="text-terminal-muted">Magic Number</span>
-              <p className="font-mono-nums text-slate-300 mt-0.5">{signal.magic_number}</p>
-            </div>
-          </div>
 
-          {signal.block_reason && (
-            <div className="rounded-lg border border-neon-amber/30 bg-neon-amber/5 px-3 py-2 text-xs text-neon-amber">
-              Blocked: {signal.block_reason}
-            </div>
-          )}
+            {signal.block_reason && (
+              <div className="rounded-xl border border-neon-amber/30 bg-neon-amber/5 px-4 py-2.5 text-xs text-neon-amber flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon-amber" />
+                Blocked: {signal.block_reason}
+              </div>
+            )}
 
-          {/* Execution chain */}
-          <div>
-            <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Execution Chain
-            </h4>
-            <div className="space-y-1.5">
-              {signal.executions.map((exec, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 rounded-lg border border-terminal-border bg-terminal-card px-3 py-2 text-xs"
-                >
-                  <span className="text-slate-300 font-medium w-24 shrink-0">
-                    {exec.follower_alias}
-                  </span>
-                  <StatusBadge status={exec.status} />
-                  {exec.executed_price != null && (
-                    <span className="font-mono-nums text-slate-400">
-                      @ {exec.executed_price}
+            {/* Execution chain */}
+            <div>
+              <h4 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5 mb-3">
+                <span className="h-1 w-1 rounded-full bg-neon-purple" />
+                Execution Chain
+              </h4>
+              <div className="space-y-1.5">
+                {signal.executions.map((exec, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 rounded-xl glass px-4 py-2.5 text-xs"
+                  >
+                    <span className="text-slate-300 font-medium w-24 shrink-0">
+                      {exec.follower_alias}
                     </span>
-                  )}
-                  {exec.slippage != null && (
-                    <span
-                      className={`font-mono-nums ${
-                        exec.slippage > 0 ? 'text-neon-red' : 'text-neon-green'
-                      }`}
-                    >
-                      {exec.slippage > 0 ? '+' : ''}
-                      {exec.slippage} slip
+                    <StatusBadge status={exec.status} />
+                    {exec.executed_price != null && (
+                      <span className="font-mono-nums text-slate-400">
+                        @ {exec.executed_price}
+                      </span>
+                    )}
+                    {exec.slippage != null && (
+                      <span
+                        className={`font-mono-nums ${
+                          exec.slippage > 0 ? 'text-neon-red' : 'text-neon-green'
+                        }`}
+                      >
+                        {exec.slippage > 0 ? '+' : ''}
+                        {exec.slippage} slip
+                      </span>
+                    )}
+                    <span className="font-mono-nums text-terminal-muted ml-auto">
+                      {exec.execution_time_ms}ms
                     </span>
-                  )}
-                  <span className="font-mono-nums text-terminal-muted ml-auto">
-                    {exec.execution_time_ms}ms
-                  </span>
-                  {exec.block_reason && (
-                    <span className="text-neon-amber">{exec.block_reason}</span>
-                  )}
-                </div>
-              ))}
+                    {exec.block_reason && (
+                      <span className="text-neon-amber">{exec.block_reason}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -291,13 +313,18 @@ export function SignalLogPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div
+        className="flex items-center justify-between animate-fade-in-up"
+        style={{ animationDelay: '0ms' }}
+      >
         <div className="flex items-center gap-3">
-          <h1 className="font-display text-2xl font-bold text-white tracking-tight">Signal Log</h1>
+          <h1 className="text-3xl font-black tracking-tight text-white font-display">
+            Signal Log
+          </h1>
           {autoRefresh && (
             <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-cyan opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neon-cyan" />
+              <span className="absolute inline-flex h-full w-full rounded-full bg-neon-cyan status-pulse" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-neon-cyan shadow-[0_0_6px_#00e5ff,0_0_12px_#00e5ff60]" />
             </span>
           )}
         </div>
@@ -306,6 +333,7 @@ export function SignalLogPage() {
           variant={autoRefresh ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => setAutoRefresh((v) => !v)}
+          className="focus-ring"
         >
           {autoRefresh ? <Pause size={14} /> : <Play size={14} />}
           {autoRefresh ? 'Pause' : 'Resume'}
@@ -313,161 +341,172 @@ export function SignalLogPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-terminal-border bg-terminal-card p-4">
-        <Filter size={16} className="text-terminal-muted mb-2" />
-        <div className="w-44">
-          <Select
-            label="Master"
-            options={masterOptions}
-            value={filterMaster}
-            onChange={(e) => setFilterMaster(e.target.value)}
-          />
-        </div>
-        <div className="w-36">
-          <Input
-            label="Symbol"
-            placeholder="e.g. XAUUSD"
-            value={filterSymbol}
-            onChange={(e) => setFilterSymbol(e.target.value)}
-          />
-        </div>
-        <div className="w-36">
-          <Select
-            label="Action"
-            options={actionOptions}
-            value={filterAction}
-            onChange={(e) => setFilterAction(e.target.value)}
-          />
-        </div>
-        <div className="w-36">
-          <Select
-            label="Status"
-            options={statusOptions}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          />
+      <div
+        className="glass rounded-2xl p-4 animate-fade-in-up"
+        style={{ animationDelay: '60ms' }}
+      >
+        <div className="flex flex-wrap items-end gap-3">
+          <Filter size={16} className="text-terminal-muted mb-2" />
+          <div className="w-44">
+            <Select
+              label="Master"
+              options={masterOptions}
+              value={filterMaster}
+              onChange={(e) => setFilterMaster(e.target.value)}
+            />
+          </div>
+          <div className="w-36">
+            <Input
+              label="Symbol"
+              placeholder="e.g. XAUUSD"
+              value={filterSymbol}
+              onChange={(e) => setFilterSymbol(e.target.value)}
+            />
+          </div>
+          <div className="w-36">
+            <Select
+              label="Action"
+              options={actionOptions}
+              value={filterAction}
+              onChange={(e) => setFilterAction(e.target.value)}
+            />
+          </div>
+          <div className="w-36">
+            <Select
+              label="Status"
+              options={statusOptions}
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div
+          className="flex flex-col items-center justify-center py-20 text-center animate-fade-in-up"
+          style={{ animationDelay: '120ms' }}
+        >
           <RefreshCw size={40} className="text-terminal-muted mb-4 opacity-30" />
           <p className="text-sm text-terminal-muted">
             No signals yet. Connect your Master EA to start receiving signals.
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-terminal-border">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead>
-              <tr className="bg-terminal-surface sticky top-0 z-10">
-                <th className="w-8 px-3 py-3" />
-                <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Time
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Master
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Symbol
-                </th>
-                <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Action
-                </th>
-                <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Volume
-                </th>
-                <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Price
-                </th>
-                <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  SL / TP
-                </th>
-                <th className="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Latency
-                </th>
-                <th className="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-terminal-muted">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((signal, idx) => {
-                const isExpanded = expandedRow === signal.signal_id;
-                return (
-                  <>
-                    <tr
-                      key={signal.signal_id}
-                      onClick={() =>
-                        setExpandedRow(isExpanded ? null : signal.signal_id)
-                      }
-                      className={`cursor-pointer border-b border-terminal-border transition-colors ${
-                        idx % 2 === 0 ? 'bg-terminal-card' : 'bg-terminal-surface'
-                      } hover:bg-terminal-card/50`}
-                    >
-                      <td className="px-3 py-2.5 text-terminal-muted">
-                        {isExpanded ? (
-                          <ChevronDown size={14} />
-                        ) : (
-                          <ChevronRight size={14} />
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className="font-mono-nums text-slate-200 block">
-                          {signal.time}
-                        </span>
-                        <span className="font-mono-nums text-xs text-terminal-muted">
-                          {signal.date}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Badge variant="purple">{signal.master_alias}</Badge>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <Badge variant="cyan">{signal.symbol}</Badge>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <ActionBadge action={signal.action} />
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
-                        {signal.volume.toFixed(2)}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
-                        {signal.price.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 5,
-                        })}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-mono-nums text-terminal-muted text-xs">
-                        {signal.sl != null && signal.tp != null
-                          ? `${signal.sl.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 5,
-                            })} / ${signal.tp.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 5,
-                            })}`
-                          : '—'}
-                      </td>
-                      <td className="px-3 py-2.5 text-right font-mono-nums text-slate-400">
-                        {signal.latency_ms}ms
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
-                        <StatusBadge status={signal.status} />
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <ExpandedDetails
-                        key={`${signal.signal_id}-details`}
-                        signal={signal}
-                      />
-                    )}
-                  </>
-                );
-              })}
-            </tbody>
-          </table>
+        <div
+          className="glass rounded-2xl overflow-hidden animate-fade-in-up"
+          style={{ animationDelay: '120ms' }}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead>
+                <tr className="bg-terminal-surface/80 sticky top-0 z-10">
+                  <th className="w-8 px-3 py-3" />
+                  <th className="px-3 py-3 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Time
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Master
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Symbol
+                  </th>
+                  <th className="px-3 py-3 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Action
+                  </th>
+                  <th className="px-3 py-3 text-right text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Volume
+                  </th>
+                  <th className="px-3 py-3 text-right text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Price
+                  </th>
+                  <th className="px-3 py-3 text-right text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    SL / TP
+                  </th>
+                  <th className="px-3 py-3 text-right text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Latency
+                  </th>
+                  <th className="px-3 py-3 text-center text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((signal) => {
+                  const isExpanded = expandedRow === signal.signal_id;
+                  return (
+                    <>
+                      <tr
+                        key={signal.signal_id}
+                        onClick={() =>
+                          setExpandedRow(isExpanded ? null : signal.signal_id)
+                        }
+                        className="cursor-pointer border-b border-terminal-border/50 data-row transition-colors"
+                      >
+                        <td className="px-3 py-2.5 text-terminal-muted">
+                          {isExpanded ? (
+                            <ChevronDown size={14} className="text-neon-cyan" />
+                          ) : (
+                            <ChevronRight size={14} />
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span className="font-mono-nums text-neon-cyan/70 text-xs block">
+                            {signal.time}
+                          </span>
+                          <span className="font-mono-nums text-xs text-terminal-muted">
+                            {signal.date}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Badge variant="purple">{signal.master_alias}</Badge>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <Badge variant="cyan">{signal.symbol}</Badge>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <ActionBadge action={signal.action} />
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
+                          {signal.volume.toFixed(2)}
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
+                          {signal.price.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 5,
+                          })}
+                        </td>
+                        <td className="px-3 py-2.5 text-right font-mono-nums text-terminal-muted text-xs">
+                          {signal.sl != null && signal.tp != null
+                            ? `${signal.sl.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 5,
+                              })} / ${signal.tp.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 5,
+                              })}`
+                            : '\u2014'}
+                        </td>
+                        <td className="px-3 py-2.5 text-right text-xs">
+                          <LatencyDisplay ms={signal.latency_ms} />
+                        </td>
+                        <td className="px-3 py-2.5 text-center">
+                          <StatusBadge status={signal.status} />
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <ExpandedDetails
+                          key={`${signal.signal_id}-details`}
+                          signal={signal}
+                        />
+                      )}
+                    </>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

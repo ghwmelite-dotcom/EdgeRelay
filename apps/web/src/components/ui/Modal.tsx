@@ -24,24 +24,52 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-xl"
+        onClick={onClose}
+      />
+
+      {/* Modal Card */}
       <div
         className={clsx(
-          'relative z-10 w-full max-w-lg rounded-2xl border border-terminal-border bg-terminal-surface p-6 shadow-2xl animate-fade-in-up',
+          'relative z-10 w-full max-w-lg rounded-2xl p-6 shadow-2xl',
+          'glass backdrop-blur-2xl border-gradient overflow-hidden',
+          'animate-fade-in-scale',
           className,
         )}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
+        {/* Subtle scan-line effect */}
+        <div
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, transparent, transparent 2px, #00e5ff03 2px, #00e5ff03 4px)',
+          }}
+        />
+
+        {/* Header */}
+        <div className="relative z-10 flex items-center justify-between mb-5 pb-5">
+          <h2 className="text-lg font-semibold text-slate-100 font-display">
+            {title}
+          </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-terminal-muted hover:text-slate-200 hover:bg-terminal-card transition-colors"
+            className={clsx(
+              'rounded-xl p-1.5 text-terminal-muted',
+              'hover:text-neon-cyan hover:bg-neon-cyan/5',
+              'transition-all duration-300 ease-out',
+              'focus-ring',
+            )}
             aria-label="Close"
           >
             <X size={18} />
           </button>
+          <div className="divider absolute bottom-0 left-0 right-0" />
         </div>
-        {children}
+
+        {/* Content */}
+        <div className="relative z-10">{children}</div>
       </div>
     </div>
   );

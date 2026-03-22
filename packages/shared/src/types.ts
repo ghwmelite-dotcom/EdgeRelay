@@ -125,3 +125,235 @@ export const PLAN_LIMITS: Record<PlanTier, { masters: number; followers: number 
   unlimited: { masters: 5, followers: 999 },
   provider: { masters: 10, followers: 999 },
 };
+
+// ── Validation Helpers ──────────────────────────────────────────
+
+export const validateSignalPayload = (data: unknown) => SignalPayload.safeParse(data);
+export const validateExecutionResult = (data: unknown) => ExecutionResult.safeParse(data);
+
+// ── PropGuard Types ─────────────────────────────────────────────
+
+export const DrawdownType = z.enum(['static', 'trailing', 'eod_trailing']);
+export type DrawdownType = z.infer<typeof DrawdownType>;
+
+export const DailyLossCalculation = z.enum([
+  'balance_start_of_day',
+  'equity_high_of_day',
+  'previous_day_balance',
+]);
+export type DailyLossCalculation = z.infer<typeof DailyLossCalculation>;
+
+export const PropGuardStatus = z.enum([
+  'protected',
+  'warning',
+  'critical',
+  'locked',
+  'disconnected',
+]);
+export type PropGuardStatus = z.infer<typeof PropGuardStatus>;
+
+export const ChallengePhase = z.enum(['evaluation', 'verification', 'funded']);
+export type ChallengePhase = z.infer<typeof ChallengePhase>;
+
+// ── PropGuard Rule Set ──────────────────────────────────────────
+
+export const PropRuleSet = z.object({
+  preset_name: z.string().optional(),
+  challenge_phase: ChallengePhase.default('evaluation'),
+  initial_balance: z.number().positive(),
+  profit_target_percent: z.number().min(0).default(10),
+  max_daily_loss_percent: z.number().min(0).default(5),
+  daily_loss_calculation: DailyLossCalculation.default('balance_start_of_day'),
+  max_total_drawdown_percent: z.number().min(0).default(10),
+  drawdown_type: DrawdownType.default('static'),
+  trailing_drawdown_lock_at_breakeven: z.boolean().default(false),
+  max_lot_size: z.number().positive().default(100),
+  max_open_positions: z.number().int().min(0).default(50),
+  max_daily_trades: z.number().int().min(0).default(0),
+  min_trading_days: z.number().int().min(0).default(0),
+  consistency_rule_enabled: z.boolean().default(false),
+  max_profit_from_single_day_percent: z.number().min(0).default(30),
+  allowed_trading_start: z.string().default('00:00'),
+  allowed_trading_end: z.string().default('23:59'),
+  block_weekend_holding: z.boolean().default(false),
+  block_during_news: z.boolean().default(false),
+  news_block_minutes_before: z.number().int().min(0).default(5),
+  news_block_minutes_after: z.number().int().min(0).default(5),
+  allowed_symbols: z.array(z.string()).default([]),
+  blocked_symbols: z.array(z.string()).default([]),
+  warning_threshold_percent: z.number().min(0).max(100).default(80),
+  critical_threshold_percent: z.number().min(0).max(100).default(95),
+  auto_close_at_critical: z.boolean().default(true),
+  challenge_start_date: z.string().optional(),
+  challenge_end_date: z.string().optional(),
+});
+export type PropRuleSet = z.infer<typeof PropRuleSet>;
+
+export const validatePropRuleSet = (data: unknown) => PropRuleSet.safeParse(data);
+
+// ── Equity State (EA → Cloud sync) ─────────────────────────────
+
+export const EquitySnapshot = z.object({
+  balance: z.number(),
+  equity: z.number(),
+  floating_pnl: z.number(),
+  daily_pnl: z.number(),
+  daily_pnl_percent: z.number(),
+  high_water_mark: z.number(),
+  total_drawdown_percent: z.number(),
+  balance_start_of_day: z.number(),
+  equity_high_of_day: z.number(),
+  trades_today: z.number().int(),
+  positions_open: z.number().int(),
+});
+export type EquitySnapshot = z.infer<typeof EquitySnapshot>;
+
+export const validateEquitySnapshot = (data: unknown) => EquitySnapshot.safeParse(data);
+
+// ── Blocked Trade ───────────────────────────────────────────────
+
+export const BlockedTradeReport = z.object({
+  rule_violated: z.string(),
+  rule_details: z.string(),
+  attempted_action: z.string(),
+  attempted_symbol: z.string(),
+  attempted_volume: z.number(),
+  attempted_price: z.number().optional(),
+  current_daily_loss_percent: z.number().optional(),
+  current_total_drawdown_percent: z.number().optional(),
+  current_equity: z.number().optional(),
+});
+export type BlockedTradeReport = z.infer<typeof BlockedTradeReport>;
+
+export const validateBlockedTradeReport = (data: unknown) => BlockedTradeReport.safeParse(data);
+
+// ── Emergency Close ─────────────────────────────────────────────
+
+export const EmergencyCloseReport = z.object({
+  reason: z.string(),
+  equity_at_close: z.number(),
+  positions_closed: z.number().int(),
+});
+export type EmergencyCloseReport = z.infer<typeof EmergencyCloseReport>;
+
+export const validateEmergencyCloseReport = (data: unknown) => EmergencyCloseReport.safeParse(data);
+
+// ── News Event ──────────────────────────────────────────────────
+
+export const NewsImpact = z.enum(['low', 'medium', 'high']);
+export type NewsImpact = z.infer<typeof NewsImpact>;
+
+export interface NewsEvent {
+  id: string;
+  event_name: string;
+  currency: string;
+  impact: NewsImpact;
+  event_time: string;
+  actual?: string;
+  forecast?: string;
+  previous?: string;
+}
+
+// ── PropGuard Verdict (server-side evaluation) ──────────────────
+
+export interface PropGuardVerdict {
+  allowed: boolean;
+  blocked_rule?: string;
+  blocked_reason?: string;
+  current_daily_loss_pct: number;
+  current_drawdown_pct: number;
+  projected_daily_loss_pct: number;
+  projected_drawdown_pct: number;
+}
+
+// ── Daily Stats ─────────────────────────────────────────────────
+
+export interface DailyStat {
+  id: string;
+  account_id: string;
+  date: string;
+  balance_start_of_day: number;
+  equity_high_of_day: number;
+  equity_low_of_day: number;
+  balance_end_of_day: number;
+  daily_pnl: number;
+  daily_pnl_percent: number;
+  high_water_mark: number;
+  total_drawdown_percent: number;
+  trades_taken: number;
+  trades_blocked: number;
+  consistency_score: number;
+  warnings_triggered: number;
+  critical_events: number;
+}
+
+// ── Prop Firm Presets ───────────────────────────────────────────
+
+export const PROP_FIRM_PRESETS: Record<string, Partial<PropRuleSet>> = {
+  FTMO_Evaluation: {
+    preset_name: 'FTMO_Evaluation',
+    profit_target_percent: 10,
+    max_daily_loss_percent: 5,
+    daily_loss_calculation: 'equity_high_of_day',
+    max_total_drawdown_percent: 10,
+    drawdown_type: 'static',
+    min_trading_days: 4,
+    consistency_rule_enabled: false,
+    block_during_news: false,
+    block_weekend_holding: false,
+  },
+  FTMO_Verification: {
+    preset_name: 'FTMO_Verification',
+    profit_target_percent: 5,
+    max_daily_loss_percent: 5,
+    daily_loss_calculation: 'equity_high_of_day',
+    max_total_drawdown_percent: 10,
+    drawdown_type: 'static',
+    min_trading_days: 4,
+  },
+  FundedNext_Evaluation: {
+    preset_name: 'FundedNext_Evaluation',
+    profit_target_percent: 10,
+    max_daily_loss_percent: 5,
+    daily_loss_calculation: 'balance_start_of_day',
+    max_total_drawdown_percent: 10,
+    drawdown_type: 'static',
+    consistency_rule_enabled: true,
+    max_profit_from_single_day_percent: 30,
+    block_during_news: true,
+    news_block_minutes_before: 5,
+    news_block_minutes_after: 5,
+  },
+  The5ers_HighStakes: {
+    preset_name: 'The5ers_HighStakes',
+    profit_target_percent: 8,
+    max_daily_loss_percent: 5,
+    max_total_drawdown_percent: 6,
+    drawdown_type: 'trailing',
+    trailing_drawdown_lock_at_breakeven: true,
+  },
+  Apex_Evaluation: {
+    preset_name: 'Apex_Evaluation',
+    profit_target_percent: 6,
+    max_daily_loss_percent: 2.5,
+    max_total_drawdown_percent: 6,
+    drawdown_type: 'eod_trailing',
+    block_weekend_holding: true,
+  },
+  MyFundedFutures: {
+    preset_name: 'MyFundedFutures',
+    profit_target_percent: 9,
+    max_daily_loss_percent: 4,
+    max_total_drawdown_percent: 6,
+    drawdown_type: 'eod_trailing',
+    consistency_rule_enabled: true,
+    max_profit_from_single_day_percent: 35,
+  },
+  TopStep_Combine: {
+    preset_name: 'TopStep_Combine',
+    profit_target_percent: 6,
+    max_daily_loss_percent: 2,
+    max_total_drawdown_percent: 4.5,
+    drawdown_type: 'eod_trailing',
+  },
+};

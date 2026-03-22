@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const accounts = new Hono<{ Bindings: Env }>();
 
@@ -175,6 +176,202 @@ accounts.post('/', async (c) => {
     },
     201,
   );
+});
+
+// ── GET /accounts/usage/summary ──────────────────────────────────
+// Returns aggregate usage across all user's accounts
+accounts.get('/usage/summary', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+
+  // Get all user's master accounts
+  const masterAccounts = await c.env.DB.prepare(
+    `SELECT id, alias, signals_today, last_signal_at, last_heartbeat
+     FROM accounts WHERE user_id = ? AND role = 'master' AND is_active = true`,
+  )
+    .bind(userId)
+    .all();
+
+  const masterIds = masterAccounts.results.map((a: Record<string, unknown>) => a.id as string);
+
+  if (masterIds.length === 0) {
+    return c.json<ApiResponse>({
+      data: {
+        total_signals_today: 0,
+        total_signals_7d: 0,
+        execution_summary: { executed: 0, blocked: 0, failed: 0, skipped: 0 },
+        avg_latency: 0,
+        active_accounts: 0,
+        total_accounts: 0,
+        accounts: [],
+      },
+      error: null,
+    });
+  }
+
+  // Build placeholders for IN clause
+  const placeholders = masterIds.map(() => '?').join(',');
+
+  // Aggregate signals today
+  const totalSignalsToday = masterAccounts.results.reduce(
+    (sum: number, a: Record<string, unknown>) => sum + ((a.signals_today as number) ?? 0),
+    0,
+  );
+
+  // Total signals in last 7 days
+  const signals7d = await c.env.DB.prepare(
+    `SELECT COUNT(*) as count FROM signals WHERE master_account_id IN (${placeholders}) AND received_at >= datetime('now', '-7 days')`,
+  )
+    .bind(...masterIds)
+    .first<{ count: number }>();
+
+  // Execution summary
+  const execSummary = await c.env.DB.prepare(
+    `SELECT status, COUNT(*) as count
+     FROM executions e
+     JOIN signals s ON e.signal_id = s.id
+     WHERE s.master_account_id IN (${placeholders})
+     AND e.executed_at >= datetime('now', '-7 days')
+     GROUP BY status`,
+  )
+    .bind(...masterIds)
+    .all();
+
+  const executionMap: Record<string, number> = {};
+  for (const row of execSummary.results) {
+    const r = row as Record<string, unknown>;
+    executionMap[r.status as string] = r.count as number;
+  }
+
+  // Average latency across all accounts
+  const latency = await c.env.DB.prepare(
+    `SELECT AVG(execution_time_ms) as avg_latency
+     FROM executions e
+     JOIN signals s ON e.signal_id = s.id
+     WHERE s.master_account_id IN (${placeholders})
+     AND e.executed_at >= datetime('now', '-24 hours')
+     AND e.status = 'executed'`,
+  )
+    .bind(...masterIds)
+    .first<{ avg_latency: number | null }>();
+
+  // Active accounts (heartbeat within 30s)
+  const now = Date.now();
+  const activeAccounts = masterAccounts.results.filter((a: Record<string, unknown>) => {
+    const hb = a.last_heartbeat as string | null;
+    if (!hb) return false;
+    return now - new Date(hb).getTime() < 30_000;
+  }).length;
+
+  return c.json<ApiResponse>({
+    data: {
+      total_signals_today: totalSignalsToday,
+      total_signals_7d: signals7d?.count ?? 0,
+      execution_summary: {
+        executed: executionMap['executed'] ?? 0,
+        blocked: executionMap['blocked'] ?? 0,
+        failed: executionMap['failed'] ?? 0,
+        skipped: executionMap['skipped'] ?? 0,
+      },
+      avg_latency: latency?.avg_latency ?? 0,
+      active_accounts: activeAccounts,
+      total_accounts: masterAccounts.results.length,
+      accounts: masterAccounts.results,
+    },
+    error: null,
+  });
+});
+
+// ── GET /accounts/:id/usage ─────────────────────────────────────
+// Returns API usage stats for an account
+accounts.get('/:id/usage', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const accountId = c.req.param('id');
+
+  // Verify ownership
+  const account = await c.env.DB.prepare(
+    'SELECT id, role, alias, signals_today, last_signal_at, last_heartbeat FROM accounts WHERE id = ? AND user_id = ? AND is_active = true',
+  )
+    .bind(accountId, userId)
+    .first();
+
+  if (!account) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Account not found' } },
+      404,
+    );
+  }
+
+  // Get signal counts for last 7 days
+  const dailySignals = await c.env.DB.prepare(`
+    SELECT date(received_at) as day, COUNT(*) as count
+    FROM signals
+    WHERE master_account_id = ?
+    AND received_at >= datetime('now', '-7 days')
+    GROUP BY date(received_at)
+    ORDER BY day DESC
+  `)
+    .bind(accountId)
+    .all();
+
+  // Get execution stats for last 7 days
+  const executionStats = await c.env.DB.prepare(`
+    SELECT status, COUNT(*) as count
+    FROM executions e
+    JOIN signals s ON e.signal_id = s.id
+    WHERE s.master_account_id = ?
+    AND e.executed_at >= datetime('now', '-7 days')
+    GROUP BY status
+  `)
+    .bind(accountId)
+    .all();
+
+  // Get average latency
+  const latencyStats = await c.env.DB.prepare(`
+    SELECT
+      AVG(execution_time_ms) as avg_latency,
+      MIN(execution_time_ms) as min_latency,
+      MAX(execution_time_ms) as max_latency,
+      COUNT(*) as total_executions
+    FROM executions e
+    JOIN signals s ON e.signal_id = s.id
+    WHERE s.master_account_id = ?
+    AND e.executed_at >= datetime('now', '-24 hours')
+    AND e.status = 'executed'
+  `)
+    .bind(accountId)
+    .first();
+
+  // Current rate limit status (from KV)
+  const currentMinute = Math.floor(Date.now() / 60000);
+  const rateKey = `rate:${accountId}:${currentMinute}`;
+  const currentRate = await c.env.SESSIONS.get(rateKey);
+
+  return c.json<ApiResponse>({
+    data: {
+      account: {
+        id: (account as Record<string, unknown>).id,
+        alias: (account as Record<string, unknown>).alias,
+        role: (account as Record<string, unknown>).role,
+        signals_today: (account as Record<string, unknown>).signals_today,
+        last_signal_at: (account as Record<string, unknown>).last_signal_at,
+        last_heartbeat: (account as Record<string, unknown>).last_heartbeat,
+      },
+      rate_limit: {
+        current_minute_usage: currentRate ? parseInt(currentRate) : 0,
+        limit_per_minute: 60,
+        remaining: 60 - (currentRate ? parseInt(currentRate) : 0),
+      },
+      daily_signals: dailySignals.results,
+      execution_stats: executionStats.results,
+      latency: latencyStats ?? {
+        avg_latency: 0,
+        min_latency: 0,
+        max_latency: 0,
+        total_executions: 0,
+      },
+    },
+    error: null,
+  });
 });
 
 // ── GET /accounts/:id ───────────────────────────────────────────

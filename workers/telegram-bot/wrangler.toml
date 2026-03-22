@@ -1,0 +1,19 @@
+name = "edgerelay-telegram-bot"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[vars]
+BOT_USERNAME = "EdgeRelayBot"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edgerelay-db"
+database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
+
+[[kv_namespaces]]
+binding = "BOT_STATE"
+id = "PLACEHOLDER_BOT_KV_ID"
+
+# Set via wrangler secret:
+# TELEGRAM_BOT_TOKEN
+# TELEGRAM_WEBHOOK_SECRET

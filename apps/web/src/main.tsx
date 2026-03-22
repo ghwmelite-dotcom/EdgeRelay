@@ -16,6 +16,7 @@ import { BillingCallbackPage } from '@/pages/BillingCallbackPage';
 import { DownloadsPage } from '@/pages/DownloadsPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { UsagePage } from '@/pages/UsagePage';
 import { LandingPage } from '@/pages/LandingPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -47,6 +48,7 @@ function App() {
           <Route path="/signals" element={<SignalLogPage />} />
           <Route path="/downloads" element={<DownloadsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/usage" element={<UsagePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/billing/callback" element={<BillingCallbackPage />} />

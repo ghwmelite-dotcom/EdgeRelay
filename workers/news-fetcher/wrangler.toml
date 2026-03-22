@@ -1,0 +1,11 @@
+name = "edgerelay-news-fetcher"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[triggers]
+crons = ["0 0 * * *", "0 12 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edgerelay-db"
+database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"

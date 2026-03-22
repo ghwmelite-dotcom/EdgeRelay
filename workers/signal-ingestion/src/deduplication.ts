@@ -8,7 +8,7 @@ export async function isDuplicate(
   sequenceNum: number,
 ): Promise<boolean> {
   const result = await db
-    .prepare('SELECT 1 FROM signals WHERE account_id = ? AND sequence_num = ? LIMIT 1')
+    .prepare('SELECT 1 FROM signals WHERE master_account_id = ? AND sequence_num = ? LIMIT 1')
     .bind(accountId, sequenceNum)
     .first<{ '1': number }>();
 

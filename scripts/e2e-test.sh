@@ -65,7 +65,7 @@ fail_and_exit() {
   log_fail "$step_name"
   echo -e "  Response: $response"
   record_result "$step_name" "false"
-  print_summary
+  if declare -f print_summary > /dev/null 2>&1; then print_summary; fi
   exit 1
 }
 
@@ -249,7 +249,7 @@ STEP_START=$(date +%s)
 HB_TIMESTAMP=$(date +%s)
 
 # Build heartbeat payload (without signature first, for signing)
-HB_CANONICAL=$(jq -n -S \
+HB_CANONICAL=$(jq -n -c -S \
   --arg account_id "$MASTER_ID" \
   --argjson timestamp "$HB_TIMESTAMP" \
   '{account_id: $account_id, timestamp: $timestamp}')
@@ -291,17 +291,17 @@ SIGNAL_TIMESTAMP=$(date +%s)
 SIGNAL_ID="e2e-test-${TIMESTAMP}"
 
 # Build signal payload without hmac_signature (for canonical signing)
-SIGNAL_CANONICAL=$(jq -n -S \
+SIGNAL_CANONICAL=$(jq -n -c -S \
   --arg signal_id "$SIGNAL_ID" \
   --arg account_id "$MASTER_ID" \
   --argjson sequence_num 1 \
   --arg action "open" \
   --arg order_type "buy" \
   --arg symbol "EURUSD" \
-  --argjson volume 0.10 \
-  --argjson price 1.08500 \
-  --argjson sl 1.08000 \
-  --argjson tp 1.09000 \
+  --argjson volume 0.1 \
+  --argjson price 1.085 \
+  --argjson sl 1.08 \
+  --argjson tp 1.09 \
   --argjson magic_number 12345 \
   --argjson ticket 100001 \
   --argjson timestamp "$SIGNAL_TIMESTAMP" \
@@ -435,7 +435,7 @@ CLOSE_TIMESTAMP=$(date +%s)
 CLOSE_SIGNAL_ID="e2e-close-${TIMESTAMP}"
 
 # Build close signal payload (sorted keys, no hmac_signature)
-CLOSE_CANONICAL=$(jq -n -S \
+CLOSE_CANONICAL=$(jq -n -c -S \
   --arg signal_id "$CLOSE_SIGNAL_ID" \
   --arg account_id "$MASTER_ID" \
   --argjson sequence_num 2 \

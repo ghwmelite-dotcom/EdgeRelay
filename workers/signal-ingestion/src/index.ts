@@ -111,7 +111,7 @@ app.post('/v1/ingest', async (c) => {
     const doId = c.env.ACCOUNT_RELAY.idFromName(signal.account_id);
     const stub = c.env.ACCOUNT_RELAY.get(doId);
 
-    await stub.fetch(new Request('https://do/relay', {
+    await stub.fetch(new Request('https://do/signal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(signal),
@@ -120,9 +120,9 @@ app.post('/v1/ingest', async (c) => {
     // 7. Store signal in D1
     await c.env.DB.prepare(
       `INSERT INTO signals (
-        id, account_id, sequence_num, action, order_type, symbol,
-        volume, price, sl, tp, magic_number, ticket, comment, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        id, master_account_id, sequence_num, action, order_type, symbol,
+        volume, price, sl, tp, magic_number, ticket, comment
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
       .bind(
         signal.signal_id,
@@ -138,7 +138,6 @@ app.post('/v1/ingest', async (c) => {
         signal.magic_number ?? null,
         signal.ticket ?? null,
         signal.comment ?? null,
-        signal.timestamp,
       )
       .run();
 

@@ -13,7 +13,7 @@
 //+------------------------------------------------------------------+
 //| CJsonParser - Simple string-based JSON parser for MQL5           |
 //| Handles flat objects and arrays of objects.                       |
-//| Not a full spec parser — tuned for EdgeRelay poll responses.     |
+//| Not a full spec parser - tuned for EdgeRelay poll responses.     |
 //+------------------------------------------------------------------+
 class CJsonParser
   {
@@ -22,7 +22,7 @@ private:
    int               m_len;            // Length cache
 
    int               SkipWhitespace(int pos);
-   int               FindMatchingBrace(int openPos, char openChar, char closeChar);
+   int               FindMatchingBrace(int openPos, ushort openChar, ushort closeChar);
    int               FindKeyValue(const string &key, int searchStart, int searchEnd);
    string            ExtractStringValue(int valueStart, int &valueEnd);
    string            ExtractRawValue(int valueStart, int &valueEnd);
@@ -43,9 +43,6 @@ public:
    int               GetArraySize(const string &key);
    string            GetArrayElement(int index);
    string            GetArrayElementByKey(const string &key, int index);
-
-   //--- Nested object from substring
-   static CJsonParser FromString(const string &json);
 
    //--- Utility
    string            GetRawJson()    { return m_json; }
@@ -107,7 +104,7 @@ int CJsonParser::SkipWhitespace(int pos)
 //+------------------------------------------------------------------+
 //| Find matching close brace/bracket respecting nesting & strings    |
 //+------------------------------------------------------------------+
-int CJsonParser::FindMatchingBrace(int openPos, char openChar, char closeChar)
+int CJsonParser::FindMatchingBrace(int openPos, ushort openChar, ushort closeChar)
   {
    int depth = 0;
    bool inString = false;
@@ -132,9 +129,9 @@ int CJsonParser::FindMatchingBrace(int openPos, char openChar, char closeChar)
          inString = true;
          continue;
         }
-      if(ch == (ushort)openChar)
+      if(ch == openChar)
          depth++;
-      if(ch == (ushort)closeChar)
+      if(ch == closeChar)
         {
          depth--;
          if(depth == 0)
@@ -446,16 +443,6 @@ string CJsonParser::GetArrayElementByKey(const string &key, int index)
      }
 
    return "";
-  }
-
-//+------------------------------------------------------------------+
-//| FromString - Static helper to create parser from substring        |
-//+------------------------------------------------------------------+
-static CJsonParser CJsonParser::FromString(const string &json)
-  {
-   CJsonParser p;
-   p.Parse(json);
-   return p;
   }
 
 #endif // EDGERELAY_JSONPARSER_MQH

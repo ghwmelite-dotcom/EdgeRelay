@@ -85,7 +85,7 @@ string ActionToString(ENUM_SIGNAL_ACTION action)
 //+------------------------------------------------------------------+
 //| Convert order type to string                                      |
 //+------------------------------------------------------------------+
-string OrderTypeToString(ENUM_ORDER_TYPE type)
+string OrderTypeToStr(ENUM_ORDER_TYPE type)
   {
    switch(type)
      {
@@ -127,12 +127,17 @@ string SignalToJson(Signal &signal)
    json += "\"account_id\":\"" + JsonEscape(signal.account_id) + "\",";
    json += "\"sequence_num\":" + IntegerToString(signal.sequence_num) + ",";
    json += "\"action\":\"" + ActionToString(signal.action) + "\",";
-   json += "\"order_type\":\"" + OrderTypeToString(signal.order_type) + "\",";
+   json += "\"order_type\":\"" + OrderTypeToStr(signal.order_type) + "\",";
    json += "\"symbol\":\"" + JsonEscape(signal.symbol) + "\",";
    json += "\"volume\":" + DoubleToString(signal.volume, 8) + ",";
-   json += "\"price\":" + DoubleToString(signal.price, (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS)) + ",";
-   json += "\"sl\":" + DoubleToString(signal.sl, (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS)) + ",";
-   json += "\"tp\":" + DoubleToString(signal.tp, (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS)) + ",";
+
+   int digits = (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS);
+   if(digits <= 0)
+      digits = 5;
+
+   json += "\"price\":" + DoubleToString(signal.price, digits) + ",";
+   json += "\"sl\":" + DoubleToString(signal.sl, digits) + ",";
+   json += "\"tp\":" + DoubleToString(signal.tp, digits) + ",";
    json += "\"magic_number\":" + IntegerToString(signal.magic_number) + ",";
    json += "\"ticket\":" + IntegerToString(signal.ticket) + ",";
    json += "\"comment\":\"" + JsonEscape(signal.comment) + "\",";

@@ -10,7 +10,7 @@
 #ifndef EDGERELAY_DISPLAY_MQH
 #define EDGERELAY_DISPLAY_MQH
 
-#include "EdgeRelay_Common.mqh"
+#include <EdgeRelay_Common.mqh>
 
 //--- Object name constants
 #define OBJ_PREFIX          "EdgeRelay_"
@@ -39,9 +39,9 @@ class CEdgeRelayDisplay
 private:
    bool              m_initialized;
 
-   void              CreateLabel(string name, int x, int y, string text,
+   void              CreatePanelLabel(string name, int x, int y, string text,
                                  color clr, int fontSize = 9, string font = "Consolas");
-   void              UpdateLabel(string name, string text, color clr = clrNONE);
+   void              UpdatePanelLabel(string name, string text, color clr = clrNONE);
 
 public:
                      CEdgeRelayDisplay();
@@ -93,25 +93,25 @@ void CEdgeRelayDisplay::Init()
    int yBase = PANEL_Y_OFFSET + 8;
 
    //--- Status dot (Wingdings circle character 0x6C = 108)
-   CreateLabel(OBJ_STATUS_DOT, xBase + 12, yBase, "l", clrGray, 12, "Wingdings");
+   CreatePanelLabel(OBJ_STATUS_DOT, xBase + 12, yBase, "l", clrGray, 12, "Wingdings");
 
    //--- Title
-   CreateLabel(OBJ_TITLE, xBase - 15, yBase, "EdgeRelay Master v1.0", C'200,200,220', 9, "Consolas");
+   CreatePanelLabel(OBJ_TITLE, xBase - 15, yBase, "EdgeRelay Master v1.0", C'200,200,220', 9, "Consolas");
 
    //--- Status text
-   CreateLabel(OBJ_STATUS_TEXT, xBase, yBase + LINE_HEIGHT, "Initializing...", clrGray);
+   CreatePanelLabel(OBJ_STATUS_TEXT, xBase, yBase + LINE_HEIGHT, "Initializing...", clrGray);
 
    //--- Signals sent today
-   CreateLabel(OBJ_SIGNALS_TEXT, xBase, yBase + LINE_HEIGHT * 2, "Signals sent: 0", C'160,160,180');
+   CreatePanelLabel(OBJ_SIGNALS_TEXT, xBase, yBase + LINE_HEIGHT * 2, "Signals sent: 0", C'160,160,180');
 
    //--- Queue size
-   CreateLabel(OBJ_QUEUE_TEXT, xBase, yBase + LINE_HEIGHT * 3, "Queue size: 0", C'160,160,180');
+   CreatePanelLabel(OBJ_QUEUE_TEXT, xBase, yBase + LINE_HEIGHT * 3, "Queue size: 0", C'160,160,180');
 
    //--- Latency
-   CreateLabel(OBJ_LATENCY_TEXT, xBase, yBase + LINE_HEIGHT * 4, "Last latency: --", C'160,160,180');
+   CreatePanelLabel(OBJ_LATENCY_TEXT, xBase, yBase + LINE_HEIGHT * 4, "Last latency: --", C'160,160,180');
 
    //--- Last signal time
-   CreateLabel(OBJ_LAST_SIGNAL, xBase, yBase + LINE_HEIGHT * 5, "Last signal: --:--:--", C'160,160,180');
+   CreatePanelLabel(OBJ_LAST_SIGNAL, xBase, yBase + LINE_HEIGHT * 5, "Last signal: --:--:--", C'160,160,180');
 
    m_initialized = true;
    ChartRedraw(0);
@@ -150,21 +150,21 @@ void CEdgeRelayDisplay::Update(int status, int signalCount, int queueSize,
          break;
      }
 
-   UpdateLabel(OBJ_STATUS_DOT, "l", dotColor);
-   UpdateLabel(OBJ_STATUS_TEXT, statusText);
+   UpdatePanelLabel(OBJ_STATUS_DOT, "l", dotColor);
+   UpdatePanelLabel(OBJ_STATUS_TEXT, statusText);
 
    //--- Signals sent
-   UpdateLabel(OBJ_SIGNALS_TEXT, "Signals sent: " + IntegerToString(signalCount));
+   UpdatePanelLabel(OBJ_SIGNALS_TEXT, "Signals sent: " + IntegerToString(signalCount));
 
    //--- Queue size
    color queueColor = (queueSize > 0) ? clrOrange : C'160,160,180';
-   UpdateLabel(OBJ_QUEUE_TEXT, "Queue size: " + IntegerToString(queueSize), queueColor);
+   UpdatePanelLabel(OBJ_QUEUE_TEXT, "Queue size: " + IntegerToString(queueSize), queueColor);
 
    //--- Latency
    string latencyStr = (lastLatencyMs >= 0)
                         ? DoubleToString(lastLatencyMs, 0) + "ms"
                         : "--";
-   UpdateLabel(OBJ_LATENCY_TEXT, "Last latency: " + latencyStr);
+   UpdatePanelLabel(OBJ_LATENCY_TEXT, "Last latency: " + latencyStr);
 
    //--- Last signal time
    string timeStr = (lastSignalTime > 0)
@@ -174,7 +174,7 @@ void CEdgeRelayDisplay::Update(int status, int signalCount, int queueSize,
    int spacePos = StringFind(timeStr, " ");
    if(spacePos >= 0)
       timeStr = StringSubstr(timeStr, spacePos + 1);
-   UpdateLabel(OBJ_LAST_SIGNAL, "Last signal: " + timeStr);
+   UpdatePanelLabel(OBJ_LAST_SIGNAL, "Last signal: " + timeStr);
 
    ChartRedraw(0);
   }
@@ -200,7 +200,7 @@ void CEdgeRelayDisplay::Deinit()
 //+------------------------------------------------------------------+
 //| Create a text label on the chart                                  |
 //+------------------------------------------------------------------+
-void CEdgeRelayDisplay::CreateLabel(string name, int x, int y, string text,
+void CEdgeRelayDisplay::CreatePanelLabel(string name, int x, int y, string text,
                                     color clr, int fontSize, string font)
   {
    ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
@@ -218,7 +218,7 @@ void CEdgeRelayDisplay::CreateLabel(string name, int x, int y, string text,
 //+------------------------------------------------------------------+
 //| Update a label's text and optionally its color                    |
 //+------------------------------------------------------------------+
-void CEdgeRelayDisplay::UpdateLabel(string name, string text, color clr)
+void CEdgeRelayDisplay::UpdatePanelLabel(string name, string text, color clr)
   {
    ObjectSetString(0, name, OBJPROP_TEXT, text);
    if(clr != clrNONE)

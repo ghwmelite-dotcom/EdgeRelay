@@ -10,8 +10,8 @@
 #property strict
 
 #include <Trade\Trade.mqh>
-#include "Include\EdgeRelay_Common.mqh"
-#include "Include\EdgeRelay_JsonParser.mqh"
+#include <EdgeRelay_Common.mqh>
+#include <EdgeRelay_JsonParser.mqh>
 
 //+------------------------------------------------------------------+
 //| Lot sizing mode                                                   |
@@ -158,7 +158,7 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| Timer event — main poll loop                                      |
+//| Timer event - main poll loop                                      |
 //+------------------------------------------------------------------+
 void OnTimer()
   {
@@ -213,6 +213,10 @@ void OnTimer()
          exRes.success       = false;
          exRes.error_message = "Symbol not found: " + mappedSymbol;
          exRes.retcode       = 0;
+         exRes.ticket        = 0;
+         exRes.executed_price = 0;
+         exRes.executed_volume = 0;
+         exRes.slippage      = 0;
          ReportExecution(exRes);
          g_signalsFailed++;
          continue;
@@ -235,6 +239,10 @@ void OnTimer()
          exRes.success       = false;
          exRes.error_message = "Equity guard: " + guard.reason;
          exRes.retcode       = 0;
+         exRes.ticket        = 0;
+         exRes.executed_price = 0;
+         exRes.executed_volume = 0;
+         exRes.slippage      = 0;
          ReportExecution(exRes);
          g_signalsFailed++;
          continue;
@@ -248,12 +256,12 @@ void OnTimer()
          signals[i].order_type = InvertOrderType(signals[i].order_type);
 
       //--- Execute the signal
-      ExecutionResult result = ExecuteSignal(signals[i], lot);
+      ExecutionResult execResult = ExecuteSignal(signals[i], lot);
 
       //--- Report result
-      ReportExecution(result);
+      ReportExecution(execResult);
 
-      if(result.success)
+      if(execResult.success)
          g_signalsProcessed++;
       else
          g_signalsFailed++;
@@ -272,7 +280,6 @@ bool PollForSignals(Signal &signals[], int &count)
 
    string url = API_Endpoint + "/v1/poll/" + AccountID;
    string headers = "Content-Type: application/json\r\nX-API-Key: " + API_Key + "\r\n";
-   string cookie = "";
    int timeout = HTTP_TIMEOUT;
 
    char   postData[];
@@ -403,67 +410,73 @@ ENUM_ORDER_TYPE ParseOrderType(const string &typeStr)
 //+------------------------------------------------------------------+
 ExecutionResult ExecuteSignal(Signal &signal, double lot)
   {
-   ExecutionResult result;
-   result.signal_id       = signal.signal_id;
-   result.success         = false;
-   result.ticket          = 0;
-   result.executed_price  = 0.0;
-   result.executed_volume = 0.0;
-   result.slippage        = 0;
-   result.error_message   = "";
-   result.retcode         = 0;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    string comment = COMMENT_PREFIX + signal.signal_id;
 
    switch(signal.action)
      {
       case SIGNAL_OPEN:
-         result = ExecuteOpen(signal, lot, comment);
+         execResult = ExecuteOpen(signal, lot, comment);
          break;
 
       case SIGNAL_MODIFY:
-         result = ExecuteModify(signal);
+         execResult = ExecuteModify(signal);
          break;
 
       case SIGNAL_CLOSE:
-         result = ExecuteClose(signal);
+         execResult = ExecuteClose(signal);
          break;
 
       case SIGNAL_PARTIAL_CLOSE:
-         result = ExecutePartialClose(signal);
+         execResult = ExecutePartialClose(signal);
          break;
 
       case SIGNAL_PENDING:
-         result = ExecutePending(signal, lot, comment);
+         execResult = ExecutePending(signal, lot, comment);
          break;
 
       case SIGNAL_CANCEL_PENDING:
-         result = ExecuteCancelPending(signal);
+         execResult = ExecuteCancelPending(signal);
          break;
 
       default:
-         result.error_message = "Unknown action";
+         execResult.error_message = "Unknown action";
          break;
      }
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
 //| Execute OPEN signal (market order)                                |
 //+------------------------------------------------------------------+
-ExecutionResult ExecuteOpen(Signal &signal, double lot, const string &comment)
+ExecutionResult ExecuteOpen(Signal &signal, double lot, string comment)
   {
-   ExecutionResult result;
-   result.signal_id = signal.signal_id;
-   result.success   = false;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    //--- Normalize lot
    lot = NormalizeLot(signal.symbol, lot);
    if(lot <= 0.0)
      {
-      result.error_message = "Invalid lot size after normalization";
-      return result;
+      execResult.error_message = "Invalid lot size after normalization";
+      return execResult;
      }
 
    //--- Get current price
@@ -474,8 +487,8 @@ ExecutionResult ExecuteOpen(Signal &signal, double lot, const string &comment)
       price = SymbolInfoDouble(signal.symbol, SYMBOL_BID);
    else
      {
-      result.error_message = "Invalid order type for market open: " + OrderTypeToString(signal.order_type);
-      return result;
+      execResult.error_message = "Invalid order type for market open: " + OrderTypeToStr(signal.order_type);
+      return execResult;
      }
 
    //--- Normalize SL/TP
@@ -484,55 +497,55 @@ ExecutionResult ExecuteOpen(Signal &signal, double lot, const string &comment)
    double tp = NormalizeDouble(signal.tp, digits);
 
    //--- Send order
-   MqlTradeRequest request = {};
+   MqlTradeRequest tradeRequest = {};
    MqlTradeResult  tradeResult = {};
 
-   request.action    = TRADE_ACTION_DEAL;
-   request.symbol    = signal.symbol;
-   request.volume    = lot;
-   request.type      = signal.order_type;
-   request.price     = price;
-   request.sl        = sl;
-   request.tp        = tp;
-   request.deviation = (ulong)MaxSlippagePoints;
-   request.magic     = (ulong)signal.magic_number;
-   request.comment   = comment;
-   request.type_filling = ORDER_FILLING_IOC;
+   tradeRequest.action    = TRADE_ACTION_DEAL;
+   tradeRequest.symbol    = signal.symbol;
+   tradeRequest.volume    = lot;
+   tradeRequest.type      = signal.order_type;
+   tradeRequest.price     = price;
+   tradeRequest.sl        = sl;
+   tradeRequest.tp        = tp;
+   tradeRequest.deviation = (ulong)MaxSlippagePoints;
+   tradeRequest.magic     = (ulong)signal.magic_number;
+   tradeRequest.comment   = comment;
+   tradeRequest.type_filling = ORDER_FILLING_IOC;
 
-   if(!OrderSend(request, tradeResult))
+   if(!OrderSend(tradeRequest, tradeResult))
      {
-      result.error_message = "OrderSend failed: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      Print("[EdgeRelay] OPEN failed: ", result.error_message,
+      execResult.error_message = "OrderSend failed: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      Print("[EdgeRelay] OPEN failed: ", execResult.error_message,
             " Symbol=", signal.symbol, " Lot=", lot);
-      return result;
+      return execResult;
      }
 
    if(tradeResult.retcode != TRADE_RETCODE_DONE && tradeResult.retcode != TRADE_RETCODE_PLACED)
      {
-      result.error_message = "OrderSend retcode: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
+      execResult.error_message = "OrderSend retcode: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
       Print("[EdgeRelay] OPEN retcode: ", tradeResult.retcode, " Signal=", signal.signal_id);
-      return result;
+      return execResult;
      }
 
-   result.success         = true;
-   result.ticket          = tradeResult.order;
-   result.executed_price  = tradeResult.price;
-   result.executed_volume = tradeResult.volume;
-   result.retcode         = tradeResult.retcode;
+   execResult.success         = true;
+   execResult.ticket          = tradeResult.order;
+   execResult.executed_price  = tradeResult.price;
+   execResult.executed_volume = tradeResult.volume;
+   execResult.retcode         = tradeResult.retcode;
 
    //--- Calculate slippage
    double pointSize = SymbolInfoDouble(signal.symbol, SYMBOL_POINT);
    if(pointSize > 0)
-      result.slippage = (int)MathRound(MathAbs(tradeResult.price - price) / pointSize);
+      execResult.slippage = (int)MathRound(MathAbs(tradeResult.price - price) / pointSize);
 
-   Print("[EdgeRelay] OPEN success: Ticket=", result.ticket,
-         " ", OrderTypeToString(signal.order_type),
+   Print("[EdgeRelay] OPEN success: Ticket=", execResult.ticket,
+         " ", OrderTypeToStr(signal.order_type),
          " ", signal.symbol, " Lot=", lot,
          " Price=", tradeResult.price);
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
@@ -540,9 +553,15 @@ ExecutionResult ExecuteOpen(Signal &signal, double lot, const string &comment)
 //+------------------------------------------------------------------+
 ExecutionResult ExecuteModify(Signal &signal)
   {
-   ExecutionResult result;
-   result.signal_id = signal.signal_id;
-   result.success   = false;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    //--- Find position
    ulong posTicket = FindPositionByMagic(signal.magic_number);
@@ -551,10 +570,10 @@ ExecutionResult ExecuteModify(Signal &signal)
 
    if(posTicket == 0)
      {
-      result.error_message = "Position not found for modify. Magic=" +
+      execResult.error_message = "Position not found for modify. Magic=" +
                              IntegerToString(signal.magic_number);
-      Print("[EdgeRelay] MODIFY failed: ", result.error_message);
-      return result;
+      Print("[EdgeRelay] MODIFY failed: ", execResult.error_message);
+      return execResult;
      }
 
    //--- Normalize SL/TP
@@ -562,37 +581,37 @@ ExecutionResult ExecuteModify(Signal &signal)
    double sl = NormalizeDouble(signal.sl, digits);
    double tp = NormalizeDouble(signal.tp, digits);
 
-   MqlTradeRequest request = {};
+   MqlTradeRequest tradeRequest = {};
    MqlTradeResult  tradeResult = {};
 
-   request.action   = TRADE_ACTION_SLTP;
-   request.position = posTicket;
-   request.symbol   = signal.symbol;
-   request.sl       = sl;
-   request.tp       = tp;
+   tradeRequest.action   = TRADE_ACTION_SLTP;
+   tradeRequest.position = posTicket;
+   tradeRequest.symbol   = signal.symbol;
+   tradeRequest.sl       = sl;
+   tradeRequest.tp       = tp;
 
-   if(!OrderSend(request, tradeResult))
+   if(!OrderSend(tradeRequest, tradeResult))
      {
-      result.error_message = "Modify failed: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      Print("[EdgeRelay] MODIFY failed: ", result.error_message);
-      return result;
+      execResult.error_message = "Modify failed: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      Print("[EdgeRelay] MODIFY failed: ", execResult.error_message);
+      return execResult;
      }
 
    if(tradeResult.retcode != TRADE_RETCODE_DONE)
      {
-      result.error_message = "Modify retcode: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Modify retcode: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
-   result.success = true;
-   result.ticket  = posTicket;
-   result.retcode = tradeResult.retcode;
+   execResult.success = true;
+   execResult.ticket  = posTicket;
+   execResult.retcode = tradeResult.retcode;
    Print("[EdgeRelay] MODIFY success: Ticket=", posTicket,
          " SL=", sl, " TP=", tp);
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
@@ -600,9 +619,15 @@ ExecutionResult ExecuteModify(Signal &signal)
 //+------------------------------------------------------------------+
 ExecutionResult ExecuteClose(Signal &signal)
   {
-   ExecutionResult result;
-   result.signal_id = signal.signal_id;
-   result.success   = false;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    //--- Find position
    ulong posTicket = FindPositionByMagic(signal.magic_number);
@@ -611,17 +636,17 @@ ExecutionResult ExecuteClose(Signal &signal)
 
    if(posTicket == 0)
      {
-      result.error_message = "Position not found for close. Magic=" +
+      execResult.error_message = "Position not found for close. Magic=" +
                              IntegerToString(signal.magic_number);
-      Print("[EdgeRelay] CLOSE failed: ", result.error_message);
-      return result;
+      Print("[EdgeRelay] CLOSE failed: ", execResult.error_message);
+      return execResult;
      }
 
    //--- Select position and get details
    if(!PositionSelectByTicket(posTicket))
      {
-      result.error_message = "Cannot select position: " + IntegerToString((long)posTicket);
-      return result;
+      execResult.error_message = "Cannot select position: " + IntegerToString((long)posTicket);
+      return execResult;
      }
 
    double volume = PositionGetDouble(POSITION_VOLUME);
@@ -633,42 +658,42 @@ ExecutionResult ExecuteClose(Signal &signal)
                   ? SymbolInfoDouble(symbol, SYMBOL_BID)
                   : SymbolInfoDouble(symbol, SYMBOL_ASK);
 
-   MqlTradeRequest request = {};
+   MqlTradeRequest tradeRequest = {};
    MqlTradeResult  tradeResult = {};
 
-   request.action    = TRADE_ACTION_DEAL;
-   request.position  = posTicket;
-   request.symbol    = symbol;
-   request.volume    = volume;
-   request.type      = closeType;
-   request.price     = price;
-   request.deviation = (ulong)MaxSlippagePoints;
-   request.type_filling = ORDER_FILLING_IOC;
+   tradeRequest.action    = TRADE_ACTION_DEAL;
+   tradeRequest.position  = posTicket;
+   tradeRequest.symbol    = symbol;
+   tradeRequest.volume    = volume;
+   tradeRequest.type      = closeType;
+   tradeRequest.price     = price;
+   tradeRequest.deviation = (ulong)MaxSlippagePoints;
+   tradeRequest.type_filling = ORDER_FILLING_IOC;
 
-   if(!OrderSend(request, tradeResult))
+   if(!OrderSend(tradeRequest, tradeResult))
      {
-      result.error_message = "Close OrderSend failed: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      Print("[EdgeRelay] CLOSE failed: ", result.error_message);
-      return result;
+      execResult.error_message = "Close OrderSend failed: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      Print("[EdgeRelay] CLOSE failed: ", execResult.error_message);
+      return execResult;
      }
 
    if(tradeResult.retcode != TRADE_RETCODE_DONE)
      {
-      result.error_message = "Close retcode: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Close retcode: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
-   result.success         = true;
-   result.ticket          = posTicket;
-   result.executed_price  = tradeResult.price;
-   result.executed_volume = volume;
-   result.retcode         = tradeResult.retcode;
+   execResult.success         = true;
+   execResult.ticket          = posTicket;
+   execResult.executed_price  = tradeResult.price;
+   execResult.executed_volume = volume;
+   execResult.retcode         = tradeResult.retcode;
    Print("[EdgeRelay] CLOSE success: Ticket=", posTicket,
          " Vol=", volume, " Price=", tradeResult.price);
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
@@ -676,9 +701,15 @@ ExecutionResult ExecuteClose(Signal &signal)
 //+------------------------------------------------------------------+
 ExecutionResult ExecutePartialClose(Signal &signal)
   {
-   ExecutionResult result;
-   result.signal_id = signal.signal_id;
-   result.success   = false;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    //--- Find position
    ulong posTicket = FindPositionByMagic(signal.magic_number);
@@ -687,15 +718,15 @@ ExecutionResult ExecutePartialClose(Signal &signal)
 
    if(posTicket == 0)
      {
-      result.error_message = "Position not found for partial close.";
-      Print("[EdgeRelay] PARTIAL_CLOSE failed: ", result.error_message);
-      return result;
+      execResult.error_message = "Position not found for partial close.";
+      Print("[EdgeRelay] PARTIAL_CLOSE failed: ", execResult.error_message);
+      return execResult;
      }
 
    if(!PositionSelectByTicket(posTicket))
      {
-      result.error_message = "Cannot select position: " + IntegerToString((long)posTicket);
-      return result;
+      execResult.error_message = "Cannot select position: " + IntegerToString((long)posTicket);
+      return execResult;
      }
 
    double currentVolume = PositionGetDouble(POSITION_VOLUME);
@@ -710,8 +741,8 @@ ExecutionResult ExecutePartialClose(Signal &signal)
    closeVol = NormalizeLot(symbol, closeVol);
    if(closeVol <= 0)
      {
-      result.error_message = "Invalid partial close volume";
-      return result;
+      execResult.error_message = "Invalid partial close volume";
+      return execResult;
      }
 
    ENUM_ORDER_TYPE closeType = (posType == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
@@ -719,98 +750,104 @@ ExecutionResult ExecutePartialClose(Signal &signal)
                   ? SymbolInfoDouble(symbol, SYMBOL_BID)
                   : SymbolInfoDouble(symbol, SYMBOL_ASK);
 
-   MqlTradeRequest request = {};
+   MqlTradeRequest tradeRequest = {};
    MqlTradeResult  tradeResult = {};
 
-   request.action    = TRADE_ACTION_DEAL;
-   request.position  = posTicket;
-   request.symbol    = symbol;
-   request.volume    = closeVol;
-   request.type      = closeType;
-   request.price     = price;
-   request.deviation = (ulong)MaxSlippagePoints;
-   request.type_filling = ORDER_FILLING_IOC;
+   tradeRequest.action    = TRADE_ACTION_DEAL;
+   tradeRequest.position  = posTicket;
+   tradeRequest.symbol    = symbol;
+   tradeRequest.volume    = closeVol;
+   tradeRequest.type      = closeType;
+   tradeRequest.price     = price;
+   tradeRequest.deviation = (ulong)MaxSlippagePoints;
+   tradeRequest.type_filling = ORDER_FILLING_IOC;
 
-   if(!OrderSend(request, tradeResult))
+   if(!OrderSend(tradeRequest, tradeResult))
      {
-      result.error_message = "Partial close failed: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Partial close failed: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
    if(tradeResult.retcode != TRADE_RETCODE_DONE)
      {
-      result.error_message = "Partial close retcode: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Partial close retcode: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
-   result.success         = true;
-   result.ticket          = posTicket;
-   result.executed_price  = tradeResult.price;
-   result.executed_volume = closeVol;
-   result.retcode         = tradeResult.retcode;
+   execResult.success         = true;
+   execResult.ticket          = posTicket;
+   execResult.executed_price  = tradeResult.price;
+   execResult.executed_volume = closeVol;
+   execResult.retcode         = tradeResult.retcode;
    Print("[EdgeRelay] PARTIAL_CLOSE success: Ticket=", posTicket,
          " ClosedVol=", closeVol, " Remaining=", currentVolume - closeVol);
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
 //| Execute PENDING order signal                                      |
 //+------------------------------------------------------------------+
-ExecutionResult ExecutePending(Signal &signal, double lot, const string &comment)
+ExecutionResult ExecutePending(Signal &signal, double lot, string comment)
   {
-   ExecutionResult result;
-   result.signal_id = signal.signal_id;
-   result.success   = false;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    lot = NormalizeLot(signal.symbol, lot);
    if(lot <= 0.0)
      {
-      result.error_message = "Invalid lot for pending order";
-      return result;
+      execResult.error_message = "Invalid lot for pending order";
+      return execResult;
      }
 
    int digits = (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS);
 
-   MqlTradeRequest request = {};
+   MqlTradeRequest tradeRequest = {};
    MqlTradeResult  tradeResult = {};
 
-   request.action       = TRADE_ACTION_PENDING;
-   request.symbol       = signal.symbol;
-   request.volume       = lot;
-   request.type         = signal.order_type;
-   request.price        = NormalizeDouble(signal.price, digits);
-   request.sl           = NormalizeDouble(signal.sl, digits);
-   request.tp           = NormalizeDouble(signal.tp, digits);
-   request.magic        = (ulong)signal.magic_number;
-   request.comment      = comment;
-   request.type_filling = ORDER_FILLING_IOC;
+   tradeRequest.action       = TRADE_ACTION_PENDING;
+   tradeRequest.symbol       = signal.symbol;
+   tradeRequest.volume       = lot;
+   tradeRequest.type         = signal.order_type;
+   tradeRequest.price        = NormalizeDouble(signal.price, digits);
+   tradeRequest.sl           = NormalizeDouble(signal.sl, digits);
+   tradeRequest.tp           = NormalizeDouble(signal.tp, digits);
+   tradeRequest.magic        = (ulong)signal.magic_number;
+   tradeRequest.comment      = comment;
+   tradeRequest.type_filling = ORDER_FILLING_IOC;
 
-   if(!OrderSend(request, tradeResult))
+   if(!OrderSend(tradeRequest, tradeResult))
      {
-      result.error_message = "Pending OrderSend failed: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      Print("[EdgeRelay] PENDING failed: ", result.error_message);
-      return result;
+      execResult.error_message = "Pending OrderSend failed: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      Print("[EdgeRelay] PENDING failed: ", execResult.error_message);
+      return execResult;
      }
 
    if(tradeResult.retcode != TRADE_RETCODE_DONE && tradeResult.retcode != TRADE_RETCODE_PLACED)
      {
-      result.error_message = "Pending retcode: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Pending retcode: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
-   result.success = true;
-   result.ticket  = tradeResult.order;
-   result.retcode = tradeResult.retcode;
-   Print("[EdgeRelay] PENDING success: Order=", result.ticket,
-         " Type=", OrderTypeToString(signal.order_type),
+   execResult.success = true;
+   execResult.ticket  = tradeResult.order;
+   execResult.retcode = tradeResult.retcode;
+   Print("[EdgeRelay] PENDING success: Order=", execResult.ticket,
+         " Type=", OrderTypeToStr(signal.order_type),
          " Price=", signal.price, " Lot=", lot);
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
@@ -818,9 +855,15 @@ ExecutionResult ExecutePending(Signal &signal, double lot, const string &comment
 //+------------------------------------------------------------------+
 ExecutionResult ExecuteCancelPending(Signal &signal)
   {
-   ExecutionResult result;
-   result.signal_id = signal.signal_id;
-   result.success   = false;
+   ExecutionResult execResult;
+   execResult.signal_id       = signal.signal_id;
+   execResult.success         = false;
+   execResult.ticket          = 0;
+   execResult.executed_price  = 0.0;
+   execResult.executed_volume = 0.0;
+   execResult.slippage        = 0;
+   execResult.error_message   = "";
+   execResult.retcode         = 0;
 
    //--- Find the pending order by magic or comment
    ulong orderTicket = FindPendingOrderByMagic(signal.magic_number);
@@ -829,37 +872,37 @@ ExecutionResult ExecuteCancelPending(Signal &signal)
 
    if(orderTicket == 0)
      {
-      result.error_message = "Pending order not found for cancel.";
-      Print("[EdgeRelay] CANCEL_PENDING failed: ", result.error_message);
-      return result;
+      execResult.error_message = "Pending order not found for cancel.";
+      Print("[EdgeRelay] CANCEL_PENDING failed: ", execResult.error_message);
+      return execResult;
      }
 
-   MqlTradeRequest request = {};
+   MqlTradeRequest tradeRequest = {};
    MqlTradeResult  tradeResult = {};
 
-   request.action = TRADE_ACTION_REMOVE;
-   request.order  = orderTicket;
+   tradeRequest.action = TRADE_ACTION_REMOVE;
+   tradeRequest.order  = orderTicket;
 
-   if(!OrderSend(request, tradeResult))
+   if(!OrderSend(tradeRequest, tradeResult))
      {
-      result.error_message = "Cancel pending failed: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Cancel pending failed: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
    if(tradeResult.retcode != TRADE_RETCODE_DONE)
      {
-      result.error_message = "Cancel retcode: " + IntegerToString(tradeResult.retcode);
-      result.retcode       = tradeResult.retcode;
-      return result;
+      execResult.error_message = "Cancel retcode: " + IntegerToString(tradeResult.retcode);
+      execResult.retcode       = tradeResult.retcode;
+      return execResult;
      }
 
-   result.success = true;
-   result.ticket  = orderTicket;
-   result.retcode = tradeResult.retcode;
+   execResult.success = true;
+   execResult.ticket  = orderTicket;
+   execResult.retcode = tradeResult.retcode;
    Print("[EdgeRelay] CANCEL_PENDING success: Order=", orderTicket);
 
-   return result;
+   return execResult;
   }
 
 //+------------------------------------------------------------------+
@@ -929,16 +972,12 @@ void ReportExecution(ExecutionResult &exResult)
    body += "}";
 
    char postData[];
-   StringToCharArray(body, postData, 0, WHOLE_ARRAY, CP_UTF8);
-   // Remove null terminator from char array for WebRequest
-   int dataLen = ArraySize(postData);
-   if(dataLen > 0 && postData[dataLen - 1] == 0)
-      ArrayResize(postData, dataLen - 1);
+   StringToCharArray(body, postData, 0, StringLen(body));
 
    char resultData[];
    string resultHeaders;
 
-   //--- Fire and forget — log errors but don't block
+   //--- Fire and forget - log errors but don't block
    int res = WebRequest("POST", url, headers, HTTP_TIMEOUT, postData, resultData, resultHeaders);
    if(res != 200 && res != 201 && res != -1)
      {
@@ -1018,7 +1057,7 @@ double CalculateLotSize(Signal &signal)
 //+------------------------------------------------------------------+
 //| Normalize lot to symbol constraints                               |
 //+------------------------------------------------------------------+
-double NormalizeLot(const string &symbol, double lot)
+double NormalizeLot(string symbol, double lot)
   {
    double minLot  = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
    double maxLot  = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
@@ -1044,7 +1083,7 @@ double NormalizeLot(const string &symbol, double lot)
   }
 
 //+------------------------------------------------------------------+
-//| Invert order type (buy↔sell)                                     |
+//| Invert order type (buy<->sell)                                    |
 //+------------------------------------------------------------------+
 ENUM_ORDER_TYPE InvertOrderType(ENUM_ORDER_TYPE type)
   {
@@ -1116,7 +1155,7 @@ ulong FindPositionByMagic(long magicNumber)
 //+------------------------------------------------------------------+
 //| Find open position by comment tag                                 |
 //+------------------------------------------------------------------+
-ulong FindPositionByComment(const string &tag)
+ulong FindPositionByComment(string tag)
   {
    if(tag == "")
       return 0;
@@ -1159,7 +1198,7 @@ ulong FindPendingOrderByMagic(long magicNumber)
 //+------------------------------------------------------------------+
 //| Find pending order by comment tag                                 |
 //+------------------------------------------------------------------+
-ulong FindPendingOrderByComment(const string &tag)
+ulong FindPendingOrderByComment(string tag)
   {
    if(tag == "")
       return 0;
@@ -1179,7 +1218,7 @@ ulong FindPendingOrderByComment(const string &tag)
   }
 
 //+------------------------------------------------------------------+
-//| Display panel — Initialization                                    |
+//| Display panel - Initialization                                    |
 //+------------------------------------------------------------------+
 void InitDisplayPanel()
   {
@@ -1196,14 +1235,14 @@ void InitDisplayPanel()
    ObjectSetInteger(0, prefix + "bg", OBJPROP_CORNER, CORNER_LEFT_UPPER);
    ObjectSetInteger(0, prefix + "bg", OBJPROP_BACK, false);
 
-   CreateLabel(prefix + "title",    15, 30,  "EdgeRelay Follower", clrDodgerBlue, 10);
-   CreateLabel(prefix + "status",   15, 50,  "Status: Connecting...", clrYellow, 9);
-   CreateLabel(prefix + "master",   15, 70,  "Master: " + MasterAccountID, clrWhite, 9);
-   CreateLabel(prefix + "lotmode",  15, 90,  "LotMode: " + EnumToString(LotMode), clrWhite, 9);
-   CreateLabel(prefix + "signals",  15, 110, "Signals: 0 | Failed: 0", clrWhite, 9);
-   CreateLabel(prefix + "equity",   15, 130, "Equity: " + DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2), clrWhite, 9);
-   CreateLabel(prefix + "drawdown", 15, 150, "Drawdown: 0.00%", clrWhite, 9);
-   CreateLabel(prefix + "poll",     15, 170, "Poll: " + IntegerToString(PollIntervalMs) + "ms", clrGray, 8);
+   CreateFollowerLabel(prefix + "title",    15, 30,  "EdgeRelay Follower", clrDodgerBlue, 10);
+   CreateFollowerLabel(prefix + "status",   15, 50,  "Status: Connecting...", clrYellow, 9);
+   CreateFollowerLabel(prefix + "master",   15, 70,  "Master: " + MasterAccountID, clrWhite, 9);
+   CreateFollowerLabel(prefix + "lotmode",  15, 90,  "LotMode: " + EnumToString(LotMode), clrWhite, 9);
+   CreateFollowerLabel(prefix + "signals",  15, 110, "Signals: 0 | Failed: 0", clrWhite, 9);
+   CreateFollowerLabel(prefix + "equity",   15, 130, "Equity: " + DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2), clrWhite, 9);
+   CreateFollowerLabel(prefix + "drawdown", 15, 150, "Drawdown: 0.00%", clrWhite, 9);
+   CreateFollowerLabel(prefix + "poll",     15, 170, "Poll: " + IntegerToString(PollIntervalMs) + "ms", clrGray, 8);
 
    ChartRedraw();
   }
@@ -1211,7 +1250,7 @@ void InitDisplayPanel()
 //+------------------------------------------------------------------+
 //| Create a text label on chart                                      |
 //+------------------------------------------------------------------+
-void CreateLabel(const string &name, int x, int y, const string &text, color clr, int fontSize)
+void CreateFollowerLabel(string name, int x, int y, string text, color clr, int fontSize)
   {
    ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
    ObjectSetInteger(0, name, OBJPROP_XDISTANCE, x);
@@ -1288,10 +1327,10 @@ void CleanupDisplayPanel()
   }
 
 //+------------------------------------------------------------------+
-//| OnTick — not used, polling is timer-based                         |
+//| OnTick - not used, polling is timer-based                         |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   // No action — all polling handled in OnTimer
+   // No action - all polling handled in OnTimer
   }
 //+------------------------------------------------------------------+

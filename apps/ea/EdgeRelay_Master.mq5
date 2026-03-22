@@ -6,15 +6,15 @@
 #property copyright "EdgeRelay"
 #property link      "https://www.edgerelay.io"
 #property version   "1.00"
-#property description "EdgeRelay Master EA — sends trade signals to the EdgeRelay relay server."
+#property description "EdgeRelay Master EA - sends trade signals to the EdgeRelay relay server."
 #property strict
 
 //--- Includes
-#include "Include/EdgeRelay_Common.mqh"
-#include "Include/EdgeRelay_Crypto.mqh"
-#include "Include/EdgeRelay_Http.mqh"
-#include "Include/EdgeRelay_Queue.mqh"
-#include "Include/EdgeRelay_Display.mqh"
+#include <EdgeRelay_Common.mqh>
+#include <EdgeRelay_Crypto.mqh>
+#include <EdgeRelay_Http.mqh>
+#include <EdgeRelay_Queue.mqh>
+#include <EdgeRelay_Display.mqh>
 
 //+------------------------------------------------------------------+
 //| Input parameters                                                  |
@@ -36,7 +36,7 @@ input bool   CopyCloses          = true;                                // Copy 
 CSignalQueue     g_queue;
 CEdgeRelayDisplay g_display;
 
-static int       g_sequenceNum     = 0;
+int              g_sequenceNum     = 0;
 int              g_signalsSentToday = 0;
 double           g_lastLatencyMs   = -1.0;
 datetime         g_lastSignalTime  = 0;
@@ -277,7 +277,7 @@ void DispatchSignal(Signal &signal)
 
       PrintFormat("[EdgeRelay] Signal sent: %s %s %s vol=%.2f (seq=%d, %dms)",
                   ActionToString(signal.action),
-                  OrderTypeToString(signal.order_type),
+                  OrderTypeToStr(signal.order_type),
                   signal.symbol,
                   signal.volume,
                   signal.sequence_num,
@@ -295,7 +295,7 @@ void DispatchSignal(Signal &signal)
       PrintFormat("[EdgeRelay] Signal queued (HTTP %d): %s %s %s",
                   httpCode,
                   ActionToString(signal.action),
-                  OrderTypeToString(signal.order_type),
+                  OrderTypeToStr(signal.order_type),
                   signal.symbol);
      }
 
@@ -476,7 +476,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
       if(!PositionSelectByTicket(posTicket))
          return;
 
-      ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(posTicket, POSITION_TYPE);
+      ENUM_POSITION_TYPE posType = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
       ENUM_ORDER_TYPE ordType = (posType == POSITION_TYPE_BUY) ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
 
       if(!PassesDirectionFilter(ordType))
@@ -488,7 +488,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
       signal.price        = PositionGetDouble(POSITION_PRICE_OPEN);
       signal.sl           = trans.price_sl;
       signal.tp           = trans.price_tp;
-      signal.magic_number = PositionGetInteger(posTicket, POSITION_MAGIC);
+      signal.magic_number = PositionGetInteger(POSITION_MAGIC);
       signal.ticket       = (long)posTicket;
       signal.action       = SIGNAL_MODIFY;
 
@@ -530,7 +530,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
   }
 
 //+------------------------------------------------------------------+
-//| Tick handler — not used for trade detection, but can be used      |
+//| Tick handler - not used for trade detection, but can be used      |
 //| for additional monitoring if needed                               |
 //+------------------------------------------------------------------+
 void OnTick()

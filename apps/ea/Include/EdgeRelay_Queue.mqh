@@ -10,11 +10,15 @@
 #ifndef EDGERELAY_QUEUE_MQH
 #define EDGERELAY_QUEUE_MQH
 
-#include "EdgeRelay_Common.mqh"
-#include "EdgeRelay_Http.mqh"
+#include <EdgeRelay_Common.mqh>
+#include <EdgeRelay_Http.mqh>
+
+//--- Forward declarations for helper functions
+ENUM_SIGNAL_ACTION StringToAction(string action);
+ENUM_ORDER_TYPE    StringToOrderType(string orderType);
 
 //+------------------------------------------------------------------+
-//| Signal queue class — file-backed for crash resilience             |
+//| Signal queue class - file-backed for crash resilience             |
 //| File format: one JSON signal per line                             |
 //+------------------------------------------------------------------+
 class CSignalQueue
@@ -200,7 +204,7 @@ bool CSignalQueue::IsEmpty()
   }
 
 //+------------------------------------------------------------------+
-//| Flush queue — attempt to send all queued signals                  |
+//| Flush queue - attempt to send all queued signals                  |
 //| Successfully sent signals are removed                             |
 //+------------------------------------------------------------------+
 void CSignalQueue::Flush(string endpoint, string apiKey)
@@ -246,7 +250,7 @@ void CSignalQueue::Flush(string endpoint, string apiKey)
          continue;
         }
 
-      //--- Check signal age — drop signals older than MAX_SIGNAL_AGE_S
+      //--- Check signal age - drop signals older than MAX_SIGNAL_AGE_S
       if((long)TimeCurrent() - (long)sig.timestamp > MAX_SIGNAL_AGE_S)
         {
          PrintFormat("[EdgeRelay] Dropping expired signal: %s (age > %ds)",

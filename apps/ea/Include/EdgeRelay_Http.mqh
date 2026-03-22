@@ -10,8 +10,8 @@
 #ifndef EDGERELAY_HTTP_MQH
 #define EDGERELAY_HTTP_MQH
 
-#include "EdgeRelay_Common.mqh"
-#include "EdgeRelay_Crypto.mqh"
+#include <EdgeRelay_Common.mqh>
+#include <EdgeRelay_Crypto.mqh>
 
 //+------------------------------------------------------------------+
 //| Send a trade signal via HTTP POST                                 |

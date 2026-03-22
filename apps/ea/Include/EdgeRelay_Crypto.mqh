@@ -10,7 +10,7 @@
 #ifndef EDGERELAY_CRYPTO_MQH
 #define EDGERELAY_CRYPTO_MQH
 
-#include "EdgeRelay_Common.mqh"
+#include <EdgeRelay_Common.mqh>
 
 //+------------------------------------------------------------------+
 //| Convert byte array to hex string                                  |
@@ -113,16 +113,13 @@ string HmacSha256(string message, string key)
 string SignPayload(Signal &signal, string apiSecret)
   {
    //--- Build sorted key=value pairs (alphabetical order)
-   //--- Fields: account_id, action, comment, magic_number, order_type,
-   //---         price, sequence_num, signal_id, sl, symbol, ticket,
-   //---         timestamp, tp, volume
    string payload = "";
 
    payload += "account_id=" + signal.account_id;
    payload += "&action=" + ActionToString(signal.action);
    payload += "&comment=" + signal.comment;
    payload += "&magic_number=" + IntegerToString(signal.magic_number);
-   payload += "&order_type=" + OrderTypeToString(signal.order_type);
+   payload += "&order_type=" + OrderTypeToStr(signal.order_type);
 
    int digits = (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS);
    if(digits <= 0)

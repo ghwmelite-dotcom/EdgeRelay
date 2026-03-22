@@ -18,6 +18,7 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { UsagePage } from '@/pages/UsagePage';
 import { LandingPage } from '@/pages/LandingPage';
+import { PropGuardSetupPage } from '@/pages/PropGuardSetupPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -52,6 +53,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/billing/callback" element={<BillingCallbackPage />} />
+          <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

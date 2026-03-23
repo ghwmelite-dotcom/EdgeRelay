@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  ArrowLeftRight,
   ArrowRight,
-  ArrowRightLeft,
-  Check,
+  BrainCircuit,
+  Calculator,
+  CloudOff,
+  FlaskConical,
+  HardDriveDownload,
+  Link2,
   Monitor,
-  Server,
-  Shield,
-  Sliders,
-  X,
+  PackageOpen,
+  ShieldAlert,
+  ShieldCheck,
+  WifiOff,
   Zap,
 } from 'lucide-react';
 
@@ -18,152 +23,122 @@ import {
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Compare', href: '#compare' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Ecosystem', href: '#ecosystem' },
 ];
 
 const STATS = [
-  { value: '300+', label: 'PoPs' },
+  { value: '300+', label: 'Edge Locations' },
   { value: '99.9%', label: 'Uptime' },
-  { value: '<500ms', label: 'Latency' },
+  { value: '<500ms', label: 'Avg Latency' },
   { value: 'Zero', label: 'VPS Required' },
 ];
 
-const PROBLEMS = [
-  'VPS costs $20-50/month per setup',
-  '50ms+ latency with centralized copiers',
-  'Dropped trades during network blips',
-  'No built-in equity protection',
-];
-
-const SOLUTIONS = [
-  'Zero VPS — EA sends directly to edge',
-  'Sub-500ms global signal propagation',
-  'Offline queue — zero dropped trades',
-  'Built-in equity guard per account',
+const ECOSYSTEM = [
+  {
+    icon: ShieldCheck,
+    title: 'PropGuard',
+    desc: 'Built-in equity protection for prop firm accounts. Automatic drawdown monitoring, trade blocking, and emergency close.',
+    badge: 'LIVE' as const,
+  },
+  {
+    icon: BrainCircuit,
+    title: 'AI Trade Journal',
+    desc: 'AI-powered MT5 trade journal with native sync. Automatic trade logging, pattern recognition, and performance insights.',
+    badge: 'COMING SOON' as const,
+  },
+  {
+    icon: Link2,
+    title: 'Platform Bridge',
+    desc: 'Cross-platform trade copier. Copy between MT4, MT5, cTrader, and more — one master, any platform.',
+    badge: 'COMING SOON' as const,
+  },
+  {
+    icon: FlaskConical,
+    title: 'EA Performance Lab',
+    desc: 'Cloud-based EA monitoring and backtesting. Real-time performance tracking without running MT5.',
+    badge: 'COMING SOON' as const,
+  },
 ];
 
 const FEATURES = [
   {
-    icon: Server,
+    icon: CloudOff,
     title: 'Zero VPS Required',
-    desc: 'Lightweight EA pushes signals via HTTPS. Works wherever MT5 runs.',
+    desc: 'No servers to manage. Runs on Cloudflare\'s edge network — always on, globally distributed.',
   },
   {
-    icon: Shield,
-    title: 'Prop Firm Aware',
-    desc: 'Built-in equity protection prevents drawdown limit breaches.',
+    icon: ShieldCheck,
+    title: 'PropGuard Protection',
+    desc: 'Built-in equity guard for prop firm accounts. Monitors drawdown and blocks dangerous trades.',
   },
   {
-    icon: Zap,
+    icon: WifiOff,
     title: 'Never Miss a Trade',
-    desc: 'Local signal queue with dedup replay. Zero dropped trades.',
+    desc: 'Offline queue with auto-retry and crash recovery. Signals wait on the edge until your EA reconnects.',
   },
   {
-    icon: Sliders,
-    title: 'Flexible Lot Sizing',
-    desc: 'Mirror, fixed, multiplier, or risk-based — per follower.',
+    icon: Calculator,
+    title: 'Smart Lot Sizing',
+    desc: 'Mirror, fixed, multiplier, or risk-percent modes. Each follower sizes independently.',
   },
   {
-    icon: ArrowRightLeft,
+    icon: ArrowLeftRight,
     title: 'Symbol Mapping',
-    desc: 'XAUUSD → GOLD? Custom suffix? Handled automatically.',
+    desc: 'Auto-suffix and custom symbol mappings. EURUSD on master → EURUSD.m on follower, automatically.',
   },
   {
     icon: Monitor,
     title: 'Real-time Dashboard',
-    desc: 'Monitor all accounts, signals, and executions live.',
+    desc: 'Live signal log, latency stats, account monitoring. See every trade as it copies.',
   },
 ];
 
-const PLANS = [
+const BENEFITS = [
   {
-    name: 'Starter',
-    price: 19,
-    features: [
-      '1 master account',
-      '3 follower accounts',
-      'Basic lot sizing',
-      'Signal dashboard',
-      'Email support',
-    ],
-    popular: false,
+    icon: ShieldAlert,
+    title: 'Built for Prop Firms',
+    desc: 'PropGuard monitors your drawdown in real-time and blocks trades that would breach your funded account rules.',
   },
   {
-    name: 'Pro',
-    price: 49,
-    features: [
-      '1 master account',
-      '10 follower accounts',
-      'Equity protection',
-      'News filter',
-      'Symbol mapping',
-      'Priority email support',
-    ],
-    popular: true,
+    icon: Zap,
+    title: 'Edge Speed, Not Server Speed',
+    desc: "Your signals travel through Cloudflare's 300+ PoPs, not a single VPS in Virginia. Closest edge = fastest copy.",
   },
   {
-    name: 'Unlimited',
-    price: 99,
-    features: [
-      'Unlimited master accounts',
-      'Unlimited followers',
-      'API access',
-      'All Pro features',
-      'Priority support',
-      'Custom lot rules',
-    ],
-    popular: false,
+    icon: PackageOpen,
+    title: 'Zero Infrastructure',
+    desc: 'No VPS to rent, no MT5 to keep running, no port forwarding. Install the EA, connect, done.',
   },
   {
-    name: 'Signal Provider',
-    price: 149,
-    features: [
-      'Broadcast to subscribers',
-      'Performance analytics',
-      'Embeddable widget',
-      'All Unlimited features',
-      'Dedicated support',
-      'White-label option',
-    ],
-    popular: false,
+    icon: HardDriveDownload,
+    title: 'Crash-Proof Delivery',
+    desc: 'Signals queue on the edge when your follower is offline. Reconnect and they execute in order. Nothing lost.',
   },
 ];
 
-const COMPETITORS = ['EdgeRelay', 'STT', 'Duplikium', 'FXBlue', 'TC'] as const;
-
-const COMPARISON_ROWS: { feature: string; values: Record<(typeof COMPETITORS)[number], string | boolean> }[] = [
+const TESTIMONIALS = [
   {
-    feature: 'VPS Required',
-    values: { EdgeRelay: false, STT: true, Duplikium: true, FXBlue: true, TC: true },
+    quote: 'EdgeRelay replaced my VPS setup entirely. Signals hit my 6 funded accounts faster than my old copier handled one.',
+    name: 'Alex M.',
+    context: 'Managing 6 FTMO accounts',
   },
   {
-    feature: 'Copy Latency',
-    values: { EdgeRelay: '<500ms', STT: '50-200ms', Duplikium: '100-300ms', FXBlue: '200ms+', TC: '100-500ms' },
+    quote: 'PropGuard saved me twice in one week. It blocked trades that would have breached my drawdown limit on a $200k account.',
+    name: 'Sarah K.',
+    context: 'Running 3 funded challenges',
   },
   {
-    feature: 'Per-Account Cost',
-    values: { EdgeRelay: 'Included', STT: '$20-50', Duplikium: '$30+', FXBlue: 'Free*', TC: '$25+' },
-  },
-  {
-    feature: 'Equity Protection',
-    values: { EdgeRelay: true, STT: false, Duplikium: false, FXBlue: false, TC: false },
-  },
-  {
-    feature: 'Prop Firm Aware',
-    values: { EdgeRelay: true, STT: false, Duplikium: false, FXBlue: false, TC: false },
-  },
-  {
-    feature: 'News Filter',
-    values: { EdgeRelay: true, STT: false, Duplikium: true, FXBlue: false, TC: false },
+    quote: 'Setup took 10 minutes. No VPS, no port forwarding, no headaches. Just install the EA and it works.',
+    name: 'David R.',
+    context: 'Prop firm trader',
   },
 ];
 
 const FOOTER_LINKS = [
   { label: 'Features', href: '#features' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Docs', href: '/docs' },
-  { label: 'Support', href: '/support' },
+  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Ecosystem', href: '#ecosystem' },
 ];
 
 /* ────────────────────────────────────────────────────────────── */
@@ -195,13 +170,13 @@ export function LandingPage() {
 
   return (
     <div className="scan-line relative min-h-screen bg-terminal-bg text-slate-100">
-      {/* Ambient glow orbs — fixed behind everything */}
+      {/* Ambient glow orbs */}
       <div className="ambient-glow" />
       {/* Noise texture */}
       <div className="noise-overlay pointer-events-none fixed inset-0 z-[9999]" />
 
       {/* ══════════════════════════════════════════════════════════
-          NAV
+          1. NAV
           ══════════════════════════════════════════════════════════ */}
       <nav
         className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -230,20 +205,20 @@ export function LandingPage() {
               to="/register"
               className="signal-pulse inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
             >
-              Get Started
+              Get Started Free
             </Link>
           </div>
         </div>
       </nav>
 
       {/* ══════════════════════════════════════════════════════════
-          HERO — THE SHOWSTOPPER
+          2. HERO
           ══════════════════════════════════════════════════════════ */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
         {/* Layer 1: Grid */}
         <div className="bg-grid pointer-events-none absolute inset-0" />
 
-        {/* Layer 2: Ambient glow orbs (inline for hero-specific positioning) */}
+        {/* Layer 2: Ambient glow orbs */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute left-1/2 top-1/4 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,#00e5ff08_0%,transparent_70%)]" style={{ animation: 'breathe 8s ease-in-out infinite' }} />
           <div className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,#b18cff06_0%,transparent_70%)]" style={{ animation: 'breathe 10s ease-in-out infinite 3s' }} />
@@ -267,35 +242,30 @@ export function LandingPage() {
           ))}
         </div>
 
-        {/* Layer 4: Scan line handled by parent .scan-line */}
-        {/* Layer 5: Noise handled by .noise-overlay */}
-
         {/* Hero content */}
         <div className="relative z-10 mx-auto max-w-5xl text-center">
-          {/* Line 1 */}
-          <h1 className="font-display text-6xl font-black leading-[1.05] tracking-tight md:text-8xl">
+          <h1 className="font-display text-5xl font-black leading-[1.08] tracking-tight md:text-7xl lg:text-8xl">
             <span
               className="animate-fade-in-up text-gradient-hero block"
               style={{ animationDelay: '0ms' }}
             >
-              Copy trades across
+              Stop Losing Prop Firm
             </span>
-            {/* Line 2 */}
             <span
               className="animate-fade-in-up block"
               style={{ animationDelay: '150ms' }}
             >
-              <span className="text-neon-cyan glow-text-cyan">10</span>
-              <span className="text-gradient-hero"> accounts.</span>
+              <span className="text-gradient-hero">Accounts to </span>
+              <span className="text-neon-cyan glow-text-cyan">Missed Copies.</span>
             </span>
           </h1>
 
-          {/* Sub-headline */}
           <p
-            className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-xl text-slate-400"
+            className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-lg text-slate-400 md:text-xl"
             style={{ animationDelay: '300ms' }}
           >
-            <span className="text-neon-cyan">No VPS.</span> No dropped signals.
+            Edge-native trade copying powered by Cloudflare&rsquo;s global network.{' '}
+            <span className="text-neon-cyan">Sub-500ms execution</span>, built-in PropGuard protection, zero VPS required.
           </p>
 
           {/* CTA row */}
@@ -307,7 +277,7 @@ export function LandingPage() {
               to="/register"
               className="signal-pulse inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_28px_rgba(0,229,255,0.35)] transition-all hover:shadow-[0_0_48px_rgba(0,229,255,0.55)]"
             >
-              Start Free Trial <ArrowRight className="h-4 w-4" />
+              Get Started Free <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#how-it-works"
@@ -317,13 +287,12 @@ export function LandingPage() {
             </a>
           </div>
 
-          {/* Glowing divider */}
           <div className="divider mx-auto mt-16 max-w-md" />
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          STATS BAR
+          3. STATS BAR
           ══════════════════════════════════════════════════════════ */}
       <section className="relative z-10 px-6 py-14">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-4">
@@ -345,47 +314,50 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          PROBLEM → SOLUTION
+          4. PRODUCT ECOSYSTEM
           ══════════════════════════════════════════════════════════ */}
-      <section className="px-6 py-20 md:py-32">
-        <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2">
-          {/* Problem */}
-          <div className="glass animate-fade-in-up rounded-2xl border-l-2 border-l-neon-red p-8">
-            <h3 className="font-display text-lg font-semibold text-neon-red">The Problem</h3>
-            <ul className="mt-6 space-y-4">
-              {PROBLEMS.map((p) => (
-                <li key={p} className="flex items-start gap-3 text-slate-300">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-red/20 shadow-[0_0_8px_#ff3d5730]">
-                    <X className="h-3 w-3 text-neon-red" />
-                  </span>
-                  {p}
-                </li>
-              ))}
-            </ul>
-          </div>
+      <section id="ecosystem" className="px-6 py-20 md:py-32">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
+            The EdgeRelay Ecosystem
+          </h2>
+          <p className="animate-fade-in-up mt-4 text-center text-slate-400" style={{ animationDelay: '60ms' }}>
+            More than a copier — a complete trading infrastructure
+          </p>
 
-          {/* Solution */}
-          <div
-            className="glass animate-fade-in-up rounded-2xl border-l-2 border-l-neon-cyan p-8"
-            style={{ animationDelay: '120ms' }}
-          >
-            <h3 className="font-display text-lg font-semibold text-neon-cyan">The Solution</h3>
-            <ul className="mt-6 space-y-4">
-              {SOLUTIONS.map((s) => (
-                <li key={s} className="flex items-start gap-3 text-slate-300">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-cyan/20 shadow-[0_0_8px_#00e5ff30]">
-                    <Check className="h-3 w-3 text-neon-cyan" />
-                  </span>
-                  {s}
-                </li>
-              ))}
-            </ul>
+          <div className="mt-14 grid gap-6 sm:grid-cols-2">
+            {ECOSYSTEM.map((item, i) => (
+              <div
+                key={item.title}
+                className={`glass card-hover animate-fade-in-up group rounded-2xl p-6 ${
+                  item.badge === 'LIVE' ? 'glow-cyan' : ''
+                }`}
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_16px_#00e5ff25]">
+                    <item.icon className="h-5 w-5 text-neon-cyan" />
+                  </div>
+                  {item.badge === 'LIVE' ? (
+                    <span className="chip border border-neon-green/30 bg-neon-green/20 text-neon-green shadow-[0_0_8px_#00ff9d20]">
+                      LIVE
+                    </span>
+                  ) : (
+                    <span className="chip border border-neon-amber/20 bg-neon-amber/10 text-neon-amber">
+                      COMING SOON
+                    </span>
+                  )}
+                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold text-white">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          HOW IT WORKS — ANIMATED SIGNAL FLOW
+          5. HOW IT WORKS — ANIMATED SIGNAL FLOW
           ══════════════════════════════════════════════════════════ */}
       <section id="how-it-works" className="px-6 py-20 md:py-32">
         <div className="mx-auto max-w-5xl text-center">
@@ -463,7 +435,7 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          FEATURES GRID
+          6. FEATURES GRID
           ══════════════════════════════════════════════════════════ */}
       <section id="features" className="px-6 py-20 md:py-32">
         <div className="mx-auto max-w-6xl">
@@ -490,59 +462,28 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          PRICING
+          7. WHY EDGERELAY
           ══════════════════════════════════════════════════════════ */}
-      <section id="pricing" className="px-6 py-20 md:py-32">
-        <div className="mx-auto max-w-6xl">
+      <section id="why-edgerelay" className="px-6 py-20 md:py-32">
+        <div className="mx-auto max-w-4xl">
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
-            Simple, Transparent Pricing
+            Why Traders Choose EdgeRelay
           </h2>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PLANS.map((plan, i) => (
+          <div className="mt-14 space-y-6">
+            {BENEFITS.map((b, i) => (
               <div
-                key={plan.name}
-                className={`glass card-hover animate-fade-in-up relative flex flex-col rounded-2xl p-6 ${
-                  plan.popular
-                    ? 'glow-cyan-strong border-gradient z-10 scale-105'
-                    : ''
-                }`}
+                key={b.title}
+                className="benefit-card glass animate-fade-in-up rounded-2xl p-6"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
-                {plan.popular && (
-                  <span className="chip absolute -top-3 right-4 border border-neon-cyan/40 bg-neon-cyan/20 font-semibold text-neon-cyan shadow-[0_0_12px_#00e5ff30]">
-                    POPULAR
-                  </span>
-                )}
-
-                <h3 className="font-display text-lg font-semibold text-white">{plan.name}</h3>
-
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="font-mono-nums text-5xl font-black text-white">
-                    ${plan.price}
-                  </span>
-                  <span className="text-sm text-terminal-muted">/mo</span>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10">
+                  <b.icon className="h-5 w-5 text-neon-cyan" />
                 </div>
-
-                <ul className="mt-6 flex-1 space-y-3">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-slate-300">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-neon-cyan" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  to="/register"
-                  className={`mt-8 block rounded-lg py-3 text-center text-sm font-semibold transition-all ${
-                    plan.popular
-                      ? 'bg-neon-cyan text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]'
-                      : 'border border-terminal-border bg-terminal-surface text-slate-200 hover:border-terminal-border-hover hover:bg-terminal-border/40'
-                  }`}
-                >
-                  Get Started
-                </Link>
+                <div>
+                  <h3 className="font-display text-lg font-semibold text-white">{b.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-400">{b.desc}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -550,95 +491,47 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          COMPETITOR COMPARISON
+          8. TESTIMONIALS
           ══════════════════════════════════════════════════════════ */}
-      <section id="compare" className="px-6 py-20 md:py-32">
-        <div className="mx-auto max-w-5xl">
+      <section id="testimonials" className="px-6 py-20 md:py-32">
+        <div className="mx-auto max-w-6xl">
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
-            Why EdgeRelay?
+            What Traders Are Saying
           </h2>
 
-          <div
-            className="glass animate-fade-in-up mt-14 overflow-hidden rounded-2xl"
-            style={{ animationDelay: '100ms' }}
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
-                <thead>
-                  <tr className="border-b border-terminal-border bg-terminal-surface">
-                    <th className="px-5 py-4 text-left font-medium text-terminal-muted">
-                      Feature
-                    </th>
-                    {COMPETITORS.map((c) => (
-                      <th
-                        key={c}
-                        className={`px-4 py-4 text-center font-medium ${
-                          c === 'EdgeRelay'
-                            ? 'border-t-2 border-t-neon-cyan bg-neon-cyan/[0.06] text-neon-cyan'
-                            : 'text-terminal-muted'
-                        }`}
-                      >
-                        {c}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPARISON_ROWS.map((row, ri) => (
-                    <tr
-                      key={row.feature}
-                      className={`data-row ${ri < COMPARISON_ROWS.length - 1 ? 'border-b border-terminal-border/50' : ''}`}
-                    >
-                      <td className="px-5 py-3.5 font-medium text-slate-300">{row.feature}</td>
-                      {COMPETITORS.map((c) => {
-                        const v = row.values[c];
-                        return (
-                          <td
-                            key={c}
-                            className={`px-4 py-3.5 text-center ${
-                              c === 'EdgeRelay' ? 'bg-neon-cyan/[0.05]' : ''
-                            }`}
-                          >
-                            {typeof v === 'boolean' ? (
-                              v ? (
-                                <Check className="mx-auto h-4 w-4 text-neon-cyan" />
-                              ) : (
-                                <X className="mx-auto h-4 w-4 text-neon-red/50" />
-                              )
-                            ) : (
-                              <span
-                                className={`font-mono-nums text-xs ${
-                                  c === 'EdgeRelay' ? 'font-semibold text-neon-cyan' : 'text-slate-400'
-                                }`}
-                              >
-                                {v}
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {TESTIMONIALS.map((t, i) => (
+              <div
+                key={t.name}
+                className="testimonial-card glass animate-fade-in-up rounded-2xl p-6"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <p className="text-sm leading-relaxed text-slate-300">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <div className="mt-4">
+                  <p className="font-display text-sm font-semibold text-white">{t.name}</p>
+                  <p className="font-mono-nums text-xs text-terminal-muted">{t.context}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          FINAL CTA
+          9. FINAL CTA
           ══════════════════════════════════════════════════════════ */}
       <section className="px-6 py-20 md:py-32">
         <div className="glow-cyan-strong border-gradient glass mx-auto max-w-3xl rounded-3xl p-12 text-center md:p-16">
           <h2 className="animate-fade-in-up text-gradient-cyan font-display text-3xl font-bold md:text-4xl">
-            Ready to ditch your VPS?
+            Free for All Traders
           </h2>
           <p
             className="animate-fade-in-up mt-4 text-lg text-slate-400"
             style={{ animationDelay: '80ms' }}
           >
-            Start copying trades in under 5 minutes.
+            We&rsquo;re opening EdgeRelay to everyone at no cost during our launch period. No credit card required.
           </p>
           <Link
             to="/register"
@@ -651,7 +544,7 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          FOOTER
+          10. FOOTER
           ══════════════════════════════════════════════════════════ */}
       <footer className="relative z-10">
         <div className="divider" />

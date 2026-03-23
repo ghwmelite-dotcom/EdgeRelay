@@ -34,6 +34,7 @@ html {
   background-color: var(--color-terminal-bg);
   color: #c8d6e5;
   font-feature-settings: 'ss01' on, 'cv01' on;
+  scroll-behavior: smooth;
 }
 
 ::selection {
@@ -451,4 +452,35 @@ html {
 .scroll-fade-bottom {
   -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+
+/* ── Testimonial Card ──────────────────────────────────────── */
+.testimonial-card {
+  position: relative;
+  border-left: 2px solid var(--color-neon-cyan);
+  padding-left: 24px;
+}
+.testimonial-card::after {
+  content: '\201C';
+  position: absolute;
+  top: -8px;
+  right: 16px;
+  font-size: 48px;
+  font-family: var(--font-display);
+  color: #00e5ff20;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ── Benefit Card ──────────────────────────────────────────── */
+.benefit-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.benefit-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px -8px #00e5ff10;
 }

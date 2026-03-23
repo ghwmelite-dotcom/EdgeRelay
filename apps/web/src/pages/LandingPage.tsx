@@ -202,6 +202,12 @@ export function LandingPage() {
               </a>
             ))}
             <Link
+              to="/login"
+              className="hidden text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan sm:inline"
+            >
+              Login
+            </Link>
+            <Link
               to="/register"
               className="signal-pulse inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
             >

@@ -15,6 +15,8 @@
 #include <EdgeRelay_Http.mqh>
 #include <EdgeRelay_Queue.mqh>
 #include <EdgeRelay_Display.mqh>
+#include <EdgeRelay_JournalSync.mqh>
+#include <EdgeRelay_JournalQueue.mqh>
 
 //+------------------------------------------------------------------+
 //| Input parameters                                                  |
@@ -32,9 +34,16 @@ input bool   CopyPendings        = true;                                // Copy 
 input bool   CopyModifications   = true;                                // Copy trade modifications
 input bool   CopyCloses          = true;                                // Copy trade closes
 
+//--- Journal sync settings
+input bool   EnableJournal       = false;                                         // Enable trade journaling
+input string JournalEndpoint     = "https://edgerelay-journal-sync.ghwmelite.workers.dev"; // Journal endpoint
+
 //--- Global variables
 CSignalQueue     g_queue;
 CEdgeRelayDisplay g_display;
+CJournalQueue  g_journalQueue;
+ulong          g_journalSyncedDeals[];
+int            g_journalSyncedCount = 0;
 
 int              g_sequenceNum     = 0;
 int              g_signalsSentToday = 0;
@@ -121,6 +130,14 @@ int OnInit()
 
    g_display.Update(g_connStatus, g_signalsSentToday, g_queue.Count(), g_lastLatencyMs, g_lastSignalTime);
 
+   //--- Initialize journal if enabled
+   if(EnableJournal)
+     {
+      string jQueueFile = "JournalSync_Queue_" + AccountID + ".txt";
+      g_journalQueue.Init(jQueueFile);
+      PrintFormat("[EdgeRelay] Journal sync enabled. Endpoint: %s", JournalEndpoint);
+     }
+
    PrintFormat("[EdgeRelay] Master EA initialized. Account: %s, Endpoint: %s", AccountID, API_Endpoint);
    return INIT_SUCCEEDED;
   }
@@ -183,6 +200,10 @@ void OnTimer()
    //--- Attempt to flush queue if not empty
    if(!g_queue.IsEmpty() && g_connStatus == STATUS_CONNECTED)
       g_queue.Flush(API_Endpoint, API_Key);
+
+   //--- Flush journal queue if enabled
+   if(EnableJournal && !g_journalQueue.IsEmpty() && g_connStatus == STATUS_CONNECTED)
+      g_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
    //--- Persist sequence_num periodically
    GlobalVariableSet(g_gvSeqName, (double)g_sequenceNum);
@@ -419,6 +440,31 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
         }
 
       DispatchSignal(signal);
+
+      //--- Journal capture (if enabled)
+      if(EnableJournal)
+        {
+         ulong jDeal = trans.deal;
+         if(jDeal != 0)
+           {
+            bool jAlreadySynced = false;
+            for(int ji = 0; ji < g_journalSyncedCount; ji++)
+               if(g_journalSyncedDeals[ji] == jDeal) { jAlreadySynced = true; break; }
+
+            if(!jAlreadySynced)
+              {
+               JournalTrade jTrade;
+               if(CaptureDeal(jDeal, jTrade))
+                 {
+                  g_journalQueue.Enqueue(jTrade);
+                  ArrayResize(g_journalSyncedDeals, g_journalSyncedCount + 1);
+                  g_journalSyncedDeals[g_journalSyncedCount] = jDeal;
+                  g_journalSyncedCount++;
+                 }
+              }
+           }
+        }
+
       return;
      }
 

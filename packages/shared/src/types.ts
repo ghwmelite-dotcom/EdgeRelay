@@ -126,11 +126,6 @@ export const PLAN_LIMITS: Record<PlanTier, { masters: number; followers: number 
   provider: { masters: 10, followers: 999 },
 };
 
-// ── Validation Helpers ──────────────────────────────────────────
-
-export const validateSignalPayload = (data: unknown) => SignalPayload.safeParse(data);
-export const validateExecutionResult = (data: unknown) => ExecutionResult.safeParse(data);
-
 // ── PropGuard Types ─────────────────────────────────────────────
 
 export const DrawdownType = z.enum(['static', 'trailing', 'eod_trailing']);

@@ -70,6 +70,9 @@ export class AccountRelay implements DurableObject {
   /** Last processed sequence number */
   private lastSequenceNum = -1;
 
+  /** The master account ID (the name used with idFromName) */
+  private masterAccountId: string | null = null;
+
   /** Whether follower configs have been loaded from D1 */
   private initialized = false;
 
@@ -123,8 +126,6 @@ export class AccountRelay implements DurableObject {
     const app = new Hono();
 
     app.post('/signal', async (c) => {
-      await this.ensureInitialized();
-
       const body = await c.req.json<unknown>();
       const parsed = validateSignalPayload(body);
 
@@ -133,6 +134,14 @@ export class AccountRelay implements DurableObject {
       }
 
       const signal = parsed.data;
+
+      // Capture the master account ID from the signal if not yet set
+      if (!this.masterAccountId) {
+        this.masterAccountId = signal.account_id;
+        await this.state.storage.put('masterAccountId', signal.account_id);
+      }
+
+      await this.ensureInitialized();
 
       // Reject stale / duplicate sequence numbers
       if (signal.sequence_num <= this.lastSequenceNum) {
@@ -205,6 +214,13 @@ export class AccountRelay implements DurableObject {
     });
 
     app.get('/poll/:followerAccountId', async (c) => {
+      // Capture master account ID from query param if not yet set
+      const masterIdParam = c.req.query('master_account_id');
+      if (masterIdParam && !this.masterAccountId) {
+        this.masterAccountId = masterIdParam;
+        await this.state.storage.put('masterAccountId', masterIdParam);
+      }
+
       await this.ensureInitialized();
 
       const followerAccountId = c.req.param('followerAccountId');
@@ -382,18 +398,23 @@ export class AccountRelay implements DurableObject {
    * The DO id is the master_account_id.
    */
   private async loadFollowersFromD1(): Promise<void> {
-    const masterAccountId = this.state.id.toString();
+    if (!this.masterAccountId) {
+      console.warn('[AccountRelay] Cannot load followers: masterAccountId not set yet');
+      return;
+    }
+    const masterAccountId = this.masterAccountId;
 
     const rows = await this.env.DB.prepare(
       `SELECT
-        f.follower_account_id,
-        f.lot_mode,
-        f.lot_value,
-        f.symbol_suffix,
-        f.max_daily_loss_percent,
-        f.enabled
-      FROM followers f
-      WHERE f.master_account_id = ? AND f.enabled = 1`,
+        a.id AS follower_account_id,
+        fc.lot_mode,
+        fc.lot_value,
+        fc.symbol_suffix,
+        fc.max_daily_loss_percent,
+        a.is_active AS enabled
+      FROM accounts a
+      JOIN follower_config fc ON fc.account_id = a.id
+      WHERE a.master_account_id = ? AND a.role = 'follower' AND a.is_active = 1`,
     )
       .bind(masterAccountId)
       .all<{
@@ -410,16 +431,16 @@ export class AccountRelay implements DurableObject {
     for (const row of rows.results) {
       // Load explicit symbol mappings for this follower
       const mappingRows = await this.env.DB.prepare(
-        `SELECT source_symbol, target_symbol
+        `SELECT master_symbol, follower_symbol
          FROM symbol_mappings
-         WHERE follower_account_id = ?`,
+         WHERE account_id = ?`,
       )
         .bind(row.follower_account_id)
-        .all<{ source_symbol: string; target_symbol: string }>();
+        .all<{ master_symbol: string; follower_symbol: string }>();
 
       const symbolMappings = new Map<string, string>();
       for (const m of mappingRows.results) {
-        symbolMappings.set(m.source_symbol, m.target_symbol);
+        symbolMappings.set(m.master_symbol, m.follower_symbol);
       }
 
       this.followers.set(row.follower_account_id, {
@@ -439,16 +460,23 @@ export class AccountRelay implements DurableObject {
    * Hydrate ephemeral state from Durable Object transactional storage.
    */
   private async hydrateFromStorage(): Promise<void> {
-    const stored = await this.state.storage.get<{
-      lastSequenceNum: number;
-      openPositions: Array<[number, OpenPosition]>;
-      pendingSignals: Array<[string, FollowerSignal[]]>;
-    }>('relay_state');
+    const [stored, storedMasterAccountId] = await Promise.all([
+      this.state.storage.get<{
+        lastSequenceNum: number;
+        openPositions: Array<[number, OpenPosition]>;
+        pendingSignals: Array<[string, FollowerSignal[]]>;
+      }>('relay_state'),
+      this.state.storage.get<string>('masterAccountId'),
+    ]);
 
     if (stored) {
       this.lastSequenceNum = stored.lastSequenceNum;
       this.openPositions = new Map(stored.openPositions);
       this.pendingSignals = new Map(stored.pendingSignals);
+    }
+
+    if (storedMasterAccountId) {
+      this.masterAccountId = storedMasterAccountId;
     }
   }
 

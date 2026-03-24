@@ -19,7 +19,7 @@
 //+------------------------------------------------------------------+
 int SendSignal(string endpoint, string apiKey, Signal &signal)
   {
-   string url = endpoint + "/v1/signals";
+   string url = endpoint + "/v1/ingest";
    string headers = "Content-Type: application/json\r\n"
                      "X-API-Key: " + apiKey + "\r\n";
 
@@ -79,8 +79,8 @@ int SendHeartbeat(string endpoint, string apiKey, string accountId, string apiSe
    long ts = (long)TimeCurrent();
    string tsStr = IntegerToString(ts);
 
-   //--- Sign the heartbeat: HMAC of "account_id={id}&timestamp={ts}"
-   string sigPayload = "account_id=" + accountId + "&timestamp=" + tsStr;
+   //--- Sign the heartbeat: HMAC of sorted JSON (must match worker's verifyHmacSignature)
+   string sigPayload = "{\"account_id\":\"" + accountId + "\",\"timestamp\":" + tsStr + "}";
    string hmac = HmacSha256(sigPayload, apiSecret);
 
    //--- Build JSON

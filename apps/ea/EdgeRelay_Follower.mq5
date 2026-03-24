@@ -33,7 +33,8 @@ enum ENUM_LOT_MODE
 //+------------------------------------------------------------------+
 input string   API_Key              = "";                             // API Key
 input string   API_Secret           = "";                             // API Secret (HMAC)
-input string   API_Endpoint         = "https://signal.edgerelay.io";  // API Endpoint
+input string   API_Endpoint         = "https://edgerelay-signal-ingestion.ghwmelite.workers.dev";  // Signal Endpoint
+input string   API_Gateway          = "https://edgerelay-api.ghwmelite.workers.dev";              // API Gateway (PropGuard)
 input string   AccountID            = "";                             // This follower account ID
 input string   MasterAccountID      = "";                             // Master account to follow
 input ENUM_LOT_MODE LotMode         = LOT_MIRROR;                    // Lot sizing mode
@@ -215,7 +216,7 @@ int OnInit()
       if(PropGuard_UseCloudRules)
         {
          string rulesResponse;
-         int rc = FetchPropGuardRules(API_Endpoint, API_Key, AccountID, rulesResponse);
+         int rc = FetchPropGuardRules(API_Gateway, API_Key, AccountID, rulesResponse);
          if(rc == 200 && StringLen(rulesResponse) > 5)
             Print("[PropGuard] Cloud rules fetched successfully.");
          else
@@ -271,7 +272,7 @@ void OnTimer()
             DoubleToString(g_equityTracker.GetTotalDrawdownPercent(), 2) + "%";
          int closed = g_propGuard.EmergencyCloseAll(reason);
 
-         PostEmergencyClose(API_Endpoint, API_Key, AccountID, reason,
+         PostEmergencyClose(API_Gateway, API_Key, AccountID, reason,
                             AccountInfoDouble(ACCOUNT_EQUITY), closed);
 
          PlaySound("alert2.wav");
@@ -282,14 +283,14 @@ void OnTimer()
       if(g_equityTracker.ShouldSync())
         {
          string eqJson = g_equityTracker.ToJson();
-         SyncEquityToCloud(API_Endpoint, API_Key, AccountID, eqJson);
+         SyncEquityToCloud(API_Gateway, API_Key, AccountID, eqJson);
         }
 
       //--- Refresh news cache if needed
       if(g_propGuard.ShouldRefreshNews())
         {
          string newsResponse;
-         int rc = FetchNewsEvents(API_Endpoint, API_Key, "USD,EUR,GBP,JPY,CHF,AUD,NZD,CAD", newsResponse);
+         int rc = FetchNewsEvents(API_Gateway, API_Key, "USD,EUR,GBP,JPY,CHF,AUD,NZD,CAD", newsResponse);
          if(rc == 200 && StringLen(newsResponse) > 5)
             g_propGuard.UpdateNewsCache(newsResponse);
         }
@@ -369,7 +370,7 @@ void OnTimer()
            {
             Print("[PropGuard] BLOCKED: ", pgVerdict.blocked_rule, " - ", pgVerdict.blocked_reason);
 
-            PostBlockedTrade(API_Endpoint, API_Key, AccountID,
+            PostBlockedTrade(API_Gateway, API_Key, AccountID,
                pgVerdict.blocked_rule, pgVerdict.blocked_reason,
                ActionToString(signals[i].action), mappedSymbol, lot, evalPrice,
                pgVerdict.current_daily_loss_pct, pgVerdict.current_drawdown_pct,
@@ -453,7 +454,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
             DoubleToString(g_equityTracker.GetTotalDrawdownPercent(), 2) + "%";
          int closed = g_propGuard.EmergencyCloseAll(reason);
 
-         PostEmergencyClose(API_Endpoint, API_Key, AccountID, reason,
+         PostEmergencyClose(API_Gateway, API_Key, AccountID, reason,
                             AccountInfoDouble(ACCOUNT_EQUITY), closed);
 
          PlaySound("alert2.wav");

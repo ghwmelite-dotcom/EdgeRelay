@@ -150,6 +150,93 @@ app.post('/v1/ingest', async (c) => {
   }
 });
 
+// ── Poll (Follower EA → DO) ──────────────────────────────────────
+
+app.get('/v1/poll/:followerAccountId', async (c) => {
+  try {
+    const followerAccountId = c.req.param('followerAccountId');
+
+    // Look up the follower to find its master_account_id
+    const follower = await c.env.DB.prepare(
+      'SELECT master_account_id FROM accounts WHERE id = ? AND role = ? LIMIT 1',
+    )
+      .bind(followerAccountId, 'follower')
+      .first<{ master_account_id: string }>();
+
+    if (!follower || !follower.master_account_id) {
+      return errorResponse('ACCOUNT_NOT_FOUND', 'Follower account not found or not linked to master', 404);
+    }
+
+    // Route to the master's DO for long-poll
+    const doId = c.env.ACCOUNT_RELAY.idFromName(follower.master_account_id);
+    const stub = c.env.ACCOUNT_RELAY.get(doId);
+
+    const doResponse = await stub.fetch(
+      new Request(`https://do/poll/${followerAccountId}?master_account_id=${encodeURIComponent(follower.master_account_id)}`, {
+        method: 'GET',
+        headers: c.req.raw.headers,
+      }),
+    );
+
+    // Pass through the DO response
+    return new Response(doResponse.body, {
+      status: doResponse.status,
+      headers: doResponse.headers,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    console.error('Poll error:', message);
+    return errorResponse('INTERNAL_ERROR', message, 500);
+  }
+});
+
+// ── Execution Report (Follower EA → DO) ──────────────────────────
+
+app.post('/v1/execution', async (c) => {
+  try {
+    const body: unknown = await c.req.json();
+
+    // We need the follower_account_id to find the master's DO
+    const payload = body as Record<string, unknown>;
+    const followerAccountId = payload.follower_account_id as string;
+
+    if (!followerAccountId) {
+      return errorResponse('VALIDATION_ERROR', 'follower_account_id is required', 400);
+    }
+
+    const follower = await c.env.DB.prepare(
+      'SELECT master_account_id FROM accounts WHERE id = ? AND role = ? LIMIT 1',
+    )
+      .bind(followerAccountId, 'follower')
+      .first<{ master_account_id: string }>();
+
+    if (!follower || !follower.master_account_id) {
+      return errorResponse('ACCOUNT_NOT_FOUND', 'Follower account not found', 404);
+    }
+
+    // Route to the master's DO
+    const doId = c.env.ACCOUNT_RELAY.idFromName(follower.master_account_id);
+    const stub = c.env.ACCOUNT_RELAY.get(doId);
+
+    const doResponse = await stub.fetch(
+      new Request('https://do/execution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    );
+
+    return new Response(doResponse.body, {
+      status: doResponse.status,
+      headers: doResponse.headers,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Internal server error';
+    console.error('Execution error:', message);
+    return errorResponse('INTERNAL_ERROR', message, 500);
+  }
+});
+
 // ── Heartbeat ────────────────────────────────────────────────────
 
 app.post('/v1/heartbeat', async (c) => {

@@ -177,6 +177,7 @@ void OnTimer()
    else
      {
       g_connStatus = STATUS_ERROR;
+      PrintFormat("[EdgeRelay] Heartbeat returned HTTP %d", hbResult);
      }
 
    //--- Attempt to flush queue if not empty

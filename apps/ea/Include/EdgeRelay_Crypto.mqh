@@ -112,28 +112,28 @@ string HmacSha256(string message, string key)
 //+------------------------------------------------------------------+
 string SignPayload(Signal &signal, string apiSecret)
   {
-   //--- Build sorted key=value pairs (alphabetical order)
-   string payload = "";
-
-   payload += "account_id=" + signal.account_id;
-   payload += "&action=" + ActionToString(signal.action);
-   payload += "&comment=" + signal.comment;
-   payload += "&magic_number=" + IntegerToString(signal.magic_number);
-   payload += "&order_type=" + OrderTypeToStr(signal.order_type);
-
+   //--- Build sorted JSON (must match worker's verifyHmacSignature)
+   //--- Keys must be in alphabetical order, matching JSON.stringify output
    int digits = (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS);
    if(digits <= 0)
       digits = 5;
 
-   payload += "&price=" + DoubleToString(signal.price, digits);
-   payload += "&sequence_num=" + IntegerToString(signal.sequence_num);
-   payload += "&signal_id=" + signal.signal_id;
-   payload += "&sl=" + DoubleToString(signal.sl, digits);
-   payload += "&symbol=" + signal.symbol;
-   payload += "&ticket=" + IntegerToString(signal.ticket);
-   payload += "&timestamp=" + IntegerToString((long)signal.timestamp);
-   payload += "&tp=" + DoubleToString(signal.tp, digits);
-   payload += "&volume=" + DoubleToString(signal.volume, 8);
+   string payload = "{";
+   payload += "\"account_id\":\"" + JsonEscape(signal.account_id) + "\",";
+   payload += "\"action\":\"" + ActionToString(signal.action) + "\",";
+   payload += "\"comment\":\"" + JsonEscape(signal.comment) + "\",";
+   payload += "\"magic_number\":" + IntegerToString(signal.magic_number) + ",";
+   payload += "\"order_type\":\"" + OrderTypeToStr(signal.order_type) + "\",";
+   payload += "\"price\":" + JsDouble(signal.price, digits) + ",";
+   payload += "\"sequence_num\":" + IntegerToString(signal.sequence_num) + ",";
+   payload += "\"signal_id\":\"" + JsonEscape(signal.signal_id) + "\",";
+   payload += "\"sl\":" + JsDouble(signal.sl, digits) + ",";
+   payload += "\"symbol\":\"" + signal.symbol + "\",";
+   payload += "\"ticket\":" + IntegerToString(signal.ticket) + ",";
+   payload += "\"timestamp\":" + IntegerToString((long)signal.timestamp) + ",";
+   payload += "\"tp\":" + JsDouble(signal.tp, digits) + ",";
+   payload += "\"volume\":" + JsDouble(signal.volume, 8);
+   payload += "}";
 
    return HmacSha256(payload, apiSecret);
   }

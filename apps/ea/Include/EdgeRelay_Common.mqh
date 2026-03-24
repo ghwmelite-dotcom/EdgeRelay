@@ -154,14 +154,14 @@ string ActionToString(ENUM_SIGNAL_ACTION action)
   {
    switch(action)
      {
-      case SIGNAL_OPEN:           return "OPEN";
-      case SIGNAL_MODIFY:         return "MODIFY";
-      case SIGNAL_PARTIAL_CLOSE:  return "PARTIAL_CLOSE";
-      case SIGNAL_CLOSE:          return "CLOSE";
-      case SIGNAL_PENDING:        return "PENDING";
-      case SIGNAL_CANCEL_PENDING: return "CANCEL_PENDING";
+      case SIGNAL_OPEN:           return "open";
+      case SIGNAL_MODIFY:         return "modify";
+      case SIGNAL_PARTIAL_CLOSE:  return "partial_close";
+      case SIGNAL_CLOSE:          return "close";
+      case SIGNAL_PENDING:        return "pending";
+      case SIGNAL_CANCEL_PENDING: return "cancel_pending";
      }
-   return "UNKNOWN";
+   return "unknown";
   }
 
 //+------------------------------------------------------------------+
@@ -171,22 +171,42 @@ string OrderTypeToStr(ENUM_ORDER_TYPE type)
   {
    switch(type)
      {
-      case ORDER_TYPE_BUY:             return "BUY";
-      case ORDER_TYPE_SELL:            return "SELL";
-      case ORDER_TYPE_BUY_LIMIT:       return "BUY_LIMIT";
-      case ORDER_TYPE_SELL_LIMIT:      return "SELL_LIMIT";
-      case ORDER_TYPE_BUY_STOP:        return "BUY_STOP";
-      case ORDER_TYPE_SELL_STOP:       return "SELL_STOP";
-      case ORDER_TYPE_BUY_STOP_LIMIT:  return "BUY_STOP_LIMIT";
-      case ORDER_TYPE_SELL_STOP_LIMIT: return "SELL_STOP_LIMIT";
-      case ORDER_TYPE_CLOSE_BY:        return "CLOSE_BY";
+      case ORDER_TYPE_BUY:             return "buy";
+      case ORDER_TYPE_SELL:            return "sell";
+      case ORDER_TYPE_BUY_LIMIT:       return "buy_limit";
+      case ORDER_TYPE_SELL_LIMIT:      return "sell_limit";
+      case ORDER_TYPE_BUY_STOP:        return "buy_stop";
+      case ORDER_TYPE_SELL_STOP:       return "sell_stop";
+      case ORDER_TYPE_BUY_STOP_LIMIT:  return "buy_stop_limit";
+      case ORDER_TYPE_SELL_STOP_LIMIT: return "sell_stop_limit";
+      case ORDER_TYPE_CLOSE_BY:        return "close_by";
      }
-   return "UNKNOWN";
+   return "unknown";
   }
 
 //+------------------------------------------------------------------+
 //| Escape a string for JSON output                                   |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Format double like JavaScript's JSON.stringify (strip trailing 0) |
+//+------------------------------------------------------------------+
+string JsDouble(double value, int digits)
+  {
+   if(value == 0.0)
+      return "0";
+   string s = DoubleToString(value, digits);
+   //--- Strip trailing zeros after decimal point
+   if(StringFind(s, ".") >= 0)
+     {
+      while(StringLen(s) > 1 && StringGetCharacter(s, StringLen(s) - 1) == '0')
+         s = StringSubstr(s, 0, StringLen(s) - 1);
+      //--- Remove trailing decimal point
+      if(StringLen(s) > 0 && StringGetCharacter(s, StringLen(s) - 1) == '.')
+         s = StringSubstr(s, 0, StringLen(s) - 1);
+     }
+   return s;
+  }
+
 string JsonEscape(string text)
   {
    string result = text;
@@ -211,15 +231,14 @@ string SignalToJson(Signal &signal)
    json += "\"action\":\"" + ActionToString(signal.action) + "\",";
    json += "\"order_type\":\"" + OrderTypeToStr(signal.order_type) + "\",";
    json += "\"symbol\":\"" + JsonEscape(signal.symbol) + "\",";
-   json += "\"volume\":" + DoubleToString(signal.volume, 8) + ",";
-
    int digits = (int)SymbolInfoInteger(signal.symbol, SYMBOL_DIGITS);
    if(digits <= 0)
       digits = 5;
 
-   json += "\"price\":" + DoubleToString(signal.price, digits) + ",";
-   json += "\"sl\":" + DoubleToString(signal.sl, digits) + ",";
-   json += "\"tp\":" + DoubleToString(signal.tp, digits) + ",";
+   json += "\"volume\":" + JsDouble(signal.volume, 8) + ",";
+   json += "\"price\":" + JsDouble(signal.price, digits) + ",";
+   json += "\"sl\":" + JsDouble(signal.sl, digits) + ",";
+   json += "\"tp\":" + JsDouble(signal.tp, digits) + ",";
    json += "\"magic_number\":" + IntegerToString(signal.magic_number) + ",";
    json += "\"ticket\":" + IntegerToString(signal.ticket) + ",";
    json += "\"comment\":\"" + JsonEscape(signal.comment) + "\",";

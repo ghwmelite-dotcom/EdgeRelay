@@ -352,3 +352,56 @@ export const PROP_FIRM_PRESETS: Record<string, Partial<PropRuleSet>> = {
     drawdown_type: 'eod_trailing',
   },
 };
+
+// ── Journal Sync ────────────────────────────────────────────
+
+export const DealDirection = z.enum(['buy', 'sell']);
+export type DealDirection = z.infer<typeof DealDirection>;
+
+export const DealEntry = z.enum(['in', 'out', 'inout']);
+export type DealEntry = z.infer<typeof DealEntry>;
+
+export const SessionTag = z.enum(['asian', 'london', 'new_york', 'off_hours']);
+export type SessionTag = z.infer<typeof SessionTag>;
+
+export const JournalTrade = z.object({
+  deal_ticket: z.number().int().positive(),
+  order_ticket: z.number().int().optional(),
+  position_id: z.number().int().optional(),
+  symbol: z.string().min(1),
+  direction: DealDirection,
+  deal_entry: DealEntry,
+  volume: z.number().positive(),
+  price: z.number().optional(),
+  sl: z.number().optional(),
+  tp: z.number().optional(),
+  time: z.number().int().positive(),
+  profit: z.number().optional(),
+  commission: z.number().optional(),
+  swap: z.number().optional(),
+  magic_number: z.number().int().optional(),
+  comment: z.string().max(256).optional(),
+  balance_at_trade: z.number().optional(),
+  equity_at_trade: z.number().optional(),
+  spread_at_entry: z.number().int().optional(),
+  atr_at_entry: z.number().optional(),
+  session_tag: SessionTag.optional(),
+  duration_seconds: z.number().int().nonnegative().optional().nullable(),
+  pips: z.number().optional().nullable(),
+  risk_reward_ratio: z.number().optional().nullable(),
+});
+export type JournalTrade = z.infer<typeof JournalTrade>;
+
+export const JournalSyncPayload = z.object({
+  account_id: z.string().min(1),
+  timestamp: z.number().int().positive(),
+  trades: z.array(JournalTrade).min(1).max(10),
+  hmac_signature: z.string().min(1),
+});
+export type JournalSyncPayload = z.infer<typeof JournalSyncPayload>;
+
+export const JOURNAL_RATE_LIMIT_PER_MINUTE = 120;
+
+export function validateJournalSyncPayload(data: unknown) {
+  return JournalSyncPayload.safeParse(data);
+}

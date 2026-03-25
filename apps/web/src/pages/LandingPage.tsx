@@ -290,24 +290,25 @@ export function LandingPage() {
               </span>
             </div>
 
-            <h1 className="font-display font-black leading-[0.95] tracking-tight">
+            <h1 className="font-display font-black leading-[1.05] tracking-tight">
               <span
-                className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-white"
+                className="animate-fade-in-up block text-4xl md:text-5xl lg:text-6xl text-white"
                 style={{ animationDelay: '100ms' }}
               >
-                Copy Trades
+                Copy Trades Across
               </span>
               <span
-                className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-white"
+                className="animate-fade-in-up block text-4xl md:text-5xl lg:text-6xl text-white mt-1"
                 style={{ animationDelay: '250ms' }}
               >
-                Across Any VPS.
+                Any VPS.{' '}
+                <span className="text-neon-cyan glow-text-cyan">Any Broker.</span>
               </span>
               <span
-                className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-neon-cyan glow-text-cyan"
+                className="animate-fade-in-up block text-4xl md:text-5xl lg:text-6xl text-neon-green glow-text-green mt-1"
                 style={{ animationDelay: '400ms' }}
               >
-                Any Broker. Free.
+                Completely Free.
               </span>
             </h1>
 

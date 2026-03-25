@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Download, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -49,8 +49,10 @@ const setupSteps: SetupStep[] = [
           </li>
           <li>Add the following URL:</li>
         </ol>
-        <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50">
-          <code className="text-sm text-neon-green">https://signal.edgerelay.io</code>
+        <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-3 py-2 border border-terminal-border/50 space-y-1">
+          <code className="block text-sm text-neon-green">https://edgerelay-signal-ingestion.ghwmelite.workers.dev</code>
+          <code className="block text-sm text-neon-green">https://edgerelay-api.ghwmelite.workers.dev</code>
+          <code className="block text-sm text-neon-green">https://edgerelay-journal-sync.ghwmelite.workers.dev</code>
         </div>
         <p className="text-sm text-slate-400">Click OK to save the settings.</p>
       </div>
@@ -245,7 +247,7 @@ function EADownloadCard({
   type,
   accounts,
 }: {
-  type: 'master' | 'follower';
+  type: 'master' | 'follower' | 'journal';
   accounts: Account[];
 }) {
   const [downloading, setDownloading] = useState(false);
@@ -253,13 +255,18 @@ function EADownloadCard({
   const token = useAuthStore((s) => s.token);
 
   const isMaster = type === 'master';
-  const Icon = isMaster ? Upload : Download;
-  const iconColor = isMaster ? 'text-neon-cyan' : 'text-neon-green';
-  const iconGlow = isMaster
+  const isJournal = type === 'journal';
+  const Icon = isJournal ? BookOpen : isMaster ? Upload : Download;
+  const iconColor = isJournal ? 'text-neon-purple' : isMaster ? 'text-neon-cyan' : 'text-neon-green';
+  const iconGlow = isJournal
+    ? 'shadow-[0_0_15px_#b18cff25,0_0_30px_#b18cff10]'
+    : isMaster
     ? 'shadow-[0_0_15px_#00e5ff25,0_0_30px_#00e5ff10]'
     : 'shadow-[0_0_15px_#00ff9d25,0_0_30px_#00ff9d10]';
 
-  const matchingAccount = accounts.find((a) => a.role === type && a.is_active);
+  const matchingAccount = isJournal
+    ? accounts.find((a) => a.is_active)
+    : accounts.find((a) => a.role === type && a.is_active);
 
   const handleDownload = async () => {
     if (!matchingAccount) {
@@ -271,7 +278,8 @@ function EADownloadCard({
     setDownloading(true);
 
     try {
-      const res = await fetch(`/v1/accounts/${matchingAccount.id}/ea-download/${type}`, {
+      const downloadType = isJournal ? 'journal' : type;
+      const res = await fetch(`/v1/accounts/${matchingAccount.id}/ea-download/${downloadType}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -286,7 +294,7 @@ function EADownloadCard({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `EdgeRelay_${isMaster ? 'Master' : 'Follower'}.ex5`;
+      a.download = isJournal ? 'TradeJournal_Sync.ex5' : `EdgeRelay_${isMaster ? 'Master' : 'Follower'}.ex5`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -306,10 +314,12 @@ function EADownloadCard({
         </div>
         <div className="flex-1 space-y-1">
           <h3 className="font-display text-base font-semibold text-slate-100">
-            EdgeRelay {isMaster ? 'Master' : 'Follower'} EA
+            {isJournal ? 'TradeJournal Sync' : `EdgeRelay ${isMaster ? 'Master' : 'Follower'}`} EA
           </h3>
           <p className="text-sm text-slate-400">
-            {isMaster
+            {isJournal
+              ? 'Install on any MT5 account. Syncs every trade to your journal with zero drops — real-time capture + history catch-up.'
+              : isMaster
               ? 'Install on your master MT5 account. Captures and sends trade signals to the edge network.'
               : 'Install on each follower account. Receives signals and executes trades automatically.'}
           </p>
@@ -317,13 +327,13 @@ function EADownloadCard({
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <Badge variant={isMaster ? 'cyan' : 'green'}>v1.0.0</Badge>
-        <span className="text-xs text-slate-500 font-mono-nums">{isMaster ? '~45 KB' : '~52 KB'}</span>
+        <Badge variant={isJournal ? 'purple' : isMaster ? 'cyan' : 'green'}>v1.0.0</Badge>
+        <span className="text-xs text-slate-500 font-mono-nums">{isJournal ? '~38 KB' : isMaster ? '~45 KB' : '~52 KB'}</span>
       </div>
 
       <div className="mt-4">
         <Button
-          variant={isMaster ? 'primary' : 'secondary'}
+          variant={isMaster || isJournal ? 'primary' : 'secondary'}
           size="md"
           isLoading={downloading}
           onClick={handleDownload}
@@ -398,11 +408,12 @@ export function DownloadsPage() {
 
       {/* EA Download Cards */}
       <div
-        className="grid gap-6 sm:grid-cols-2 animate-fade-in-up"
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in-up"
         style={{ animationDelay: '60ms' }}
       >
         <EADownloadCard type="master" accounts={accounts} />
         <EADownloadCard type="follower" accounts={accounts} />
+        <EADownloadCard type="journal" accounts={accounts} />
       </div>
 
       {/* Setup Guide */}

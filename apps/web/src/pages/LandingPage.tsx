@@ -142,32 +142,30 @@ const FOOTER_LINKS = [
 ];
 
 /* ────────────────────────────────────────────────────────────── */
-/*  Constellation particles for the hero                        */
+/*  Particles — reduced to 12 for surgical precision             */
 /* ────────────────────────────────────────────────────────────── */
 
-const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
   id: i,
-  size: 2 + Math.random() * 2,
+  size: 1.5 + Math.random() * 2.5,
   x: Math.random() * 100,
   y: Math.random() * 100,
-  opacity: 0.15 + Math.random() * 0.4,
+  opacity: 0.1 + Math.random() * 0.3,
   delay: Math.random() * 6,
-  duration: 4 + Math.random() * 4,
+  duration: 5 + Math.random() * 5,
 }));
 
-/* Extended particles for cinematic hero — 30 total with size & color variety */
-const PARTICLES_EXTENDED = [
-  ...PARTICLES,
-  ...Array.from({ length: 12 }, (_, i) => ({
-    id: 18 + i,
-    size: i % 3 === 0 ? 4 + Math.random() * 3 : 1.5 + Math.random() * 2,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    opacity: 0.1 + Math.random() * 0.35,
-    delay: Math.random() * 8,
-    duration: 5 + Math.random() * 5,
-    purple: i % 4 === 0,
-  })),
+/* ────────────────────────────────────────────────────────────── */
+/*  Terminal signal feed lines                                   */
+/* ────────────────────────────────────────────────────────────── */
+
+const SIGNAL_LINES = [
+  { time: '14:32:07', pair: 'EURUSD', action: 'BUY', lot: '0.50', status: 'ok' },
+  { time: '14:31:44', pair: 'XAUUSD', action: 'SELL', lot: '1.00', status: 'ok' },
+  { time: '14:28:19', pair: 'GBPJPY', action: 'CLOSE', lot: '0.30', status: 'ok' },
+  { time: '14:25:02', pair: 'USDJPY', action: 'BUY', lot: '0.20', status: 'pending' },
+  { time: '14:22:58', pair: 'NZDUSD', action: 'SELL', lot: '0.75', status: 'ok' },
+  { time: '14:19:33', pair: 'EURJPY', action: 'BUY', lot: '0.40', status: 'ok' },
 ];
 
 /* ────────────────────────────────────────────────────────────── */
@@ -191,7 +189,7 @@ export function LandingPage() {
       <div className="noise-overlay pointer-events-none fixed inset-0 z-[9999]" />
 
       {/* ══════════════════════════════════════════════════════════
-          1. NAV
+          1. NAV — Minimal, authoritative
           ══════════════════════════════════════════════════════════ */}
       <nav
         className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -225,7 +223,7 @@ export function LandingPage() {
             </Link>
             <Link
               to="/register"
-              className="btn-premium signal-pulse inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
+              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
             >
               Get Started Free
             </Link>
@@ -234,51 +232,18 @@ export function LandingPage() {
       </nav>
 
       {/* ══════════════════════════════════════════════════════════
-          2. HERO
+          2. HERO — Split layout: editorial left, live terminal right
           ══════════════════════════════════════════════════════════ */}
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6">
-        {/* Layer 0: Hex pattern */}
-        <div className="bg-hex pointer-events-none absolute inset-0 opacity-60" />
-
-        {/* Layer 1: Grid */}
+      <section className="relative min-h-screen overflow-hidden px-6">
+        {/* Layer 0: Grid */}
         <div className="bg-grid pointer-events-none absolute inset-0" />
 
-        {/* Layer 2: Ambient glow orbs */}
+        {/* Layer 1: Particles — 12, surgical */}
         <div className="pointer-events-none absolute inset-0">
-          <div
-            className="absolute left-1/2 top-1/4 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,#00e5ff08_0%,transparent_70%)]"
-            style={{ animation: 'breathe 8s ease-in-out infinite' }}
-          />
-          <div
-            className="absolute bottom-1/4 right-1/4 h-[400px] w-[400px] rounded-full bg-[radial-gradient(circle,#b18cff06_0%,transparent_70%)]"
-            style={{ animation: 'breathe 10s ease-in-out infinite 3s' }}
-          />
-        </div>
-
-        {/* Layer 2.5: Animated signal rings — radar pulse */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          {[0, 1, 2].map((ring) => (
-            <div
-              key={ring}
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-neon-cyan/[0.08]"
-              style={{
-                width: `${(ring + 1) * 280}px`,
-                height: `${(ring + 1) * 280}px`,
-                animation: `signal-pulse ${3 + ring * 0.5}s cubic-bezier(0, 0.5, 0.5, 1) infinite ${ring * 0.8}s`,
-                opacity: 0.4 - ring * 0.1,
-              }}
-            />
-          ))}
-          {/* Center dot */}
-          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neon-cyan/30 shadow-[0_0_20px_#00e5ff40,0_0_60px_#00e5ff20]" />
-        </div>
-
-        {/* Layer 3: Constellation particles — 30 with variety */}
-        <div className="pointer-events-none absolute inset-0">
-          {PARTICLES_EXTENDED.map((p) => (
+          {PARTICLES.map((p) => (
             <div
               key={p.id}
-              className={`absolute rounded-full ${'purple' in p && p.purple ? 'bg-neon-purple' : 'bg-neon-cyan'}`}
+              className="absolute rounded-full bg-neon-cyan"
               style={{
                 width: p.size,
                 height: p.size,
@@ -291,108 +256,264 @@ export function LandingPage() {
           ))}
         </div>
 
-        {/* Hero content */}
-        <div className="relative z-10 mx-auto max-w-5xl text-center">
-          <h1 className="font-display text-6xl font-black leading-[1.05] tracking-tight md:text-8xl lg:text-9xl">
-            <span
-              className="animate-fade-in-up text-gradient-hero block"
+        {/* Layer 2: Large radial glow behind terminal area */}
+        <div className="pointer-events-none absolute inset-0">
+          <div
+            className="absolute right-0 top-1/3 h-[700px] w-[700px] -translate-y-1/4 translate-x-1/6 rounded-full"
+            style={{
+              background: 'radial-gradient(circle, rgba(0,229,255,0.06) 0%, rgba(0,229,255,0.02) 40%, transparent 70%)',
+              animation: 'breathe 8s ease-in-out infinite',
+            }}
+          />
+        </div>
+
+        {/* Hero content — split layout */}
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-12 pt-24 md:pt-32 lg:flex-row lg:items-center lg:gap-16 lg:pt-40">
+
+          {/* LEFT — Editorial headline */}
+          <div className="flex-1 lg:max-w-[560px]">
+            {/* Classification badge */}
+            <div
+              className="animate-fade-in-up mb-8 inline-flex items-center gap-2.5 rounded-full border border-neon-cyan/20 bg-neon-cyan/[0.05] px-4 py-1.5"
               style={{ animationDelay: '0ms' }}
             >
-              Stop Losing Prop Firm
-            </span>
-            <span
-              className="animate-fade-in-up block"
-              style={{ animationDelay: '150ms' }}
-            >
-              <span className="text-gradient-hero">Accounts to </span>
-              <span className="relative inline-block">
-                <span className="text-neon-cyan glow-text-cyan">Missed Copies.</span>
-                {/* Animated gradient underline */}
-                <span
-                  className="absolute -bottom-2 left-0 h-[2px] w-full"
-                  style={{
-                    background: 'linear-gradient(90deg, transparent, #00e5ff, #b18cff, #00e5ff, transparent)',
-                    backgroundSize: '200% 100%',
-                    animation: 'shimmer 3s ease-in-out infinite',
-                  }}
-                />
-              </span>
-            </span>
-          </h1>
-
-          <p
-            className="animate-fade-in-up mx-auto mt-8 max-w-2xl text-lg text-slate-400 md:text-xl"
-            style={{ animationDelay: '300ms' }}
-          >
-            Edge-native trade copying powered by Cloudflare&rsquo;s global network.{' '}
-            <span className="text-neon-cyan">Sub-500ms execution</span>, built-in PropGuard protection, zero VPS required.
-          </p>
-
-          {/* CTA row */}
-          <div
-            className="animate-fade-in-up mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-            style={{ animationDelay: '450ms' }}
-          >
-            <Link
-              to="/register"
-              className="btn-premium signal-pulse inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)]"
-            >
-              Get Started Free <ArrowRight className="h-4 w-4" />
-            </Link>
-            <a
-              href="#how-it-works"
-              className="inline-flex items-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 px-10 py-4 text-base font-semibold text-slate-200 backdrop-blur transition-all hover:border-terminal-border-hover hover:bg-terminal-border/40"
-            >
-              See How It Works
-            </a>
-          </div>
-
-          {/* Trust badge */}
-          <div
-            className="animate-fade-in-up mt-8 inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-terminal-card/40 px-5 py-2 backdrop-blur"
-            style={{ animationDelay: '600ms' }}
-          >
-            <ShieldCheck className="h-4 w-4 text-neon-cyan" />
-            <span className="text-sm text-slate-400">
-              Trusted by <span className="font-semibold text-white">300+</span> prop firm traders
-            </span>
-          </div>
-
-          <div className="divider-diamond mx-auto mt-16 max-w-md" />
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════
-          3. STATS BAR
-          ══════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 px-6 py-14">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-4">
-          {STATS.map((s, i) => (
-            <div
-              key={s.label}
-              className="glass-premium stat-card-cyan animate-fade-in-up rounded-xl px-5 py-5 text-center"
-              style={{ animationDelay: `${i * 80}ms` }}
-            >
-              <span className="font-mono-nums block text-2xl font-bold text-neon-cyan glow-text-cyan">
-                {s.value}
-              </span>
-              <span className="mt-1.5 block text-xs uppercase tracking-widest text-terminal-muted">
-                {s.label}
+              <span className="live-dot" style={{ width: 5, height: 5 }} />
+              <span className="font-mono-nums text-[10px] uppercase tracking-[0.2em] text-neon-cyan">
+                Edge-Native Trade Copier
               </span>
             </div>
-          ))}
+
+            <h1 className="font-display font-black leading-[0.95] tracking-tight">
+              <span
+                className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-white"
+                style={{ animationDelay: '100ms' }}
+              >
+                Stop Losing
+              </span>
+              <span
+                className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-white"
+                style={{ animationDelay: '250ms' }}
+              >
+                Prop Firm Accounts
+              </span>
+              <span
+                className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-neon-cyan glow-text-cyan"
+                style={{ animationDelay: '400ms' }}
+              >
+                to Missed Copies.
+              </span>
+            </h1>
+
+            <p
+              className="animate-fade-in-up mt-8 max-w-lg text-lg leading-relaxed text-slate-400"
+              style={{ animationDelay: '550ms' }}
+            >
+              Edge-native trade copying powered by Cloudflare&rsquo;s global network.{' '}
+              <span className="text-slate-200">Sub-500ms execution</span>, built-in PropGuard
+              protection, zero VPS required.
+            </p>
+
+            {/* CTA row */}
+            <div
+              className="animate-fade-in-up mt-10 flex flex-col gap-4 sm:flex-row"
+              style={{ animationDelay: '700ms' }}
+            >
+              <Link
+                to="/register"
+                className="btn-premium signal-pulse inline-flex items-center justify-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)]"
+              >
+                Get Started Free <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 px-10 py-4 text-base font-semibold text-slate-200 backdrop-blur transition-all hover:border-terminal-border-hover hover:bg-terminal-border/40"
+              >
+                See How It Works
+              </a>
+            </div>
+
+            {/* Trust badge */}
+            <div
+              className="animate-fade-in-up mt-8 inline-flex items-center gap-2"
+              style={{ animationDelay: '850ms' }}
+            >
+              <ShieldCheck className="h-4 w-4 text-neon-cyan/60" />
+              <span className="text-sm text-slate-500">
+                Trusted by <span className="font-semibold text-slate-300">300+</span> prop firm traders
+              </span>
+            </div>
+          </div>
+
+          {/* RIGHT — Live terminal readout */}
+          <div
+            className="animate-fade-in-up w-full flex-1 lg:max-w-[520px]"
+            style={{ animationDelay: '500ms' }}
+          >
+            <div
+              className="relative overflow-hidden rounded-xl border border-neon-cyan/20 bg-terminal-bg/90"
+              style={{
+                boxShadow: '0 0 40px rgba(0,229,255,0.08), 0 0 80px rgba(0,229,255,0.04), inset 0 1px 0 rgba(255,255,255,0.03)',
+              }}
+            >
+              {/* Terminal header bar */}
+              <div className="flex items-center justify-between border-b border-terminal-border px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-neon-red/60" />
+                  <div className="h-2 w-2 rounded-full bg-neon-amber/60" />
+                  <div className="h-2 w-2 rounded-full bg-neon-green/60" />
+                </div>
+                <span className="font-mono-nums text-[10px] uppercase tracking-[0.15em] text-terminal-muted">
+                  Signal Feed
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="live-dot" style={{ width: 5, height: 5 }} />
+                  <span className="font-mono-nums text-[10px] text-neon-green/70">LIVE</span>
+                </div>
+              </div>
+
+              {/* Column headers */}
+              <div className="border-b border-terminal-border/50 px-4 py-2">
+                <div className="grid grid-cols-[72px_80px_56px_52px_32px] gap-2 font-mono-nums text-[10px] uppercase tracking-widest text-terminal-muted">
+                  <span>Time</span>
+                  <span>Symbol</span>
+                  <span>Side</span>
+                  <span>Lots</span>
+                  <span className="text-right">St</span>
+                </div>
+              </div>
+
+              {/* Signal rows */}
+              <div className="px-4 py-1">
+                {SIGNAL_LINES.map((line, i) => (
+                  <div
+                    key={i}
+                    className="data-row grid grid-cols-[72px_80px_56px_52px_32px] gap-2 rounded px-0 py-1.5 font-mono-nums text-[13px]"
+                  >
+                    <span className="text-terminal-muted">{line.time}</span>
+                    <span className="font-semibold text-slate-200">{line.pair}</span>
+                    <span
+                      className={
+                        line.action === 'BUY'
+                          ? 'text-neon-green'
+                          : line.action === 'SELL'
+                            ? 'text-neon-red'
+                            : 'text-neon-amber'
+                      }
+                    >
+                      {line.action}
+                    </span>
+                    <span className="text-slate-400">{line.lot}</span>
+                    <span className="text-right">
+                      {line.status === 'ok' ? (
+                        <span className="text-neon-green">&#10003;</span>
+                      ) : (
+                        <span className="text-neon-amber animate-pulse">&#9679;</span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Blinking cursor line */}
+                <div className="py-1.5 font-mono-nums text-[13px]">
+                  <span
+                    className="inline-block h-[15px] w-[8px] bg-neon-cyan/70"
+                    style={{
+                      animation: 'pulse-glow 1.2s step-start infinite',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Terminal footer — status bar */}
+              <div className="flex items-center justify-between border-t border-terminal-border px-4 py-2">
+                <div className="flex items-center gap-4 font-mono-nums text-[10px] uppercase tracking-wider text-terminal-muted">
+                  <span>
+                    Latency:{' '}
+                    <span className="text-neon-green">38ms</span>
+                  </span>
+                  <span className="text-terminal-border">|</span>
+                  <span>
+                    Uptime:{' '}
+                    <span className="text-neon-cyan">99.9%</span>
+                  </span>
+                  <span className="text-terminal-border">|</span>
+                  <span>
+                    Signals:{' '}
+                    <span className="text-slate-300">1,247</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Decorative data beneath terminal */}
+            <div className="mt-3 flex items-center justify-between px-1 font-mono-nums text-[10px] text-terminal-muted/50">
+              <span>EDGE://CF-WORKER.RELAY</span>
+              <span>AES-256-GCM</span>
+              <span>HMAC-SHA256</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
+          <div className="flex flex-col items-center gap-2 text-terminal-muted/40">
+            <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
+            <div className="h-8 w-[1px] bg-gradient-to-b from-terminal-muted/30 to-transparent" />
+          </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          4. PRODUCT ECOSYSTEM
+          3. STATS BAR — Cockpit instrument strip
+          ══════════════════════════════════════════════════════════ */}
+      <section className="relative z-10 px-6 py-16">
+        <div className="mx-auto max-w-4xl">
+          <div
+            className="glass-premium animate-fade-in-up flex flex-col items-stretch overflow-hidden rounded-2xl sm:flex-row"
+            style={{
+              boxShadow: '0 0 30px rgba(0,229,255,0.05), inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
+          >
+            {STATS.map((s, i) => (
+              <div
+                key={s.label}
+                className={`flex flex-1 flex-col items-center justify-center px-6 py-6 ${
+                  i < STATS.length - 1
+                    ? 'border-b border-terminal-border/50 sm:border-b-0 sm:border-r'
+                    : ''
+                }`}
+              >
+                <span className="font-mono-nums text-2xl font-bold text-neon-cyan glow-text-cyan">
+                  {s.value}
+                </span>
+                <span className="mt-1 text-[10px] uppercase tracking-[0.2em] text-terminal-muted">
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          4. PRODUCT ECOSYSTEM — PropGuard spans 2 cols
           ══════════════════════════════════════════════════════════ */}
       <section id="ecosystem" className="px-6 py-20 md:py-32">
         <div className="mx-auto max-w-6xl">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Platform
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
             The EdgeRelay Ecosystem
           </h2>
-          <p className="animate-fade-in-up mt-4 text-center text-slate-400" style={{ animationDelay: '60ms' }}>
+          <p
+            className="animate-fade-in-up mt-4 text-center text-slate-400"
+            style={{ animationDelay: '60ms' }}
+          >
             More than a copier — a complete trading infrastructure
           </p>
 
@@ -401,13 +522,14 @@ export function LandingPage() {
               <div
                 key={item.title}
                 className={`glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6 ${
-                  item.badge === 'LIVE' ? 'glow-cyan border-gradient' : ''
+                  item.badge === 'LIVE'
+                    ? 'glow-cyan border-gradient sm:col-span-2'
+                    : ''
                 }`}
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="flex items-start justify-between">
                   <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00e5ff30]">
-                    {/* Radial glow behind icon */}
                     <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle,#00e5ff15_0%,transparent_70%)]" />
                     <item.icon className="relative z-10 h-6 w-6 text-neon-cyan" />
                   </div>
@@ -420,7 +542,8 @@ export function LandingPage() {
                     <span
                       className="chip border border-neon-amber/20 bg-neon-amber/10 text-neon-amber"
                       style={{
-                        background: 'linear-gradient(90deg, #ffb80010, #ffb80020, #ffb80010)',
+                        background:
+                          'linear-gradient(90deg, #ffb80010, #ffb80020, #ffb80010)',
                         backgroundSize: '200% 100%',
                         animation: 'shimmer 4s ease-in-out infinite',
                       }}
@@ -429,7 +552,9 @@ export function LandingPage() {
                     </span>
                   )}
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold text-white">{item.title}</h3>
+                <h3 className="mt-4 font-display text-lg font-semibold text-white">
+                  {item.title}
+                </h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.desc}</p>
               </div>
             ))}
@@ -442,6 +567,13 @@ export function LandingPage() {
           ══════════════════════════════════════════════════════════ */}
       <section id="how-it-works" className="px-6 py-20 md:py-32">
         <div className="mx-auto max-w-5xl text-center">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Architecture
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
           <h2 className="animate-fade-in-up font-display text-3xl font-bold md:text-4xl">
             How It Works
           </h2>
@@ -452,22 +584,23 @@ export function LandingPage() {
           >
             {/* Master EA Card */}
             <div className="glass flex w-full flex-col items-center justify-center rounded-2xl p-6 md:w-[200px]">
-              <p className="font-mono-nums text-[11px] uppercase tracking-widest text-terminal-muted">Source</p>
+              <p className="font-mono-nums text-[11px] uppercase tracking-widest text-terminal-muted">
+                Source
+              </p>
               <p className="mt-1 font-display text-lg font-semibold text-white">Master EA</p>
             </div>
 
             {/* Connector 1 */}
             <div className="relative hidden items-center md:flex">
-              <div className="h-px w-16 border-t-2 border-dashed border-neon-cyan/30" style={{ animation: 'shimmer 3s ease-in-out infinite' }} />
-              {/* Traveling dot */}
+              <div
+                className="h-px w-16 border-t-2 border-dashed border-neon-cyan/30"
+                style={{ animation: 'shimmer 3s ease-in-out infinite' }}
+              />
               <div
                 className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-neon-cyan shadow-[0_0_8px_#00e5ff]"
-                style={{
-                  animation: 'travel-right 2s ease-in-out infinite',
-                }}
+                style={{ animation: 'travel-right 2s ease-in-out infinite' }}
               />
             </div>
-            {/* Vertical connector for mobile */}
             <div className="relative flex h-10 items-center justify-center md:hidden">
               <div className="h-full w-px border-l-2 border-dashed border-neon-cyan/30" />
               <div
@@ -476,14 +609,19 @@ export function LandingPage() {
               />
             </div>
 
-            {/* Cloudflare Edge Card — the hero */}
+            {/* Cloudflare Edge Card */}
             <div className="glow-cyan-strong border-gradient glass z-10 flex w-full flex-col items-center rounded-2xl p-8 md:w-[300px] md:scale-110">
-              <p className="font-mono-nums text-[11px] uppercase tracking-widest text-neon-cyan">Edge Network</p>
+              <p className="font-mono-nums text-[11px] uppercase tracking-widest text-neon-cyan">
+                Edge Network
+              </p>
               <p className="mt-1 font-display text-xl font-bold text-white">Cloudflare Edge</p>
               <p className="font-mono-nums mt-0.5 text-sm text-terminal-muted">300+ PoPs</p>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 {['HMAC Auth', 'Dedup', 'Equity Guard', 'Lot Sizing'].map((label) => (
-                  <span key={label} className="chip border border-neon-cyan/20 bg-neon-cyan/10 text-neon-cyan">
+                  <span
+                    key={label}
+                    className="chip border border-neon-cyan/20 bg-neon-cyan/10 text-neon-cyan"
+                  >
                     {label}
                   </span>
                 ))}
@@ -492,7 +630,10 @@ export function LandingPage() {
 
             {/* Connector 2 */}
             <div className="relative hidden items-center md:flex">
-              <div className="h-px w-16 border-t-2 border-dashed border-neon-cyan/30" style={{ animation: 'shimmer 3s ease-in-out infinite 1s' }} />
+              <div
+                className="h-px w-16 border-t-2 border-dashed border-neon-cyan/30"
+                style={{ animation: 'shimmer 3s ease-in-out infinite 1s' }}
+              />
               <div
                 className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-neon-cyan shadow-[0_0_8px_#00e5ff]"
                 style={{ animation: 'travel-right 2s ease-in-out infinite 1s' }}
@@ -508,7 +649,9 @@ export function LandingPage() {
 
             {/* Follower EA Card */}
             <div className="glass flex w-full flex-col items-center justify-center rounded-2xl p-6 md:w-[200px]">
-              <p className="font-mono-nums text-[11px] uppercase tracking-widest text-terminal-muted">Destination</p>
+              <p className="font-mono-nums text-[11px] uppercase tracking-widest text-terminal-muted">
+                Destination
+              </p>
               <p className="mt-1 font-display text-lg font-semibold text-white">Follower EA</p>
             </div>
           </div>
@@ -516,71 +659,93 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          6. FEATURES GRID
+          6. FEATURES — Alternating layout
           ══════════════════════════════════════════════════════════ */}
       <section id="features" className="px-6 py-20 md:py-32">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Capabilities
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
             Everything You Need
           </h2>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f, i) => (
-              <div
-                key={f.title}
-                className={`glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6 ${
-                  i % 2 === 0 ? 'stat-card-cyan' : 'stat-card-green'
-                }`}
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00e5ff30]">
-                  <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle,#00e5ff15_0%,transparent_70%)]" />
-                  <f.icon className="relative z-10 h-6 w-6 text-neon-cyan" />
+          <div className="mt-14 space-y-6">
+            {FEATURES.map((f, i) => {
+              const isEven = i % 2 === 0;
+              return (
+                <div
+                  key={f.title}
+                  className={`glass-premium card-hover-premium animate-fade-in-up flex flex-col items-start gap-6 rounded-2xl p-6 md:flex-row md:items-center ${
+                    isEven ? '' : 'md:flex-row-reverse'
+                  }`}
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  {/* Icon block */}
+                  <div
+                    className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 ${
+                      isEven ? 'md:mr-2' : 'md:ml-2'
+                    }`}
+                  >
+                    <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle,#00e5ff15_0%,transparent_70%)]" />
+                    <f.icon className="relative z-10 h-7 w-7 text-neon-cyan" />
+                  </div>
+
+                  {/* Text */}
+                  <div className={isEven ? 'text-left' : 'text-left md:text-right'}>
+                    <h3 className="font-display text-lg font-semibold text-white">{f.title}</h3>
+                    <p className="mt-1.5 max-w-md text-sm leading-relaxed text-slate-400">
+                      {f.desc}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold text-white">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">{f.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          7. WHY EDGERELAY
+          7. WHY EDGERELAY — 2x2 grid with large numbers
           ══════════════════════════════════════════════════════════ */}
       <section id="why-edgerelay" className="px-6 py-20 md:py-32">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Why Us
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
             Why Traders Choose EdgeRelay
           </h2>
 
-          <div className="mt-14 space-y-0">
+          <div className="mt-14 grid gap-6 sm:grid-cols-2">
             {BENEFITS.map((b, i) => (
-              <div key={b.title}>
-                <div
-                  className="benefit-card glass-premium animate-fade-in-up rounded-2xl p-6"
-                  style={{ animationDelay: `${i * 80}ms` }}
-                >
-                  {/* Large muted number */}
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center">
-                    <span className="font-mono-nums text-3xl font-black text-terminal-border/60">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
+              <div
+                key={b.title}
+                className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                {/* Large number */}
+                <span className="font-mono-nums text-5xl font-black leading-none text-terminal-border/40">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+
+                <div className="mt-4 flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_20px_#00e5ff25]">
+                    <b.icon className="h-5 w-5 text-neon-cyan" />
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10">
-                      <b.icon className="h-5 w-5 text-neon-cyan" />
-                    </div>
-                    <div>
-                      <h3 className="font-display text-lg font-semibold text-white">{b.title}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-400">{b.desc}</p>
-                    </div>
+                  <div>
+                    <h3 className="font-display text-lg font-semibold text-white">{b.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{b.desc}</p>
                   </div>
                 </div>
-                {/* Diamond divider between items */}
-                {i < BENEFITS.length - 1 && (
-                  <div className="divider-diamond mx-8 my-0" />
-                )}
               </div>
             ))}
           </div>
@@ -588,46 +753,79 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          8. TESTIMONIALS
+          8. TESTIMONIALS — Single featured testimonial
           ══════════════════════════════════════════════════════════ */}
       <section id="testimonials" className="px-6 py-20 md:py-32">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Traders
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
             What Traders Are Saying
           </h2>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {TESTIMONIALS.map((t, i) => (
+          {/* Featured testimonial — the second one (PropGuard story) is most compelling */}
+          <div
+            className="glass-premium animate-fade-in-up mt-14 rounded-2xl p-8 md:p-12"
+            style={{
+              animationDelay: '100ms',
+              borderLeft: '3px solid var(--color-neon-cyan)',
+              boxShadow: '0 0 40px rgba(0,229,255,0.05)',
+            }}
+          >
+            {/* Stars */}
+            <div className="mb-6 flex gap-1">
+              {[...Array(5)].map((_, si) => (
+                <svg
+                  key={si}
+                  className="h-5 w-5 text-neon-cyan"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+
+            <blockquote className="text-xl leading-relaxed text-slate-200 md:text-2xl">
+              &ldquo;{TESTIMONIALS[1].quote}&rdquo;
+            </blockquote>
+
+            <div className="mt-8 flex items-center gap-4">
+              {/* Avatar placeholder */}
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neon-cyan/20 bg-neon-cyan/10">
+                <span className="font-display text-lg font-bold text-neon-cyan">
+                  {TESTIMONIALS[1].name[0]}
+                </span>
+              </div>
+              <div>
+                <p className="font-display text-base font-semibold text-white">
+                  {TESTIMONIALS[1].name}
+                </p>
+                <p className="font-mono-nums text-sm text-neon-cyan/70">
+                  {TESTIMONIALS[1].context}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary testimonials — smaller, below */}
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            {[TESTIMONIALS[0], TESTIMONIALS[2]].map((t, i) => (
               <div
                 key={t.name}
-                className="glass-premium card-hover-premium animate-fade-in-up rounded-2xl p-6"
+                className="glass-premium animate-fade-in-up rounded-xl p-6"
                 style={{
-                  animationDelay: `${i * 80}ms`,
-                  borderLeft: '2px solid var(--color-neon-cyan)',
-                  paddingLeft: '24px',
+                  animationDelay: `${200 + i * 80}ms`,
+                  borderLeft: '2px solid var(--color-terminal-border)',
                 }}
               >
-                {/* Large glowing quote mark */}
-                <span className="mb-3 block font-display text-6xl leading-none text-neon-cyan/20 glow-text-cyan">
-                  &ldquo;
-                </span>
-
-                {/* 5-star rating */}
-                <div className="mb-3 flex gap-1">
-                  {[...Array(5)].map((_, si) => (
-                    <svg
-                      key={si}
-                      className="h-4 w-4 text-neon-cyan"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-
-                <p className="text-sm leading-relaxed text-slate-300">
-                  {t.quote}
+                <p className="text-sm leading-relaxed text-slate-400">
+                  &ldquo;{t.quote}&rdquo;
                 </p>
                 <div className="mt-4">
                   <p className="font-display text-sm font-semibold text-white">{t.name}</p>
@@ -640,38 +838,23 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          9. FINAL CTA
+          9. FINAL CTA — Full-width, maximum breathing room
           ══════════════════════════════════════════════════════════ */}
-      <section className="relative px-6 py-20 md:py-32">
-        {/* Background signal rings */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
-          {[0, 1, 2].map((ring) => (
-            <div
-              key={ring}
-              className="absolute rounded-full border border-neon-cyan/[0.05]"
-              style={{
-                width: `${(ring + 1) * 320}px`,
-                height: `${(ring + 1) * 320}px`,
-                animation: `signal-pulse ${3.5 + ring * 0.6}s cubic-bezier(0, 0.5, 0.5, 1) infinite ${ring * 1}s`,
-                opacity: 0.3 - ring * 0.08,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="glow-cyan-strong border-gradient glass-premium relative z-10 mx-auto max-w-3xl rounded-3xl p-12 text-center md:p-16">
-          <h2 className="animate-fade-in-up text-gradient-animated font-display text-3xl font-bold md:text-4xl">
+      <section className="px-6 py-24 md:py-40">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="animate-fade-in-up font-display text-4xl font-bold text-white md:text-5xl">
             Free for All Traders
           </h2>
           <p
-            className="animate-fade-in-up mt-4 text-lg text-slate-400"
+            className="animate-fade-in-up mt-6 text-lg text-slate-400"
             style={{ animationDelay: '80ms' }}
           >
-            We&rsquo;re opening EdgeRelay to everyone at no cost during our launch period. No credit card required.
+            We&rsquo;re opening EdgeRelay to everyone at no cost during our launch period.
+            No credit card required.
           </p>
           <Link
             to="/register"
-            className="btn-premium signal-pulse animate-fade-in-up mt-8 inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)]"
+            className="btn-premium signal-pulse animate-fade-in-up mt-10 inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-12 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)]"
             style={{ animationDelay: '160ms' }}
           >
             Get Started Free <ArrowRight className="h-4 w-4" />
@@ -680,16 +863,21 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          10. FOOTER
+          10. FOOTER — Minimal
           ══════════════════════════════════════════════════════════ */}
-      <footer className="bg-hex relative z-10">
+      <footer className="relative z-10">
         <div className="divider-diamond" />
         <div className="px-6 py-12">
           <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 md:flex-row md:justify-between">
             <div className="text-center md:text-left">
-              <a href="#" className="flex items-center gap-2 font-display text-lg tracking-tight">
+              <a
+                href="#"
+                className="flex items-center gap-2 font-display text-lg tracking-tight"
+              >
                 <span className="font-bold text-white">EDGE</span>
-                <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">RELAY</span>
+                <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">
+                  RELAY
+                </span>
               </a>
               <p className="mt-1 text-xs text-terminal-muted">
                 &copy; 2026 Hodges &amp; Co. Limited
@@ -711,7 +899,8 @@ export function LandingPage() {
             <div className="flex flex-col items-center gap-2 md:items-end">
               <p className="text-xs text-terminal-muted">
                 Built on{' '}
-                <span className="font-medium text-orange-400">Cloudflare&rsquo;s</span> edge network
+                <span className="font-medium text-orange-400">Cloudflare&rsquo;s</span> edge
+                network
               </p>
               <div className="flex items-center gap-2">
                 <span className="live-dot" />

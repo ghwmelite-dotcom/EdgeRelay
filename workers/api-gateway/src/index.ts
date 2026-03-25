@@ -10,6 +10,7 @@ import { signals } from './routes/signals.js';
 import { billing } from './routes/billing.js';
 import { propguard } from './routes/propguard.js';
 import { news } from './routes/news.js';
+import { journal } from './routes/journal.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -74,6 +75,7 @@ protectedApp.route('/accounts', accounts);
 protectedApp.route('/signals', signals);
 protectedApp.route('/propguard', propguard);
 protectedApp.route('/news', news);
+protectedApp.route('/journal', journal);
 
 app.route('/v1', protectedApp);
 

@@ -39,7 +39,7 @@ const ECOSYSTEM = [
   {
     icon: Radio,
     title: 'Edge Signal Copier',
-    desc: 'Sub-500ms trade copying across unlimited accounts via Cloudflare\'s global edge network. Zero VPS, zero missed trades, crash-proof delivery.',
+    desc: 'The world\'s only free cross-VPS trade copier. Master on VPS 1, followers on VPS 2, 3, 4 — different servers, different brokers, different countries. Sub-500ms via Cloudflare\'s 300+ edge locations.',
     badge: 'LIVE' as const,
   },
   {
@@ -286,7 +286,7 @@ export function LandingPage() {
             >
               <span className="live-dot" style={{ width: 5, height: 5 }} />
               <span className="font-mono-nums text-[10px] uppercase tracking-[0.2em] text-neon-cyan">
-                Edge-Native Trade Copier
+                The World&rsquo;s Only Free Cross-VPS Trade Copier
               </span>
             </div>
 
@@ -295,19 +295,19 @@ export function LandingPage() {
                 className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-white"
                 style={{ animationDelay: '100ms' }}
               >
-                Stop Losing
+                Copy Trades
               </span>
               <span
                 className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-white"
                 style={{ animationDelay: '250ms' }}
               >
-                Prop Firm Accounts
+                Across Any VPS.
               </span>
               <span
                 className="animate-fade-in-up block text-[clamp(3rem,8vw,6.5rem)] text-neon-cyan glow-text-cyan"
                 style={{ animationDelay: '400ms' }}
               >
-                to Missed Copies.
+                Any Broker. Free.
               </span>
             </h1>
 
@@ -315,9 +315,9 @@ export function LandingPage() {
               className="animate-fade-in-up mt-8 max-w-lg text-lg leading-relaxed text-slate-400"
               style={{ animationDelay: '550ms' }}
             >
-              Edge-native trade copying powered by Cloudflare&rsquo;s global network.{' '}
-              <span className="text-slate-200">Sub-500ms execution</span>, built-in PropGuard
-              protection, zero VPS required.
+              Master EA on VPS 1, Follower EA on VPS 2 — different servers, different countries, different brokers.{' '}
+              <span className="text-slate-200">Sub-500ms via Cloudflare&rsquo;s 300+ edge locations.</span>{' '}
+              No port forwarding. No shared networks. No VPS-to-VPS headaches. Just connect and copy.
             </p>
 
             {/* CTA row */}
@@ -452,12 +452,37 @@ export function LandingPage() {
               </div>
             </div>
 
-            {/* Decorative data beneath terminal */}
-            <div className="mt-3 flex items-center justify-between px-1 font-mono-nums text-[10px] text-terminal-muted/50">
-              <span>EDGE://CF-WORKER.RELAY</span>
-              <span>AES-256-GCM</span>
-              <span>HMAC-SHA256</span>
+            {/* Cross-VPS architecture indicator */}
+            <div className="mt-4 flex items-center justify-center gap-3 font-mono-nums text-[11px]">
+              <div className="flex items-center gap-1.5 rounded-md border border-terminal-border bg-terminal-card/60 px-3 py-1.5">
+                <span className="live-dot" style={{ width: 4, height: 4 }} />
+                <span className="text-slate-400">VPS 1</span>
+                <span className="text-terminal-muted">·</span>
+                <span className="text-neon-cyan">Master</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="h-px w-4 bg-neon-cyan/30" />
+                <Zap className="h-3 w-3 text-neon-cyan/60" />
+                <div className="h-px w-4 bg-neon-cyan/30" />
+              </div>
+              <div className="rounded-md border border-neon-cyan/20 bg-neon-cyan/[0.05] px-3 py-1.5">
+                <span className="text-neon-cyan">Cloudflare Edge</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="h-px w-4 bg-neon-cyan/30" />
+                <Zap className="h-3 w-3 text-neon-cyan/60" />
+                <div className="h-px w-4 bg-neon-cyan/30" />
+              </div>
+              <div className="flex items-center gap-1.5 rounded-md border border-terminal-border bg-terminal-card/60 px-3 py-1.5">
+                <span className="live-dot" style={{ width: 4, height: 4 }} />
+                <span className="text-slate-400">VPS 2</span>
+                <span className="text-terminal-muted">·</span>
+                <span className="text-neon-green">Follower</span>
+              </div>
             </div>
+            <p className="mt-2 text-center font-mono-nums text-[10px] text-terminal-muted/50">
+              Different servers · Different countries · Different brokers · Zero configuration
+            </p>
           </div>
         </div>
 

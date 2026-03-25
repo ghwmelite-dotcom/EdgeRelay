@@ -19,6 +19,27 @@ import {
 import { checkEquityGuard, type EquityGuardConfig } from './equityGuard.js';
 import { calculateLot, type LotSizingConfig } from './lotSizing.js';
 import { mapSymbol, type SymbolMapperConfig } from './symbolMapper.js';
+import type { NormalizedOrderType } from '@edgerelay/shared';
+
+const ORDER_TYPE_MAP: Record<string, NormalizedOrderType> = {
+  buy: 'market_buy',
+  sell: 'market_sell',
+  buy_limit: 'limit_buy',
+  sell_limit: 'limit_sell',
+  buy_stop: 'stop_buy',
+  sell_stop: 'stop_sell',
+  buy_stop_limit: 'stop_limit_buy',
+  sell_stop_limit: 'stop_limit_sell',
+};
+
+function deriveNormalizedOrderType(
+  orderType?: string,
+  existing?: string,
+): NormalizedOrderType | undefined {
+  if (existing) return existing as NormalizedOrderType;
+  if (!orderType) return undefined;
+  return ORDER_TYPE_MAP[orderType];
+}
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -35,6 +56,7 @@ interface FollowerConfig {
   current_daily_loss_percent: number;
   symbol_mappings: Map<string, string>;
   enabled: boolean;
+  platform: string;
 }
 
 interface OpenPosition {
@@ -183,7 +205,14 @@ export class AccountRelay implements DurableObject {
         const symbolConfig: SymbolMapperConfig = {
           symbol_suffix: follower.symbol_suffix,
         };
-        const mappedSymbol = mapSymbol(signal.symbol, symbolConfig, follower.symbol_mappings);
+        const sourcePlatform = signal.source_platform ?? 'mt5';
+        const mappedSymbol = mapSymbol(
+          signal.symbol,
+          symbolConfig,
+          follower.symbol_mappings,
+          sourcePlatform,
+          follower.platform,
+        );
 
         // Build follower signal
         const followerSignal: FollowerSignal = {
@@ -199,6 +228,10 @@ export class AccountRelay implements DurableObject {
           ticket: signal.ticket,
           comment: signal.comment,
           master_timestamp: signal.timestamp,
+          normalized_order_type: deriveNormalizedOrderType(
+            signal.order_type,
+            signal.normalized_order_type,
+          ),
         };
 
         // Queue for follower
@@ -411,6 +444,7 @@ export class AccountRelay implements DurableObject {
         fc.lot_value,
         fc.symbol_suffix,
         fc.max_daily_loss_percent,
+        fc.platform,
         a.is_active AS enabled
       FROM accounts a
       JOIN follower_config fc ON fc.account_id = a.id
@@ -423,6 +457,7 @@ export class AccountRelay implements DurableObject {
         lot_value: number;
         symbol_suffix: string;
         max_daily_loss_percent: number | null;
+        platform: string;
         enabled: number;
       }>();
 
@@ -433,9 +468,9 @@ export class AccountRelay implements DurableObject {
       const mappingRows = await this.env.DB.prepare(
         `SELECT master_symbol, follower_symbol
          FROM symbol_mappings
-         WHERE account_id = ?`,
+         WHERE account_id = ? AND target_platform = ?`,
       )
-        .bind(row.follower_account_id)
+        .bind(row.follower_account_id, row.platform ?? 'mt5')
         .all<{ master_symbol: string; follower_symbol: string }>();
 
       const symbolMappings = new Map<string, string>();
@@ -452,6 +487,7 @@ export class AccountRelay implements DurableObject {
         current_daily_loss_percent: 0, // MVP: reset on load
         symbol_mappings: symbolMappings,
         enabled: row.enabled === 1,
+        platform: row.platform ?? 'mt5',
       });
     }
   }

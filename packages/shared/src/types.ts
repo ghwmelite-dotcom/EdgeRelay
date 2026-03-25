@@ -18,8 +18,21 @@ export const OrderType = z.enum([
   'buy_stop',
   'sell_limit',
   'sell_stop',
+  'buy_stop_limit',
+  'sell_stop_limit',
 ]);
 export type OrderType = z.infer<typeof OrderType>;
+
+export const SourcePlatform = z.enum(['mt5', 'ctrader', 'dxtrade', 'tradelocker']);
+export type SourcePlatform = z.infer<typeof SourcePlatform>;
+
+export const NormalizedOrderType = z.enum([
+  'market_buy', 'market_sell',
+  'limit_buy', 'limit_sell',
+  'stop_buy', 'stop_sell',
+  'stop_limit_buy', 'stop_limit_sell',
+]);
+export type NormalizedOrderType = z.infer<typeof NormalizedOrderType>;
 
 // ── Signal Payload (EA → Worker) ────────────────────────────────
 export const SignalPayload = z.object({
@@ -38,6 +51,9 @@ export const SignalPayload = z.object({
   comment: z.string().max(256).optional(),
   timestamp: z.number().int().positive(),
   hmac_signature: z.string().min(1),
+  source_platform: SourcePlatform.optional(),
+  normalized_order_type: NormalizedOrderType.optional(),
+  platform_specific: z.record(z.unknown()).optional(),
 });
 export type SignalPayload = z.infer<typeof SignalPayload>;
 
@@ -115,6 +131,7 @@ export interface FollowerSignal {
   ticket?: number;
   comment?: string;
   master_timestamp: number;
+  normalized_order_type?: string;
 }
 
 // ── Plan Limits ─────────────────────────────────────────────────

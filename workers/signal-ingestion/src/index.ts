@@ -121,8 +121,9 @@ app.post('/v1/ingest', async (c) => {
     await c.env.DB.prepare(
       `INSERT INTO signals (
         id, master_account_id, sequence_num, action, order_type, symbol,
-        volume, price, sl, tp, magic_number, ticket, comment
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        volume, price, sl, tp, magic_number, ticket, comment,
+        source_platform, normalized_order_type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
       .bind(
         signal.signal_id,
@@ -138,6 +139,8 @@ app.post('/v1/ingest', async (c) => {
         signal.magic_number ?? null,
         signal.ticket ?? null,
         signal.comment ?? null,
+        signal.source_platform ?? null,
+        signal.normalized_order_type ?? null,
       )
       .run();
 

@@ -107,8 +107,8 @@ export function AppLayout() {
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="relative flex-1 space-y-1 px-3 py-4">
+        {/* Navigation — scrollable if items overflow */}
+        <nav className="relative flex-1 overflow-y-auto space-y-1 px-3 py-4">
           {navItems.map(({ label, icon: Icon, to }) => {
             const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
             return (
@@ -133,8 +133,8 @@ export function AppLayout() {
           })}
         </nav>
 
-        {/* Bottom section */}
-        <div className="relative p-4 space-y-3">
+        {/* Bottom section — always visible, pinned to bottom */}
+        <div className="relative shrink-0 p-4 space-y-3 border-t border-terminal-border/30">
           {/* Gradient divider */}
           <div className="divider mb-3" />
 

@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   WifiOff,
+  Radio,
   Zap,
 } from 'lucide-react';
 
@@ -35,6 +36,12 @@ const STATS = [
 ];
 
 const ECOSYSTEM = [
+  {
+    icon: Radio,
+    title: 'Edge Signal Copier',
+    desc: 'Sub-500ms trade copying across unlimited accounts via Cloudflare\'s global edge network. Zero VPS, zero missed trades, crash-proof delivery.',
+    badge: 'LIVE' as const,
+  },
   {
     icon: ShieldCheck,
     title: 'PropGuard',

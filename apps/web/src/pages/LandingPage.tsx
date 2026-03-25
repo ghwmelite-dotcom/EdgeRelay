@@ -44,14 +44,14 @@ const ECOSYSTEM = [
   {
     icon: BrainCircuit,
     title: 'AI Trade Journal',
-    desc: 'AI-powered MT5 trade journal with native sync. Automatic trade logging, pattern recognition, and performance insights.',
-    badge: 'COMING SOON' as const,
+    desc: 'Zero-drop MT5 trade journal with native sync. Automatic trade logging, session analysis, equity curve tracking, and performance insights.',
+    badge: 'LIVE' as const,
   },
   {
     icon: Link2,
     title: 'Platform Bridge',
-    desc: 'Cross-platform trade copier. Copy between MT4, MT5, cTrader, and more — one master, any platform.',
-    badge: 'COMING SOON' as const,
+    desc: 'Cross-platform trade copier with universal signal format. Symbol normalization across MT5, cTrader, DXTrade, and TradeLocker.',
+    badge: 'LIVE' as const,
   },
   {
     icon: FlaskConical,
@@ -522,10 +522,8 @@ export function LandingPage() {
               <div
                 key={item.title}
                 className={`glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6 ${
-                  item.badge === 'LIVE'
-                    ? 'glow-cyan border-gradient sm:col-span-2'
-                    : ''
-                }`}
+                  item.badge === 'LIVE' ? 'glow-cyan' : ''
+                } ${i === 0 ? 'border-gradient sm:col-span-2' : ''}`}
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="flex items-start justify-between">

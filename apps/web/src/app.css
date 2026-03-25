@@ -484,3 +484,280 @@ html {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px -8px #00e5ff10;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   PREMIUM POLISH — Cinematic Trading Terminal
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Page Transition ──────────────────────────────────────── */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.page-enter {
+  animation: page-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Counter Animation ────────────────────────────────────── */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count-up {
+  animation: count-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Sidebar Active Indicator ─────────────────────────────── */
+@keyframes sidebar-glow {
+  0%, 100% { box-shadow: inset 3px 0 8px -2px #00e5ff40; }
+  50% { box-shadow: inset 3px 0 16px -2px #00e5ff60; }
+}
+
+.sidebar-active-glow {
+  animation: sidebar-glow 3s ease-in-out infinite;
+}
+
+/* ── Live Pulse Dot ───────────────────────────────────────── */
+@keyframes live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ff9d;
+  animation: live-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px #00ff9d60, 0 0 16px #00ff9d30;
+}
+
+/* ── Holographic Shimmer on Glass Cards ───────────────────── */
+@keyframes holo-shimmer {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(200%) rotate(25deg); }
+}
+
+.glass-premium {
+  background: linear-gradient(135deg, #0d121940 0%, #0d121980 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid #ffffff08;
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, #00e5ff18, transparent 50%, #b18cff12);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glass-premium::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 40px;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, #00e5ff08, #b18cff06, transparent);
+  transform: rotate(25deg);
+  animation: holo-shimmer 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Enhanced Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track {
+  background: #0a0f1620;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00e5ff40, #b18cff30, #00e5ff20);
+  border-radius: 10px;
+  border: 1px solid #00e5ff10;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00e5ff60, #b18cff40, #00e5ff30);
+}
+
+/* ── Button Premium Hover ─────────────────────────────────── */
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, #ffffff10 50%, transparent 60%);
+  background-size: 200% 100%;
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.btn-premium:hover::before {
+  transform: translateX(100%);
+}
+
+.btn-premium:hover {
+  transform: translateY(-1px);
+}
+
+/* ── Data Stream — Sidebar Background Effect ──────────────── */
+@keyframes data-rain {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.data-stream-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.data-stream-bg .stream-line {
+  position: absolute;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, #00e5ff15, transparent);
+  animation: data-rain var(--duration) linear infinite;
+  animation-delay: var(--delay);
+}
+
+/* ── Stat Card Gradient Borders ───────────────────────────── */
+.stat-card-cyan {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #00e5ff40, transparent) 1;
+}
+
+.stat-card-green {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #00ff9d40, transparent) 1;
+}
+
+.stat-card-amber {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #ffb80040, transparent) 1;
+}
+
+.stat-card-red {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #ff3d5740, transparent) 1;
+}
+
+/* ── Enhanced Focus States ────────────────────────────────── */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 1px #00e5ff40, 0 0 12px #00e5ff15, inset 0 0 8px #00e5ff05;
+  transition: box-shadow 0.2s ease;
+}
+
+/* ── Tooltip Glow ─────────────────────────────────────────── */
+.tooltip-glow {
+  background: linear-gradient(135deg, #0d1219f0, #0d1219e0);
+  border: 1px solid #00e5ff20;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px #00e5ff08;
+  backdrop-filter: blur(12px);
+}
+
+/* ── Animated Gradient Text ───────────────────────────────── */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.text-gradient-animated {
+  background: linear-gradient(270deg, #00e5ff, #b18cff, #00ff9d, #00e5ff);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* ── Sidebar Logo Shimmer ─────────────────────────────────── */
+@keyframes logo-shimmer {
+  0%, 90%, 100% { opacity: 1; text-shadow: 0 0 10px #00e5ff40, 0 0 30px #00e5ff20; }
+  95% { opacity: 0.8; text-shadow: 0 0 20px #00e5ff60, 0 0 40px #00e5ff30, -2px 0 #ff3d5715, 2px 0 #00e5ff15; }
+}
+
+.logo-shimmer {
+  animation: logo-shimmer 8s ease-in-out infinite;
+}
+
+/* ── Nav Item Hover Glow Line ─────────────────────────────── */
+.nav-glow-line {
+  position: relative;
+}
+
+.nav-glow-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 2px;
+  height: 60%;
+  background: linear-gradient(180deg, transparent, #00e5ff, transparent);
+  border-radius: 2px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-glow-line:hover::after {
+  transform: translateY(-50%) scaleY(1);
+}
+
+/* ── Ambient Hex Pattern ──────────────────────────────────── */
+.bg-hex {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='70' viewBox='0 0 60 70' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='%2300e5ff' stroke-width='0.3' stroke-opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ── Enhanced Card Hover with Tilt Feel ────────────────────── */
+.card-hover-premium {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease;
+}
+
+.card-hover-premium:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow:
+    0 20px 60px -12px #00e5ff12,
+    0 8px 20px -4px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 #ffffff0a;
+  border-color: #00e5ff25;
+}
+
+/* ── Section Divider with Diamond ─────────────────────────── */
+.divider-diamond {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00e5ff15, transparent);
+  position: relative;
+}
+
+.divider-diamond::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #00e5ff30;
+  border: 1px solid #00e5ff40;
+}

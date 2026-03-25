@@ -29,6 +29,33 @@ const planBadgeVariant = (plan: string) => {
   }
 };
 
+const STREAM_LINES = Array.from({ length: 8 }, (_, i) => ({
+  id: i,
+  left: 12 + i * 12,
+  height: 40 + Math.random() * 30,
+  duration: 6 + Math.random() * 8,
+  delay: Math.random() * 6,
+}));
+
+function DataStreamBg() {
+  return (
+    <div className="data-stream-bg">
+      {STREAM_LINES.map((line) => (
+        <div
+          key={line.id}
+          className="stream-line"
+          style={{
+            left: `${line.left}%`,
+            height: `${line.height}%`,
+            '--duration': `${line.duration}s`,
+            '--delay': `${line.delay}s`,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuthStore();
@@ -54,6 +81,9 @@ export function AppLayout() {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
+        {/* Data stream rain effect */}
+        <DataStreamBg />
+
         {/* Left edge gradient border */}
         <div className="absolute top-0 left-0 bottom-0 w-px bg-gradient-to-b from-neon-cyan/40 via-neon-cyan/10 to-transparent" />
 
@@ -61,11 +91,14 @@ export function AppLayout() {
         <div className="absolute top-0 right-0 bottom-0 w-px bg-terminal-border/60" />
 
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between px-5 border-b border-terminal-border/40">
-          <span className="text-xl tracking-tighter">
-            <span className="text-white font-black">EDGE</span>
-            <span className="text-neon-cyan font-black glow-text-cyan">RELAY</span>
-          </span>
+        <div className="relative flex h-16 items-center justify-between px-5 border-b border-terminal-border/40">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl tracking-tighter">
+              <span className="text-white font-black">EDGE</span>
+              <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">RELAY</span>
+            </span>
+            <span className="live-dot" />
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="rounded-xl p-1.5 text-slate-400 hover:bg-terminal-card/50 hover:text-slate-200 lg:hidden focus-ring"
@@ -75,7 +108,7 @@ export function AppLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="relative flex-1 space-y-1 px-3 py-4">
           {navItems.map(({ label, icon: Icon, to }) => {
             const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
             return (
@@ -88,8 +121,8 @@ export function AppLayout() {
                   transition-all duration-200 ease-out
                   focus-ring
                   ${isActive
-                    ? 'border-l-2 border-neon-cyan bg-neon-cyan/8 text-neon-cyan glow-text-cyan'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50'
+                    ? 'border-l-2 border-neon-cyan bg-neon-cyan/8 text-neon-cyan glow-text-cyan sidebar-active-glow'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50 nav-glow-line'
                   }
                 `}
               >
@@ -101,7 +134,7 @@ export function AppLayout() {
         </nav>
 
         {/* Bottom section */}
-        <div className="p-4 space-y-3">
+        <div className="relative p-4 space-y-3">
           {/* Gradient divider */}
           <div className="divider mb-3" />
 
@@ -115,7 +148,7 @@ export function AppLayout() {
           )}
           <button
             onClick={logout}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-500 transition-all duration-200 ease-out hover:bg-terminal-card/50 hover:text-neon-red hover:glow-text-red focus-ring group"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-500 transition-all duration-200 ease-out hover:bg-neon-red/5 hover:text-neon-red hover:glow-text-red hover:shadow-[inset_0_0_20px_#ff3d5708] focus-ring group"
           >
             <LogOut className="h-4 w-4 transition-colors duration-200 group-hover:drop-shadow-[0_0_6px_#ff3d5760]" />
             Logout
@@ -135,12 +168,15 @@ export function AppLayout() {
           </button>
           <span className="ml-3 text-lg tracking-tighter">
             <span className="text-white font-black">EDGE</span>
-            <span className="text-neon-cyan font-black glow-text-cyan">RELAY</span>
+            <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">RELAY</span>
           </span>
         </header>
 
         {/* Page content */}
         <main className="scan-line relative flex-1 overflow-y-auto bg-terminal-bg">
+          {/* Hex pattern overlay */}
+          <div className="bg-hex absolute inset-0 pointer-events-none" />
+
           {/* Grid overlay */}
           <div className="bg-grid absolute inset-0 pointer-events-none" />
 

@@ -78,6 +78,44 @@ async function extractWithSelector(response: Response, selector: string): Promis
   return text.replace(/\s+/g, ' ').trim();
 }
 
+// -- Telegram Alert ----------------------------------------
+
+async function sendTelegramAlert(env: Env, firmName: string, severity: string, diff: { linesAdded: number; linesRemoved: number; summary: string }, pageUrl: string): Promise<void> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHANNEL_ID) return;
+
+  const severityEmoji = severity === 'major' ? '🔴' : severity === 'moderate' ? '🟡' : '🟢';
+  const severityLabel = severity.toUpperCase();
+
+  const message = [
+    `${severityEmoji} <b>TOS Change Detected — ${firmName}</b>`,
+    ``,
+    `<b>Severity:</b> ${severityLabel}`,
+    `<b>Lines added:</b> ${diff.linesAdded}`,
+    `<b>Lines removed:</b> ${diff.linesRemoved}`,
+    ``,
+    `<b>Changes:</b>`,
+    `<pre>${diff.summary.slice(0, 300)}</pre>`,
+    ``,
+    `🔗 <a href="${pageUrl}">View Rules Page</a>`,
+    `📊 <a href="https://edgerelay-web.pages.dev/firms/${encodeURIComponent(firmName)}">View on EdgeRelay</a>`,
+  ].join('\n');
+
+  try {
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: env.TELEGRAM_CHANNEL_ID,
+        text: message,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      }),
+    });
+  } catch (err) {
+    console.error('[TOS Monitor] Telegram alert failed:', err);
+  }
+}
+
 // -- Main Check --------------------------------------------
 
 async function checkFirm(env: Env, firm: FirmToCheck): Promise<string> {
@@ -160,6 +198,19 @@ async function checkFirm(env: Env, firm: FirmToCheck): Promise<string> {
       severity,
     )
     .run();
+
+  // Send Telegram alert
+  await sendTelegramAlert(env, firm.firm_name, severity, diff, firm.rules_page_url);
+
+  // Adjust health score based on severity (TOS instability lowers trust)
+  const penalty = severity === 'major' ? 5 : severity === 'moderate' ? 2 : 0;
+  if (penalty > 0) {
+    await env.DB.prepare(
+      `UPDATE firm_templates SET health_score = MAX(0, health_score - ?) WHERE firm_name = ?`,
+    )
+      .bind(penalty, firm.firm_name)
+      .run();
+  }
 
   return `CHANGE_DETECTED (${severity}: +${diff.linesAdded}/-${diff.linesRemoved})`;
 }

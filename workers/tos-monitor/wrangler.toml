@@ -13,3 +13,9 @@ database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
 [[r2_buckets]]
 binding = "STORAGE"
 bucket_name = "edgerelay-storage"
+
+[vars]
+TELEGRAM_CHANNEL_ID = "@edgerelay"
+
+# TELEGRAM_BOT_TOKEN is set as a secret via:
+# npx wrangler secret put TELEGRAM_BOT_TOKEN

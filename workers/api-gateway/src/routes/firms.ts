@@ -10,15 +10,22 @@ export const firms = new Hono<{ Bindings: Env }>();
 
 firms.get('/', async (c) => {
   const result = await c.env.DB.prepare(
-    `SELECT firm_name, COUNT(*) as plan_count
+    `SELECT firm_name, COUNT(*) as plan_count, MAX(health_score) as health_score, MAX(health_details) as health_details
      FROM firm_templates
      WHERE verified = 1
      GROUP BY firm_name
      ORDER BY firm_name`,
-  ).all<{ firm_name: string; plan_count: number }>();
+  ).all<{ firm_name: string; plan_count: number; health_score: number | null; health_details: string | null }>();
+
+  const firms = result.results.map((f) => ({
+    firm_name: f.firm_name,
+    plan_count: f.plan_count,
+    health_score: f.health_score ?? 75,
+    health_details: f.health_details ? JSON.parse(f.health_details) : null,
+  }));
 
   return c.json<ApiResponse>({
-    data: { firms: result.results },
+    data: { firms },
     error: null,
   });
 });

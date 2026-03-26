@@ -142,10 +142,11 @@ int CJournalQueue::Flush(string endpoint, string apiKey, string apiSecret, strin
       tradesJson += lines[i];
 
       //--- Extract deal_ticket from the JSON line for HMAC
+      //--- "deal_ticket": is 14 chars, value starts at dtPos + 14
       int dtPos = StringFind(lines[i], "\"deal_ticket\":");
       if(dtPos >= 0)
         {
-         string sub = StringSubstr(lines[i], dtPos + 15, 20);
+         string sub = StringSubstr(lines[i], dtPos + 14, 20);
          int commaPos = StringFind(sub, ",");
          if(commaPos > 0) sub = StringSubstr(sub, 0, commaPos);
          dealTickets[i] = (ulong)StringToInteger(sub);

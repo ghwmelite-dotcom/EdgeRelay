@@ -46,12 +46,16 @@ export const useCommandCenterStore = create<CommandCenterState>()((set) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await api.get<{ accounts: AccountHealthResult[] }>('/command/health');
-      if (res.data) {
+      if (res.error) {
+        console.error('Health API error:', res.error);
+        set({ healthResults: [], isLoading: false, error: res.error.message });
+      } else if (res.data) {
         set({ healthResults: res.data.accounts ?? [], isLoading: false });
       } else {
-        set({ healthResults: [], isLoading: false, error: res.error?.message ?? 'Failed to load health data' });
+        set({ healthResults: [], isLoading: false });
       }
-    } catch {
+    } catch (err) {
+      console.error('Health fetch error:', err);
       set({ healthResults: [], isLoading: false });
     }
   },

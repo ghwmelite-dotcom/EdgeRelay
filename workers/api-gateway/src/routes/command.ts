@@ -174,78 +174,87 @@ command.get('/health/:accountId', async (c) => {
 // ── GET /health — Evaluate ALL accounts for authenticated user ──
 
 command.get('/health', async (c) => {
-  const userId = c.get('userId');
+  try {
+    const userId = c.get('userId');
 
-  // Get all accounts for user
-  const accountsResult = await c.env.DB.prepare(
-    `SELECT a.id, a.alias FROM accounts a WHERE a.user_id = ?`,
-  )
-    .bind(userId)
-    .all<{ id: string; alias: string | null }>();
-
-  const accounts: Array<{
-    account_id: string;
-    alias: string | null;
-    firm_name: string;
-    plan_name: string;
-    health: ReturnType<typeof evaluateHealth>;
-  }> = [];
-
-  for (const account of accountsResult.results) {
-    // Check if account has a linked firm template
-    const propRules = await c.env.DB.prepare(
-      `SELECT firm_template_id, template_version, initial_balance, challenge_start_date
-       FROM prop_rules WHERE account_id = ?`,
+    // Get all accounts for user
+    const accountsResult = await c.env.DB.prepare(
+      `SELECT a.id, a.alias FROM accounts a WHERE a.user_id = ?`,
     )
-      .bind(account.id)
-      .first<PropRulesRow>();
+      .bind(userId)
+      .all<{ id: string; alias: string | null }>();
 
-    if (!propRules?.firm_template_id) continue;
+    const accounts: Array<{
+      account_id: string;
+      alias: string | null;
+      firm_name: string;
+      plan_name: string;
+      health: ReturnType<typeof evaluateHealth>;
+    }> = [];
 
-    const template = await c.env.DB.prepare(
-      `SELECT id, firm_name, plan_name, challenge_phase, initial_balance,
-              profit_target_percent, profit_target_amount,
-              daily_loss_percent, max_drawdown_percent, max_drawdown_amount,
-              daily_loss_type, drawdown_type,
-              min_trading_days, max_calendar_days, version
-       FROM firm_templates WHERE id = ?`,
-    )
-      .bind(propRules.firm_template_id)
-      .first<FirmTemplateRow>();
+    for (const account of accountsResult.results) {
+      // Check if account has a linked firm template
+      const propRules = await c.env.DB.prepare(
+        `SELECT firm_template_id, template_version, initial_balance, challenge_start_date
+         FROM prop_rules WHERE account_id = ?`,
+      )
+        .bind(account.id)
+        .first<PropRulesRow>();
 
-    if (!template) continue;
+      if (!propRules?.firm_template_id) continue;
 
-    const latestStats = await c.env.DB.prepare(
-      `SELECT date, balance_start_of_day, balance_end_of_day, equity_high_of_day,
-              daily_pnl, high_water_mark, trades_taken
-       FROM daily_stats WHERE account_id = ? ORDER BY date DESC LIMIT 1`,
-    )
-      .bind(account.id)
-      .first<DailyStatsRow>();
+      const template = await c.env.DB.prepare(
+        `SELECT id, firm_name, plan_name, challenge_phase, initial_balance,
+                profit_target_percent, profit_target_amount,
+                daily_loss_percent, max_drawdown_percent, max_drawdown_amount,
+                daily_loss_type, drawdown_type,
+                min_trading_days, max_calendar_days, version
+         FROM firm_templates WHERE id = ?`,
+      )
+        .bind(propRules.firm_template_id)
+        .first<FirmTemplateRow>();
 
-    const tradingDaysResult = await c.env.DB.prepare(
-      `SELECT COUNT(*) as cnt FROM daily_stats WHERE account_id = ? AND trades_taken > 0`,
-    )
-      .bind(account.id)
-      .first<{ cnt: number }>();
+      if (!template) continue;
 
-    const tradingDays = tradingDaysResult?.cnt ?? 0;
-    const input = buildHealthInput(propRules, template, latestStats ?? null, tradingDays);
-    const health = evaluateHealth(input);
+      const latestStats = await c.env.DB.prepare(
+        `SELECT date, balance_start_of_day, balance_end_of_day, equity_high_of_day,
+                daily_pnl, high_water_mark, trades_taken
+         FROM daily_stats WHERE account_id = ? ORDER BY date DESC LIMIT 1`,
+      )
+        .bind(account.id)
+        .first<DailyStatsRow>();
 
-    accounts.push({
-      account_id: account.id,
-      alias: account.alias,
-      firm_name: template.firm_name,
-      plan_name: template.plan_name,
-      health,
+      const tradingDaysResult = await c.env.DB.prepare(
+        `SELECT COUNT(*) as cnt FROM daily_stats WHERE account_id = ? AND trades_taken > 0`,
+      )
+        .bind(account.id)
+        .first<{ cnt: number }>();
+
+      const tradingDays = tradingDaysResult?.cnt ?? 0;
+      const input = buildHealthInput(propRules, template, latestStats ?? null, tradingDays);
+      const health = evaluateHealth(input);
+
+      accounts.push({
+        account_id: account.id,
+        alias: account.alias,
+        firm_name: template.firm_name,
+        plan_name: template.plan_name,
+        health,
+      });
+    }
+
+    return c.json<ApiResponse>({
+      data: { accounts },
+      error: null,
     });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Health evaluation error:', msg);
+    return c.json<ApiResponse>(
+      { data: { accounts: [] }, error: { code: 'INTERNAL_ERROR', message: msg } },
+      200, // Return 200 with empty accounts so the page still renders
+    );
   }
-
-  return c.json<ApiResponse>({
-    data: { accounts },
-    error: null,
-  });
 });
 
 // ── POST /link/:accountId — Link account to firm template ──
@@ -312,6 +321,7 @@ command.post('/link/:accountId', async (c) => {
     : template.max_drawdown_percent;
 
   // UPSERT prop_rules
+  try {
   await c.env.DB.prepare(
     `INSERT INTO prop_rules (
        account_id, preset_name, challenge_phase, initial_balance,
@@ -366,6 +376,14 @@ command.post('/link/:accountId', async (c) => {
       template.version,
     )
     .run();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown DB error';
+    console.error('Link error:', msg);
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'DB_ERROR', message: msg } },
+      500,
+    );
+  }
 
   return c.json<ApiResponse>({
     data: {

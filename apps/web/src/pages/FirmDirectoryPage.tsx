@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Building2, ArrowRight } from 'lucide-react';
 
 interface Firm {
@@ -8,6 +8,9 @@ interface Firm {
 }
 
 export function FirmDirectoryPage() {
+  const location = useLocation();
+  const basePath = location.pathname.startsWith('/app') ? '/app/firms' : '/firms';
+  const isInApp = location.pathname.startsWith('/app');
   const [firms, setFirms] = useState<Firm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,8 @@ export function FirmDirectoryPage() {
       {/* Noise texture */}
       <div className="noise-overlay pointer-events-none fixed inset-0 z-[9999]" />
 
-      {/* ── Nav ──────────────────────────────────────────────────── */}
+      {/* ── Nav (only shown on public page, hidden when in app layout) ── */}
+      {!isInApp && (
       <nav
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
@@ -74,6 +78,7 @@ export function FirmDirectoryPage() {
           </div>
         </div>
       </nav>
+      )}
 
       {/* ── Content ──────────────────────────────────────────────── */}
       <main className="mx-auto max-w-7xl px-6 py-16">
@@ -131,7 +136,7 @@ export function FirmDirectoryPage() {
               {filtered.map((firm, i) => (
                 <Link
                   key={firm.firm_name}
-                  to={`/firms/${encodeURIComponent(firm.firm_name)}`}
+                  to={`${basePath}/${encodeURIComponent(firm.firm_name)}`}
                   className="glass-premium card-hover-premium rounded-2xl p-6 group animate-fade-in-up block"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >

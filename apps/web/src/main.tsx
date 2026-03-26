@@ -37,13 +37,22 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Show standalone public page if not logged in, redirect to in-app version if logged in */
+function PublicOrAppRoute({ children, appPath }: { children: React.ReactNode; appPath: string }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (isAuthenticated) return <Navigate to={appPath} replace />;
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/firms" element={<FirmDirectoryPage />} />
-        <Route path="/firms/:firmName" element={<FirmDetailPage />} />
+
+        {/* Public firms pages — redirect to in-app version if logged in */}
+        <Route path="/firms" element={<PublicOrAppRoute appPath="/app/firms"><FirmDirectoryPage /></PublicOrAppRoute>} />
+        <Route path="/firms/:firmName" element={<PublicOrAppRoute appPath="/app/firms"><FirmDetailPage /></PublicOrAppRoute>} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -57,6 +66,8 @@ function App() {
           <Route path="/signals" element={<SignalLogPage />} />
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/journal/:accountId/:dealTicket" element={<JournalTradeDetailPage />} />
+          <Route path="/app/firms" element={<FirmDirectoryPage />} />
+          <Route path="/app/firms/:firmName" element={<FirmDetailPage />} />
           <Route path="/downloads" element={<DownloadsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/usage" element={<UsagePage />} />
@@ -64,8 +75,6 @@ function App() {
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/billing/callback" element={<BillingCallbackPage />} />
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
-          <Route path="/firms" element={<FirmDirectoryPage />} />
-          <Route path="/firms/:firmName" element={<FirmDetailPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

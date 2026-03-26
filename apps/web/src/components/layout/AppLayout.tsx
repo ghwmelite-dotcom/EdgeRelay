@@ -10,7 +10,7 @@ const navItems = [
   { label: 'Accounts', icon: Users, to: '/accounts' },
   { label: 'Signal Log', icon: Activity, to: '/signals' },
   { label: 'Journal', icon: BookOpen, to: '/journal' },
-  { label: 'Firms', icon: Building2, to: '/firms' },
+  { label: 'Firms', icon: Building2, to: '/app/firms' },
   { label: 'Downloads', icon: Download, to: '/downloads' },
   { label: 'Analytics', icon: BarChart3, to: '/analytics' },
   { label: 'Usage', icon: Gauge, to: '/usage' },

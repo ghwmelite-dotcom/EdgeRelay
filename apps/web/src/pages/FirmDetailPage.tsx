@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ExternalLink, Check, X } from 'lucide-react';
 
 interface FirmTemplate {
@@ -42,6 +42,9 @@ function ddTypeBadgeColor(type: string): string {
 
 export function FirmDetailPage() {
   const { firmName } = useParams<{ firmName: string }>();
+  const location = useLocation();
+  const isInApp = location.pathname.startsWith('/app');
+  const firmsPath = isInApp ? '/app/firms' : '/firms';
   const [templates, setTemplates] = useState<FirmTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +91,8 @@ export function FirmDetailPage() {
       {/* Noise texture */}
       <div className="noise-overlay pointer-events-none fixed inset-0 z-[9999]" />
 
-      {/* ── Nav ──────────────────────────────────────────────────── */}
-      <nav
+      {/* ── Nav (hidden when inside app layout) ──────────────────── */}
+      {!isInApp && <nav
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolled
             ? 'glass-premium border-b border-white/[0.04] shadow-lg shadow-black/30'
@@ -117,13 +120,13 @@ export function FirmDetailPage() {
             </Link>
           </div>
         </div>
-      </nav>
+      </nav>}
 
       {/* ── Content ──────────────────────────────────────────────── */}
       <main className="mx-auto max-w-7xl px-6 py-12">
         {/* Back link */}
         <Link
-          to="/firms"
+          to={firmsPath}
           className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-neon-cyan transition-colors mb-8"
         >
           <ArrowLeft size={14} />

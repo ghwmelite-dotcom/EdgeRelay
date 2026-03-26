@@ -152,9 +152,11 @@ void CEquityTracker::Update()
    m_state.floating_pnl = equity - balance;
    m_state.positions_open = PositionsTotal();
 
+   //--- Update equity high of day
    if(equity > m_state.equity_high_of_day)
       m_state.equity_high_of_day = equity;
 
+   //--- Update high water mark for ALL drawdown types (not just trailing)
    if(m_rules.drawdown_type == DD_TRAILING)
      {
       if(equity > m_state.high_water_mark)
@@ -175,9 +177,21 @@ void CEquityTracker::Update()
            }
         }
      }
+   else
+     {
+      //--- For static/EOD trailing: still track HWM for reporting purposes
+      if(equity > m_state.high_water_mark)
+         m_state.high_water_mark = equity;
+     }
 
+   //--- Calculate daily P&L based on BALANCE change from start of day (not equity)
+   //--- This avoids floating P&L distortion
+   double dailyBalancePnl = balance - m_state.balance_start_of_day;
+   double dailyFloatingPnl = equity - balance;
+   m_state.daily_pnl = dailyBalancePnl + dailyFloatingPnl; // realized + unrealized today
+
+   //--- Daily loss reference for PropGuard threshold checks
    double dailyRef = GetDailyLossReference();
-   m_state.daily_pnl = equity - dailyRef;
    m_state.daily_pnl_percent = (dailyRef > 0) ? (m_state.daily_pnl / dailyRef) * 100.0 : 0;
 
    if(m_rules.drawdown_type == DD_STATIC)

@@ -308,7 +308,7 @@ export function LandingPage() {
                 className="animate-fade-in-up block text-4xl md:text-5xl lg:text-6xl text-neon-green glow-text-green mt-1"
                 style={{ animationDelay: '400ms' }}
               >
-                Completely Free.
+                Free for a Year.
               </span>
             </h1>
 
@@ -874,14 +874,14 @@ export function LandingPage() {
       <section className="px-6 py-24 md:py-40">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="animate-fade-in-up font-display text-4xl font-bold text-white md:text-5xl">
-            Free for All Traders
+            Free for a Full Year
           </h2>
           <p
             className="animate-fade-in-up mt-6 text-lg text-slate-400"
             style={{ animationDelay: '80ms' }}
           >
-            We&rsquo;re opening EdgeRelay to everyone at no cost during our launch period.
-            No credit card required.
+            EdgeRelay is completely free until 2027 — no per-account fees, no monthly subscription, no credit card required.
+            While competitors charge $20-100/month, you pay nothing.
           </p>
           <Link
             to="/register"

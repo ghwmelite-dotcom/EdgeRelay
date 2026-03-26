@@ -11,6 +11,8 @@ import { billing } from './routes/billing.js';
 import { propguard } from './routes/propguard.js';
 import { news } from './routes/news.js';
 import { journal } from './routes/journal.js';
+import { firms } from './routes/firms.js';
+import { command } from './routes/command.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -66,6 +68,9 @@ app.route('/v1/auth', auth);
 // Auth-required routes (initialize, verify, subscription, cancel) apply authMiddleware internally
 app.route('/v1/billing', billing);
 
+// Firm templates — GET endpoints public, POST applies auth internally
+app.route('/v1/firms', firms);
+
 // ── Protected Routes ────────────────────────────────────────────
 const protectedApp = new Hono<{ Bindings: Env }>();
 protectedApp.use('*', authMiddleware);
@@ -76,6 +81,7 @@ protectedApp.route('/signals', signals);
 protectedApp.route('/propguard', propguard);
 protectedApp.route('/news', news);
 protectedApp.route('/journal', journal);
+protectedApp.route('/command', command);
 
 app.route('/v1', protectedApp);
 

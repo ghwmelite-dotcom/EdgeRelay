@@ -22,6 +22,8 @@ import { PropGuardSetupPage } from '@/pages/PropGuardSetupPage';
 import { JournalPage } from '@/pages/JournalPage';
 import { JournalTradeDetailPage } from '@/pages/JournalTradeDetailPage';
 import { CommandCenterPage } from '@/pages/CommandCenterPage';
+import { FirmDirectoryPage } from '@/pages/FirmDirectoryPage';
+import { FirmDetailPage } from '@/pages/FirmDetailPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -40,6 +42,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/firms" element={<FirmDirectoryPage />} />
+        <Route path="/firms/:firmName" element={<FirmDetailPage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

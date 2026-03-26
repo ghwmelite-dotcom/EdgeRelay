@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeMetrics Pro — Cinematic Promo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #05080d;
+    --surface: #0a0f16;
+    --card: #0d1219;
+    --cyan: #00e5ff;
+    --green: #00ff9d;
+    --amber: #ffb800;
+    --red: #ff3d57;
+    --purple: #b18cff;
+    --muted: #3d4f63;
+    --text: #c8d6e5;
+    --text-dim: #64748b;
+    --border: #151d28;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+  }
+
+  /* ============================================
+     BACKGROUND LAYERS
+     ============================================ */
+
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(to right, #00e5ff05 1px, transparent 1px),
+      linear-gradient(to bottom, #00e5ff05 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .noise {
+    position: fixed; inset: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    pointer-events: none; z-index: 9999;
+  }
+
+  .scanline {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00e5ff12, transparent);
+    animation: scanline 8s linear infinite;
+    pointer-events: none; z-index: 9998;
+  }
+  @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(1080px); } }
+
+  .glow-orb {
+    position: fixed; border-radius: 50%;
+    pointer-events: none; z-index: 0;
+    animation: breathe 8s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%, 100% { opacity: 0.03; } 50% { opacity: 0.07; } }
+
+  /* Floating particles */
+  .particles {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 1;
+  }
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--cyan);
+    border-radius: 50%;
+    opacity: 0;
+    animation: particleFloat linear infinite;
+  }
+  @keyframes particleFloat {
+    0% { opacity: 0; transform: translateY(0) scale(0.5); }
+    10% { opacity: 0.4; }
+    90% { opacity: 0.4; }
+    100% { opacity: 0; transform: translateY(-200px) scale(1.2); }
+  }
+
+  /* ============================================
+     SLIDE SYSTEM
+     ============================================ */
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+    filter: blur(4px);
+    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 1s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 60px 120px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    pointer-events: auto;
+  }
+
+  .slide.active .anim {
+    animation: elemFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes elemFadeIn {
+    from { opacity: 0; transform: translateY(24px); filter: blur(3px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+
+  /* Stagger children of .stagger when parent slide is active */
+  .slide.active .stagger > *:nth-child(1) { animation-delay: 0.15s; }
+  .slide.active .stagger > *:nth-child(2) { animation-delay: 0.3s; }
+  .slide.active .stagger > *:nth-child(3) { animation-delay: 0.45s; }
+  .slide.active .stagger > *:nth-child(4) { animation-delay: 0.6s; }
+  .slide.active .stagger > *:nth-child(5) { animation-delay: 0.75s; }
+  .slide.active .stagger > *:nth-child(6) { animation-delay: 0.9s; }
+  .slide.active .stagger > *:nth-child(7) { animation-delay: 1.05s; }
+  .slide.active .stagger > *:nth-child(8) { animation-delay: 1.2s; }
+
+  /* ============================================
+     TYPOGRAPHY
+     ============================================ */
+
+  .logo-main {
+    font-size: 96px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .logo-main .trade { color: white; }
+  .logo-main .metrics {
+    color: var(--cyan);
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+  .logo-main .pro {
+    font-size: 28px;
+    color: var(--muted);
+    letter-spacing: 10px;
+    margin-left: 10px;
+    vertical-align: super;
+    font-weight: 600;
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { text-shadow: 0 0 20px #00e5ff30, 0 0 60px #00e5ff10; }
+    50% { text-shadow: 0 0 40px #00e5ff60, 0 0 80px #00e5ff30, 0 0 120px #00e5ff15; }
+  }
+
+  /* Glow burst behind logo */
+  .logo-burst {
+    position: absolute;
+    width: 600px; height: 200px;
+    background: radial-gradient(ellipse, #00e5ff15, transparent 70%);
+    filter: blur(40px);
+    animation: burstIn 2s ease-out both;
+    pointer-events: none;
+  }
+  @keyframes burstIn {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  h1 {
+    font-size: 64px; font-weight: 900;
+    line-height: 1.1; text-align: center;
+  }
+  h2 {
+    font-size: 48px; font-weight: 800;
+    text-align: center;
+  }
+
+  .subtitle {
+    font-size: 24px; color: var(--text-dim);
+    text-align: center; max-width: 900px; line-height: 1.6;
+  }
+
+  .cyan { color: var(--cyan); }
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red { color: var(--red); }
+  .purple { color: var(--purple); }
+  .white { color: white; }
+  .glow { text-shadow: 0 0 20px #00e5ff40, 0 0 60px #00e5ff15; }
+  .glow-green { text-shadow: 0 0 20px #00ff9d40, 0 0 60px #00ff9d15; }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ============================================
+     SLIDE 1 — LOGO REVEAL
+     ============================================ */
+
+  .stats-strip {
+    display: flex; gap: 56px; margin-top: 48px;
+  }
+  .stat { text-align: center; }
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 52px; font-weight: 700;
+    color: var(--cyan);
+    text-shadow: 0 0 15px #00e5ff40;
+  }
+  .stat-label {
+    font-size: 13px; text-transform: uppercase;
+    letter-spacing: 4px; color: var(--muted); margin-top: 6px;
+  }
+
+  .slide.active .stat {
+    animation: countUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .slide.active .stat:nth-child(1) { animation-delay: 1s; }
+  .slide.active .stat:nth-child(2) { animation-delay: 1.2s; }
+  .slide.active .stat:nth-child(3) { animation-delay: 1.4s; }
+  .slide.active .stat:nth-child(4) { animation-delay: 1.6s; }
+
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.9); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .tagline-reveal {
+    opacity: 0;
+    animation: none;
+  }
+  .slide.active .tagline-reveal {
+    animation: tagFade 1s ease both 0.6s;
+  }
+  @keyframes tagFade {
+    from { opacity: 0; transform: translateY(12px); letter-spacing: 8px; }
+    to { opacity: 1; transform: none; letter-spacing: 0; }
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 20px; border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .badge-cyan { background: #00e5ff08; border: 1px solid #00e5ff20; color: var(--cyan); }
+  .badge-green { background: #00ff9d08; border: 1px solid #00ff9d20; color: var(--green); }
+  .badge-amber { background: #ffb80008; border: 1px solid #ffb80020; color: var(--amber); }
+
+  .live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px #00ff9d60;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.8); }
+  }
+
+  /* ============================================
+     SLIDE 2 — PROBLEM vs SOLUTION
+     ============================================ */
+
+  .split-screen {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0;
+    width: 100%;
+    max-width: 1400px;
+    margin-top: 48px;
+    align-items: start;
+  }
+
+  .split-divider {
+    display: flex; align-items: center; justify-content: center;
+    height: 100%;
+    position: relative;
+  }
+  .split-divider::before {
+    content: '';
+    position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, #ffffff10, transparent);
+  }
+  .split-divider span {
+    font-size: 28px; font-weight: 900;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 16px 0;
+    z-index: 1;
+  }
+
+  .problem-list, .solution-list {
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  .problem-item, .solution-item {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 24px 28px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0d121940, #0d121980);
+    border: 1px solid #ffffff06;
+    backdrop-filter: blur(12px);
+    opacity: 0;
+  }
+
+  .problem-item {
+    border-left: 3px solid var(--red);
+  }
+  .solution-item {
+    border-left: 3px solid var(--green);
+  }
+
+  .slide.active .problem-item,
+  .slide.active .solution-item {
+    animation: elemFadeIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .slide.active .problem-item:nth-child(1) { animation-delay: 0.2s; }
+  .slide.active .problem-item:nth-child(2) { animation-delay: 0.4s; }
+  .slide.active .problem-item:nth-child(3) { animation-delay: 0.6s; }
+  .slide.active .solution-item:nth-child(1) { animation-delay: 0.5s; }
+  .slide.active .solution-item:nth-child(2) { animation-delay: 0.7s; }
+  .slide.active .solution-item:nth-child(3) { animation-delay: 0.9s; }
+
+  .item-icon {
+    width: 44px; height: 44px; min-width: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 900;
+  }
+  .item-icon.red-icon { background: #ff3d5712; color: var(--red); border: 1px solid #ff3d5720; }
+  .item-icon.green-icon { background: #00ff9d12; color: var(--green); border: 1px solid #00ff9d20; }
+
+  .item-text h3 {
+    font-size: 20px; font-weight: 700; color: white; margin-bottom: 4px;
+  }
+  .item-text p {
+    font-size: 15px; color: #94a3b8; line-height: 1.5;
+  }
+
+  /* ============================================
+     SLIDE 3 — ARCHITECTURE DIAGRAM
+     ============================================ */
+
+  .arch-diagram {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-top: 56px; width: 100%; max-width: 1300px;
+    position: relative;
+  }
+
+  .arch-node {
+    padding: 28px 36px;
+    border-radius: 16px;
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    position: relative;
+    z-index: 2;
+    min-width: 200px;
+  }
+
+  .arch-node.vps {
+    background: linear-gradient(135deg, #0d1219, #0a0f16);
+    border: 1px solid var(--border);
+  }
+  .arch-node.edge {
+    background: #00e5ff08;
+    border: 1px solid #00e5ff30;
+    box-shadow: 0 0 40px #00e5ff10, 0 0 80px #00e5ff05;
+    padding: 32px 48px;
+  }
+
+  .arch-node .node-label {
+    font-size: 12px; color: var(--text-dim);
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .arch-node .node-role {
+    font-size: 20px; font-weight: 700;
+  }
+  .arch-node .node-location {
+    font-size: 12px; color: var(--muted); margin-top: 6px;
+  }
+
+  .arch-connector {
+    width: 160px; height: 4px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .arch-connector::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, #00e5ff10, #00e5ff20, #00e5ff10);
+    border-radius: 2px;
+  }
+
+  .signal-dot {
+    position: absolute;
+    width: 12px; height: 12px;
+    background: var(--cyan);
+    border-radius: 50%;
+    top: -4px;
+    box-shadow: 0 0 12px #00e5ff80, 0 0 24px #00e5ff40;
+    animation: travelRight 2s ease-in-out infinite;
+  }
+  .signal-dot.d2 { animation-delay: 0.7s; }
+  .signal-dot.d3 { animation-delay: 1.4s; }
+
+  @keyframes travelRight {
+    0% { left: -12px; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { left: calc(100% + 12px); opacity: 0; }
+  }
+
+  .arch-subtitle {
+    margin-top: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px; color: var(--muted);
+    letter-spacing: 4px; text-transform: uppercase;
+    text-align: center;
+  }
+  .arch-subtitle span {
+    margin: 0 12px;
+    color: var(--text-dim);
+  }
+
+  /* ============================================
+     SLIDE 4 — DASHBOARD MOCKUP
+     ============================================ */
+
+  .dashboard-mock {
+    width: 100%; max-width: 1500px;
+    margin-top: 16px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+
+  /* Status bar */
+  .dash-status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0d121980, #0a0f1680);
+    border: 1px solid #ffffff06;
+    backdrop-filter: blur(16px);
+    opacity: 0;
+  }
+  .slide.active .dash-status-bar { animation: elemFadeIn 0.6s ease both 0.2s; }
+
+  .status-left {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px; font-weight: 600;
+  }
+  .status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px #00ff9d60;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .status-right {
+    display: flex; gap: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* Stat cards row */
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .dash-stat-card {
+    padding: 24px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0d121990, #0a0f1690);
+    border: 1px solid #ffffff06;
+    backdrop-filter: blur(16px);
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+  }
+  .dash-stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .dash-stat-card.cyan-top::before {
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+  .dash-stat-card.green-top::before {
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+  }
+  .dash-stat-card.amber-top::before {
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  }
+  .dash-stat-card.purple-top::before {
+    background: linear-gradient(90deg, transparent, var(--purple), transparent);
+  }
+
+  .slide.active .dash-stat-card:nth-child(1) { animation: elemFadeIn 0.6s ease both 0.35s; }
+  .slide.active .dash-stat-card:nth-child(2) { animation: elemFadeIn 0.6s ease both 0.5s; }
+  .slide.active .dash-stat-card:nth-child(3) { animation: elemFadeIn 0.6s ease both 0.65s; }
+  .slide.active .dash-stat-card:nth-child(4) { animation: elemFadeIn 0.6s ease both 0.8s; }
+
+  .dash-stat-label {
+    font-size: 12px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .dash-stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 40px; font-weight: 700;
+    color: white;
+    line-height: 1;
+  }
+  .dash-stat-unit {
+    font-size: 18px; color: var(--muted); font-weight: 400;
+  }
+  .dash-stat-change {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; margin-top: 8px;
+  }
+
+  /* Bottom row: account card + signal feed */
+  .dash-bottom {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 16px;
+  }
+
+  /* Account card with gauge */
+  .dash-account-card {
+    padding: 28px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0d121990, #0a0f1690);
+    border: 1px solid #ffffff06;
+    backdrop-filter: blur(16px);
+    display: flex; flex-direction: column; align-items: center;
+    opacity: 0;
+  }
+  .slide.active .dash-account-card { animation: elemFadeIn 0.6s ease both 0.95s; }
+
+  .account-header {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .account-name {
+    font-size: 16px; font-weight: 700; color: white;
+  }
+  .account-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 6px;
+    background: #00ff9d12; color: var(--green);
+    border: 1px solid #00ff9d20;
+    letter-spacing: 1px;
+  }
+
+  /* SVG gauge */
+  .gauge-container {
+    position: relative;
+    width: 160px; height: 160px;
+    margin: 8px 0;
+  }
+  .gauge-svg {
+    width: 100%; height: 100%;
+    transform: rotate(-90deg);
+  }
+  .gauge-bg {
+    fill: none; stroke: #151d28; stroke-width: 8;
+  }
+  .gauge-fill {
+    fill: none; stroke: var(--cyan); stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 408;
+    stroke-dashoffset: 408;
+    filter: drop-shadow(0 0 6px #00e5ff60);
+  }
+  .slide.active .gauge-fill {
+    animation: gaugeAnimate 1.5s cubic-bezier(0.16, 1, 0.3, 1) both 1.2s;
+  }
+  @keyframes gaugeAnimate {
+    to { stroke-dashoffset: 61; /* 85% of 408 = 346.8, so offset = 408-346.8 = 61.2 */ }
+  }
+  .gauge-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .gauge-percent {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 36px; font-weight: 700;
+    color: white;
+  }
+  .gauge-label {
+    font-size: 12px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+
+  .account-details {
+    width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-top: 16px;
+  }
+  .account-detail {
+    text-align: center;
+  }
+  .account-detail-label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .account-detail-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px; font-weight: 600; color: white;
+  }
+
+  /* Signal feed table */
+  .dash-signal-feed {
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0d121990, #0a0f1690);
+    border: 1px solid #ffffff06;
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+    opacity: 0;
+  }
+  .slide.active .dash-signal-feed { animation: elemFadeIn 0.6s ease both 1.1s; }
+
+  .feed-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .feed-title {
+    font-size: 14px; font-weight: 700; color: white;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .feed-live {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--green);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .feed-table {
+    width: 100%;
+  }
+  .feed-row {
+    display: grid;
+    grid-template-columns: 110px 100px 80px 70px 100px 80px 1fr;
+    gap: 0;
+    padding: 12px 24px;
+    border-bottom: 1px solid #ffffff04;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    align-items: center;
+  }
+  .feed-row.header {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    padding: 10px 24px;
+    background: #00000020;
+  }
+  .feed-row:not(.header):hover {
+    background: #ffffff03;
+  }
+
+  .feed-side {
+    font-weight: 700; padding: 3px 10px; border-radius: 4px;
+    display: inline-block; text-align: center; width: fit-content;
+  }
+  .feed-side.buy { background: #00ff9d12; color: var(--green); }
+  .feed-side.sell { background: #ff3d5712; color: var(--red); }
+  .feed-side.close { background: #ffb80012; color: var(--amber); }
+
+  .feed-status {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--green); font-weight: 600;
+  }
+  .feed-latency {
+    color: var(--cyan); font-weight: 500;
+  }
+
+  /* ============================================
+     SLIDE 5 — PRODUCTS
+     ============================================ */
+
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 48px;
+    width: 100%; max-width: 1300px;
+  }
+
+  .product-card {
+    padding: 32px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #0d121960, #0a0f1690);
+    border: 1px solid #ffffff06;
+    backdrop-filter: blur(16px);
+    position: relative; overflow: hidden;
+    opacity: 0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .product-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .product-card.c-cyan::before { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+  .product-card.c-green::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+  .product-card.c-purple::before { background: linear-gradient(90deg, transparent, var(--purple), transparent); }
+  .product-card.c-amber::before { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
+
+  .slide.active .product-card:nth-child(1) { animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 0.2s; }
+  .slide.active .product-card:nth-child(2) { animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 0.5s; }
+  .slide.active .product-card:nth-child(3) { animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 0.8s; }
+  .slide.active .product-card:nth-child(4) { animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 1.1s; }
+  .slide.active .product-card:nth-child(5) { animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 1.4s; }
+  .slide.active .product-card:nth-child(6) { animation: cardReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both 1.7s; }
+
+  @keyframes cardReveal {
+    from { opacity: 0; transform: translateY(40px) scale(0.92); filter: blur(6px); }
+    to { opacity: 1; transform: none; filter: none; }
+  }
+
+  .product-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 20px;
+  }
+  .product-icon.cyan-bg { background: #00e5ff10; border: 1px solid #00e5ff20; }
+  .product-icon.green-bg { background: #00ff9d10; border: 1px solid #00ff9d20; }
+  .product-icon.purple-bg { background: #b18cff10; border: 1px solid #b18cff20; }
+  .product-icon.amber-bg { background: #ffb80010; border: 1px solid #ffb80020; }
+
+  .product-card h3 {
+    font-size: 22px; font-weight: 700; color: white; margin-bottom: 8px;
+  }
+  .product-card p {
+    font-size: 15px; color: #94a3b8; line-height: 1.6;
+  }
+
+  /* ============================================
+     SLIDE 6 — CTA
+     ============================================ */
+
+  .price-compare {
+    display: flex; align-items: center; gap: 32px;
+    margin-top: 32px; margin-bottom: 16px;
+  }
+
+  .old-price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 42px; font-weight: 700;
+    color: var(--red);
+    position: relative;
+    opacity: 0.6;
+  }
+  .old-price::after {
+    content: '';
+    position: absolute;
+    left: -4px; right: -4px;
+    top: 50%;
+    height: 3px;
+    background: var(--red);
+    animation: strikeIn 0.6s ease both;
+  }
+  .slide.active .old-price::after { animation-delay: 1s; }
+  @keyframes strikeIn {
+    from { transform: scaleX(0); transform-origin: left; }
+    to { transform: scaleX(1); transform-origin: left; }
+  }
+
+  .price-arrow {
+    font-size: 32px; color: var(--muted);
+  }
+
+  .new-price {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 56px; font-weight: 700;
+    color: var(--green);
+    text-shadow: 0 0 30px #00ff9d40, 0 0 60px #00ff9d20;
+  }
+  .new-price-sub {
+    font-size: 18px; color: var(--text-dim); font-weight: 400;
+    margin-left: 8px;
+  }
+
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    margin-top: 40px;
+    padding: 22px 64px;
+    border-radius: 16px;
+    background: var(--cyan);
+    color: var(--bg);
+    font-size: 22px; font-weight: 800;
+    border: none;
+    box-shadow: 0 0 40px #00e5ff50, 0 0 80px #00e5ff20;
+    letter-spacing: 1px;
+    animation: ctaPulse 2s ease-in-out infinite;
+  }
+  @keyframes ctaPulse {
+    0%, 100% { box-shadow: 0 0 40px #00e5ff50, 0 0 80px #00e5ff20; }
+    50% { box-shadow: 0 0 60px #00e5ff70, 0 0 120px #00e5ff30; }
+  }
+
+  .cta-url {
+    margin-top: 28px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px; color: var(--cyan); opacity: 0.6;
+    letter-spacing: 5px;
+  }
+
+  /* ============================================
+     PROGRESS & COUNTER
+     ============================================ */
+
+  .progress-bar {
+    position: fixed; bottom: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    z-index: 10000;
+    box-shadow: 0 0 10px #00e5ff40;
+    transition: width 6s linear;
+  }
+
+  .slide-counter {
+    position: fixed; bottom: 24px; right: 40px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px; color: var(--muted);
+    z-index: 10000; letter-spacing: 3px;
+  }
+
+  /* ============================================
+     SLIDE 3 ENHANCED — Multiple follower nodes
+     ============================================ */
+
+  .arch-row-2 {
+    display: flex; align-items: center; justify-content: center;
+    gap: 32px; margin-top: 20px;
+  }
+
+  .follower-mini {
+    padding: 14px 24px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0d1219, #0a0f16);
+    border: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; text-align: center;
+    opacity: 0;
+  }
+  .slide.active .follower-mini:nth-child(1) { animation: elemFadeIn 0.5s ease both 1.2s; }
+  .slide.active .follower-mini:nth-child(2) { animation: elemFadeIn 0.5s ease both 1.5s; }
+  .slide.active .follower-mini:nth-child(3) { animation: elemFadeIn 0.5s ease both 1.8s; }
+
+  .follower-mini .fm-label { color: var(--muted); font-size: 10px; letter-spacing: 1px; }
+  .follower-mini .fm-role { color: var(--green); font-weight: 600; font-size: 13px; }
+
+  /* Connecting lines from edge to followers */
+  .fan-lines {
+    display: flex; gap: 32px; justify-content: center;
+    margin-top: -4px;
+  }
+  .fan-line {
+    width: 2px; height: 24px;
+    background: linear-gradient(to bottom, #00e5ff30, #00ff9d20);
+  }
+</style>
+</head>
+<body>
+  <!-- Background layers -->
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+  <div class="scanline"></div>
+  <div class="glow-orb" style="top:-15%;right:-8%;width:700px;height:700px;background:radial-gradient(circle,#00e5ff08,transparent 70%)"></div>
+  <div class="glow-orb" style="bottom:-10%;left:-5%;width:600px;height:600px;background:radial-gradient(circle,#b18cff06,transparent 70%);animation-delay:3s"></div>
+  <div class="glow-orb" style="top:40%;left:50%;width:400px;height:400px;background:radial-gradient(circle,#00ff9d04,transparent 70%);animation-delay:5s;transform:translateX(-50%)"></div>
+
+  <!-- Particles -->
+  <div class="particles" id="particles"></div>
+
+  <!-- ========================================
+       SLIDE 1: LOGO REVEAL
+       ======================================== -->
+  <div class="slide active" id="s1">
+    <div class="logo-burst"></div>
+    <div class="badge badge-cyan anim" style="animation-delay:0.3s">
+      <div class="live-dot"></div> NOW LIVE
+    </div>
+    <div class="logo-main anim" style="animation-delay:0.1s">
+      <span class="trade">TRADE</span><span class="metrics">METRICS</span><span class="pro">PRO</span>
+    </div>
+    <p class="subtitle tagline-reveal" style="margin-top:20px;font-size:26px">
+      The world's only <span style="color:white;font-weight:700">free cross-VPS</span> trade copier
+    </p>
+    <div class="stats-strip">
+      <div class="stat">
+        <div class="stat-value">&lt;500<span style="font-size:28px">ms</span></div>
+        <div class="stat-label">Latency</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">300<span style="font-size:28px">+</span></div>
+        <div class="stat-label">Edge Locations</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">99.9<span style="font-size:28px">%</span></div>
+        <div class="stat-label">Uptime SLA</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" style="color:var(--green)">$0</div>
+        <div class="stat-label">For a Full Year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 2: PROBLEM vs SOLUTION
+       ======================================== -->
+  <div class="slide" id="s2">
+    <h2 style="margin-bottom:8px"><span class="white">The Industry Problem.</span> <span class="cyan glow">Our Fix.</span></h2>
+    <p class="subtitle" style="font-size:18px;margin-bottom:0">Every trade copier forces the same limitations. We removed all of them.</p>
+
+    <div class="split-screen">
+      <!-- Problems -->
+      <div class="problem-list">
+        <div class="problem-item">
+          <div class="item-icon red-icon">&#10005;</div>
+          <div class="item-text">
+            <h3 style="color:var(--red)">Same VPS Required</h3>
+            <p>Master and Follower locked to one server. Different broker? Out of luck.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="item-icon red-icon">&#10005;</div>
+          <div class="item-text">
+            <h3 style="color:var(--red)">$20-100/month</h3>
+            <p>Per-account fees add up. 10 accounts = $1,000/month just for copying.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="item-icon red-icon">&#10005;</div>
+          <div class="item-text">
+            <h3 style="color:var(--red)">Dropped Signals</h3>
+            <p>Network blip or VPS restart? Missed trades and blown funded accounts.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="split-divider"><span>VS</span></div>
+
+      <!-- Solutions -->
+      <div class="solution-list">
+        <div class="solution-item">
+          <div class="item-icon green-icon">&#10003;</div>
+          <div class="item-text">
+            <h3 style="color:var(--green)">Any VPS, Any Broker</h3>
+            <p>Master in New York, Followers in London, Tokyo, anywhere. Just works.</p>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="item-icon green-icon">&#10003;</div>
+          <div class="item-text">
+            <h3 style="color:var(--green)">Free for a Year</h3>
+            <p>No per-account fees. No subscription. No credit card. Zero cost.</p>
+          </div>
+        </div>
+        <div class="solution-item">
+          <div class="item-icon green-icon">&#10003;</div>
+          <div class="item-text">
+            <h3 style="color:var(--green)">Zero-Drop Delivery</h3>
+            <p>Durable Objects guarantee every signal arrives. No exceptions.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 3: CROSS-VPS ARCHITECTURE
+       ======================================== -->
+  <div class="slide" id="s3">
+    <div class="badge badge-green anim" style="animation-delay:0.1s">
+      <div class="live-dot"></div> HOW IT WORKS
+    </div>
+    <h1 class="anim" style="animation-delay:0.2s">
+      <span class="white">Copy Across </span><span class="cyan glow">Any VPS</span>
+    </h1>
+    <p class="subtitle anim" style="animation-delay:0.4s;margin-top:8px">
+      Signals travel through Cloudflare's global edge network in under 500ms
+    </p>
+
+    <div class="arch-diagram anim" style="animation-delay:0.6s">
+      <!-- Master -->
+      <div class="arch-node vps">
+        <div class="node-label">VPS 1</div>
+        <div class="node-role cyan">Master EA</div>
+        <div class="node-location">New York, US</div>
+      </div>
+
+      <!-- Connector 1 -->
+      <div class="arch-connector">
+        <div class="signal-dot"></div>
+        <div class="signal-dot d2"></div>
+      </div>
+
+      <!-- Edge -->
+      <div class="arch-node edge">
+        <div class="node-label" style="color:var(--cyan)">Cloudflare Edge</div>
+        <div class="node-role cyan" style="font-size:22px">300+ PoPs</div>
+        <div class="node-location" style="color:var(--cyan);opacity:0.6">&lt;50ms globally</div>
+      </div>
+
+      <!-- Connector 2 -->
+      <div class="arch-connector">
+        <div class="signal-dot"></div>
+        <div class="signal-dot d3"></div>
+      </div>
+
+      <!-- Follower -->
+      <div class="arch-node vps">
+        <div class="node-label">VPS 2</div>
+        <div class="node-role green">Follower EA</div>
+        <div class="node-location">London, UK</div>
+      </div>
+    </div>
+
+    <!-- Additional follower nodes -->
+    <div class="fan-lines anim" style="animation-delay:1s">
+      <div class="fan-line"></div>
+      <div class="fan-line"></div>
+      <div class="fan-line"></div>
+    </div>
+    <div class="arch-row-2">
+      <div class="follower-mini">
+        <div class="fm-label">VPS 3 &middot; TOKYO</div>
+        <div class="fm-role">Follower</div>
+      </div>
+      <div class="follower-mini">
+        <div class="fm-label">VPS 4 &middot; FRANKFURT</div>
+        <div class="fm-role">Follower</div>
+      </div>
+      <div class="follower-mini">
+        <div class="fm-label">VPS 5 &middot; SINGAPORE</div>
+        <div class="fm-role">Follower</div>
+      </div>
+    </div>
+
+    <p class="arch-subtitle anim" style="animation-delay:0.8s">
+      <span>Different Servers</span> &middot; <span>Different Countries</span> &middot; <span>Different Brokers</span>
+    </p>
+  </div>
+
+  <!-- ========================================
+       SLIDE 4: DASHBOARD MOCKUP
+       ======================================== -->
+  <div class="slide" id="s4">
+    <div class="badge badge-cyan anim" style="animation-delay:0.05s">
+      <div class="live-dot"></div> COMMAND CENTER
+    </div>
+
+    <div class="dashboard-mock">
+      <!-- Status bar -->
+      <div class="dash-status-bar">
+        <div class="status-left">
+          <div class="status-dot"></div>
+          <span style="color:var(--green)">ALL SYSTEMS OPERATIONAL</span>
+        </div>
+        <div class="status-right">
+          <span>REGION: <span style="color:white">US-EAST</span></span>
+          <span>UPTIME: <span style="color:var(--green)">99.97%</span></span>
+          <span>LAST SYNC: <span style="color:var(--cyan)">2s AGO</span></span>
+        </div>
+      </div>
+
+      <!-- 4 stat cards -->
+      <div class="dash-stats">
+        <div class="dash-stat-card cyan-top">
+          <div class="dash-stat-label">Signals Today</div>
+          <div class="dash-stat-value" style="color:var(--cyan)">142</div>
+          <div class="dash-stat-change green">+23 vs yesterday</div>
+        </div>
+        <div class="dash-stat-card green-top">
+          <div class="dash-stat-label">Avg Latency</div>
+          <div class="dash-stat-value">38<span class="dash-stat-unit">ms</span></div>
+          <div class="dash-stat-change green">-12ms improvement</div>
+        </div>
+        <div class="dash-stat-card amber-top">
+          <div class="dash-stat-label">Success Rate</div>
+          <div class="dash-stat-value" style="color:var(--green)">99.2<span class="dash-stat-unit">%</span></div>
+          <div class="dash-stat-change" style="color:var(--muted)">1 retry out of 142</div>
+        </div>
+        <div class="dash-stat-card purple-top">
+          <div class="dash-stat-label">Active Accounts</div>
+          <div class="dash-stat-value">8<span class="dash-stat-unit">/10</span></div>
+          <div class="dash-stat-change" style="color:var(--cyan)">2 slots available</div>
+        </div>
+      </div>
+
+      <!-- Bottom: account card + signal feed -->
+      <div class="dash-bottom">
+        <!-- Account card with gauge -->
+        <div class="dash-account-card">
+          <div class="account-header">
+            <span class="account-name">FTMO Challenge #1</span>
+            <span class="account-badge">FUNDED</span>
+          </div>
+          <div class="gauge-container">
+            <svg class="gauge-svg" viewBox="0 0 140 140">
+              <circle class="gauge-bg" cx="70" cy="70" r="65"></circle>
+              <circle class="gauge-fill" cx="70" cy="70" r="65"></circle>
+            </svg>
+            <div class="gauge-text">
+              <div class="gauge-percent">85%</div>
+              <div class="gauge-label">Health</div>
+            </div>
+          </div>
+          <div class="account-details">
+            <div class="account-detail">
+              <div class="account-detail-label">Balance</div>
+              <div class="account-detail-value">$102,340</div>
+            </div>
+            <div class="account-detail">
+              <div class="account-detail-label">Drawdown</div>
+              <div class="account-detail-value" style="color:var(--green)">-2.3%</div>
+            </div>
+            <div class="account-detail">
+              <div class="account-detail-label">Profit</div>
+              <div class="account-detail-value" style="color:var(--green)">+$2,340</div>
+            </div>
+            <div class="account-detail">
+              <div class="account-detail-label">Max DD</div>
+              <div class="account-detail-value" style="color:var(--amber)">10%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signal feed -->
+        <div class="dash-signal-feed">
+          <div class="feed-header">
+            <div class="feed-title">
+              Recent Signals
+            </div>
+            <div class="feed-live">
+              <div class="live-dot" style="width:5px;height:5px"></div>
+              LIVE FEED
+            </div>
+          </div>
+          <div class="feed-table">
+            <div class="feed-row header">
+              <span>Time</span><span>Symbol</span><span>Side</span>
+              <span>Lots</span><span>Latency</span><span>Status</span><span>Account</span>
+            </div>
+            <div class="feed-row">
+              <span style="color:var(--muted)">14:32:07</span>
+              <span style="color:white;font-weight:600">EURUSD</span>
+              <span><span class="feed-side buy">BUY</span></span>
+              <span style="color:var(--text)">0.50</span>
+              <span class="feed-latency">32ms</span>
+              <span class="feed-status">&#10003; Filled</span>
+              <span style="color:var(--muted)">FTMO #1</span>
+            </div>
+            <div class="feed-row">
+              <span style="color:var(--muted)">14:31:44</span>
+              <span style="color:white;font-weight:600">XAUUSD</span>
+              <span><span class="feed-side sell">SELL</span></span>
+              <span style="color:var(--text)">1.00</span>
+              <span class="feed-latency">28ms</span>
+              <span class="feed-status">&#10003; Filled</span>
+              <span style="color:var(--muted)">FN #3</span>
+            </div>
+            <div class="feed-row">
+              <span style="color:var(--muted)">14:28:19</span>
+              <span style="color:white;font-weight:600">GBPJPY</span>
+              <span><span class="feed-side close">CLOSE</span></span>
+              <span style="color:var(--text)">0.30</span>
+              <span class="feed-latency">41ms</span>
+              <span class="feed-status">&#10003; Filled</span>
+              <span style="color:var(--muted)">The5ers</span>
+            </div>
+            <div class="feed-row">
+              <span style="color:var(--muted)">14:25:02</span>
+              <span style="color:white;font-weight:600">USDJPY</span>
+              <span><span class="feed-side buy">BUY</span></span>
+              <span style="color:var(--text)">0.20</span>
+              <span class="feed-latency">35ms</span>
+              <span class="feed-status">&#10003; Filled</span>
+              <span style="color:var(--muted)">FTMO #2</span>
+            </div>
+            <div class="feed-row">
+              <span style="color:var(--muted)">14:22:58</span>
+              <span style="color:white;font-weight:600">NZDUSD</span>
+              <span><span class="feed-side sell">SELL</span></span>
+              <span style="color:var(--text)">0.75</span>
+              <span class="feed-latency">44ms</span>
+              <span class="feed-status">&#10003; Filled</span>
+              <span style="color:var(--muted)">FN #1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 5: PRODUCTS SHOWCASE
+       ======================================== -->
+  <div class="slide" id="s5">
+    <h2 style="margin-bottom:4px"><span class="white">Everything You Need.</span> <span class="cyan glow">All Free.</span></h2>
+    <p class="subtitle" style="font-size:18px">Six integrated tools. One platform. Zero cost for 12 months.</p>
+
+    <div class="products-grid">
+      <div class="product-card c-cyan">
+        <div class="product-icon cyan-bg">&#9889;</div>
+        <h3>Edge Signal Copier</h3>
+        <p>Sub-500ms cross-VPS trade copying via Cloudflare's 300+ PoP edge network. Any server, any broker.</p>
+      </div>
+      <div class="product-card c-green">
+        <div class="product-icon green-bg">&#128737;</div>
+        <h3>PropGuard</h3>
+        <p>Real-time drawdown guardian. 10-point evaluation blocks dangerous trades before they breach your rules.</p>
+      </div>
+      <div class="product-card c-purple">
+        <div class="product-icon purple-bg">&#128202;</div>
+        <h3>AI Trade Journal</h3>
+        <p>Automatic trade logging with equity curves, session analysis, and AI-powered performance insights.</p>
+      </div>
+      <div class="product-card c-cyan">
+        <div class="product-icon cyan-bg">&#127919;</div>
+        <h3>Command Center</h3>
+        <p>Unified health monitoring dashboard across FTMO, FundedNext, The5ers, and 20+ prop firms.</p>
+      </div>
+      <div class="product-card c-amber">
+        <div class="product-icon amber-bg">&#9888;</div>
+        <h3>Risk Dashboard</h3>
+        <p>Aggregate exposure tracking, correlation warnings, and real-time drawdown budget monitoring.</p>
+      </div>
+      <div class="product-card c-purple">
+        <div class="product-icon purple-bg">&#127922;</div>
+        <h3>Challenge Simulator</h3>
+        <p>1,000-path Monte Carlo simulation. Know your pass probability before paying the challenge fee.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 6: CTA — FREE FOR A YEAR
+       ======================================== -->
+  <div class="slide" id="s6">
+    <div class="badge badge-amber anim" style="animation-delay:0.1s">&#128293; LIMITED TIME OFFER</div>
+    <h1 class="anim" style="font-size:80px;animation-delay:0.3s">
+      <span class="white">Free for a </span><span class="green glow-green">Full Year.</span>
+    </h1>
+    <p class="subtitle anim" style="font-size:26px;color:#94a3b8;margin-top:12px;animation-delay:0.5s">
+      No per-account fees. No subscription. No credit card required.
+    </p>
+
+    <div class="price-compare anim" style="animation-delay:0.7s">
+      <div class="old-price">$20-100/mo</div>
+      <div class="price-arrow">&#10230;</div>
+      <div>
+        <span class="new-price">$0</span>
+        <span class="new-price-sub">until 2027</span>
+      </div>
+    </div>
+
+    <div class="cta-btn anim" style="animation-delay:1s">Get Started Free &#8594;</div>
+    <div class="cta-url anim" style="animation-delay:1.3s">trademetricspro.com</div>
+  </div>
+
+  <!-- Progress bar & counter -->
+  <div class="progress-bar" id="progress"></div>
+  <div class="slide-counter" id="counter">01 / 06</div>
+
+  <script>
+    // Particle generator
+    (function() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = (50 + Math.random() * 60) + '%';
+        p.style.animationDuration = (6 + Math.random() * 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        p.style.width = (1 + Math.random() * 2) + 'px';
+        p.style.height = p.style.width;
+        container.appendChild(p);
+      }
+    })();
+
+    // Slide system
+    const slides = document.querySelectorAll('.slide');
+    const progress = document.getElementById('progress');
+    const counter = document.getElementById('counter');
+    let current = 0;
+    const total = slides.length;
+    const INTERVAL = 6000;
+    let timer = null;
+
+    function showSlide(n) {
+      slides.forEach(s => s.classList.remove('active'));
+      slides[n].classList.add('active');
+      counter.textContent = String(n + 1).padStart(2, '0') + ' / ' + String(total).padStart(2, '0');
+
+      // Animate progress bar with linear timing matching slide duration
+      progress.style.transition = 'none';
+      progress.style.width = (n / total * 100) + '%';
+      // Force reflow
+      progress.offsetWidth;
+      progress.style.transition = 'width ' + (INTERVAL / 1000) + 's linear';
+      progress.style.width = ((n + 1) / total * 100) + '%';
+    }
+
+    function next() {
+      current = (current + 1) % total;
+      showSlide(current);
+    }
+
+    function prev() {
+      current = (current - 1 + total) % total;
+      showSlide(current);
+    }
+
+    function resetTimer() {
+      clearInterval(timer);
+      timer = setInterval(next, INTERVAL);
+    }
+
+    // Initialize
+    showSlide(0);
+    timer = setInterval(next, INTERVAL);
+
+    // Click to advance
+    document.body.addEventListener('click', () => {
+      next();
+      resetTimer();
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        next();
+        resetTimer();
+      }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prev();
+        resetTimer();
+      }
+    });
+  </script>
+</body>
+</html>

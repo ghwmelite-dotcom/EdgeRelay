@@ -44,42 +44,52 @@ export const useCommandCenterStore = create<CommandCenterState>()((set) => ({
 
   fetchHealth: async () => {
     set({ isLoading: true, error: null });
-    const res = await api.get<{ accounts: AccountHealthResult[] }>('/command/health');
-    if (res.data) {
-      set({ healthResults: res.data.accounts ?? [], isLoading: false, error: null });
-    } else {
-      set({ healthResults: [], isLoading: false, error: res.error?.message ?? 'Failed to load health data' });
+    try {
+      const res = await api.get<{ accounts: AccountHealthResult[] }>('/command/health');
+      if (res.data) {
+        set({ healthResults: res.data.accounts ?? [], isLoading: false });
+      } else {
+        set({ healthResults: [], isLoading: false, error: res.error?.message ?? 'Failed to load health data' });
+      }
+    } catch {
+      set({ healthResults: [], isLoading: false });
     }
   },
 
   fetchFirms: async () => {
-    set({ isLoading: true, error: null });
-    const res = await api.get<{ firms: FirmListItem[] }>('/firms');
-    if (res.data) {
-      set({ firms: res.data.firms ?? [], isLoading: false, error: null });
-    } else {
-      set({ firms: [], isLoading: false, error: res.error?.message ?? 'Failed to load firms' });
+    try {
+      const res = await api.get<{ firms: FirmListItem[] }>('/firms');
+      if (res.data) {
+        set({ firms: res.data.firms ?? [] });
+      }
+    } catch {
+      // silently fail — firms are non-critical on page load
     }
   },
 
   fetchFirmTemplates: async (firmName: string) => {
-    set({ isLoading: true, error: null });
-    const res = await api.get<{ templates: any[] }>(`/firms/${firmName}/templates`);
-    if (res.data) {
-      set({ firmTemplates: res.data.templates ?? [], selectedFirm: firmName, isLoading: false, error: null });
-    } else {
-      set({ firmTemplates: [], isLoading: false, error: res.error?.message ?? 'Failed to load templates' });
+    set({ firmTemplates: [], selectedFirm: firmName });
+    try {
+      const res = await api.get<{ templates: any[] }>(`/firms/${firmName}/templates`);
+      if (res.data) {
+        set({ firmTemplates: res.data.templates ?? [] });
+      }
+    } catch {
+      set({ firmTemplates: [] });
     }
   },
 
   linkAccount: async (accountId: string, templateId: string) => {
-    set({ isLoading: true, error: null });
-    const res = await api.post(`/command/link/${accountId}`, { template_id: templateId });
-    if (res.data) {
-      set({ isLoading: false, error: null });
-      return true;
-    } else {
-      set({ isLoading: false, error: res.error?.message ?? 'Failed to link account' });
+    try {
+      const res = await api.post(`/command/link/${accountId}`, { template_id: templateId });
+      if (res.data) {
+        return true;
+      } else {
+        set({ error: res.error?.message ?? 'Failed to link account' });
+        return false;
+      }
+    } catch {
+      set({ error: 'Network error' });
       return false;
     }
   },

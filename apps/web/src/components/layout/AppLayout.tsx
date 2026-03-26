@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Activity, BookOpen, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Shield, Users, Activity, BookOpen, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
+  { label: 'Command Center', icon: Shield, to: '/command-center' },
   { label: 'Accounts', icon: Users, to: '/accounts' },
   { label: 'Signal Log', icon: Activity, to: '/signals' },
   { label: 'Journal', icon: BookOpen, to: '/journal' },

@@ -175,14 +175,24 @@ export function FirmDirectoryPage() {
         {/* CTA */}
         <div className="mt-16 text-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
           <div className="glass-premium rounded-2xl p-8 inline-block">
-            <p className="text-slate-300 mb-4 text-sm">Know a firm we're missing?</p>
-            <Link
-              to={isInApp ? "/command-center" : "/register"}
-              className="btn-premium inline-flex items-center gap-2 rounded-lg bg-neon-cyan px-6 py-3 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
-            >
-              Submit firm rules
-              <ArrowRight size={14} />
-            </Link>
+            <p className="text-slate-300 mb-4 text-sm">Know a firm we&rsquo;re missing?</p>
+            {isInApp ? (
+              <a
+                href="mailto:support@edgerelay.io?subject=Add%20Prop%20Firm%20Rules&body=Firm%20Name:%0AWebsite:%0ARules%20Page%20URL:%0A"
+                className="btn-premium inline-flex items-center gap-2 rounded-lg bg-neon-cyan px-6 py-3 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
+              >
+                Request a firm to be added
+                <ArrowRight size={14} />
+              </a>
+            ) : (
+              <Link
+                to="/register"
+                className="btn-premium inline-flex items-center gap-2 rounded-lg bg-neon-cyan px-6 py-3 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
+              >
+                Sign up to submit firm rules
+                <ArrowRight size={14} />
+              </Link>
+            )}
           </div>
         </div>
       </main>

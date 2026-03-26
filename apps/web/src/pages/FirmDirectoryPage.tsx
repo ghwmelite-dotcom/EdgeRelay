@@ -178,10 +178,12 @@ export function FirmDirectoryPage() {
             <p className="text-slate-300 mb-4 text-sm">Know a firm we&rsquo;re missing?</p>
             {isInApp ? (
               <a
-                href="mailto:support@edgerelay.io?subject=Add%20Prop%20Firm%20Rules&body=Firm%20Name:%0AWebsite:%0ARules%20Page%20URL:%0A"
+                href="https://t.me/edgerelay"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-premium inline-flex items-center gap-2 rounded-lg bg-neon-cyan px-6 py-3 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
               >
-                Request a firm to be added
+                Request via Telegram
                 <ArrowRight size={14} />
               </a>
             ) : (

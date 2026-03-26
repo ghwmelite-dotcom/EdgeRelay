@@ -3,18 +3,20 @@ import { Link, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ExternalLink, Check, X } from 'lucide-react';
 
 interface FirmTemplate {
+  id: string;
+  firm_name: string;
   plan_name: string;
   challenge_phase: string;
-  balance: number;
-  profit_target_pct: number | null;
-  daily_loss_pct: number;
-  max_drawdown_pct: number;
-  dd_type: string;
+  initial_balance: number;
+  profit_target_percent: number | null;
+  daily_loss_percent: number;
+  max_drawdown_percent: number;
+  drawdown_type: string;
   daily_loss_type: string;
   min_trading_days: number | null;
-  max_trading_days: number | null;
-  news_restricted: boolean;
-  consistency_rule: boolean;
+  max_calendar_days: number | null;
+  news_trading_restricted: number;
+  consistency_rule: number;
   source_url: string | null;
 }
 
@@ -240,22 +242,22 @@ export function FirmDetailPage() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right font-mono-nums text-slate-300 whitespace-nowrap">
-                              {formatCurrency(t.balance)}
+                              {formatCurrency(t.initial_balance)}
                             </td>
                             <td className="px-4 py-3 text-right font-mono-nums text-slate-300 whitespace-nowrap">
-                              {t.profit_target_pct != null ? `${t.profit_target_pct}%` : '—'}
+                              {t.profit_target_percent != null ? `${t.profit_target_percent}%` : '—'}
                             </td>
                             <td className="px-4 py-3 text-right font-mono-nums text-neon-amber whitespace-nowrap">
-                              {t.daily_loss_pct}%
+                              {t.daily_loss_percent}%
                             </td>
                             <td className="px-4 py-3 text-right font-mono-nums text-neon-red whitespace-nowrap">
-                              {t.max_drawdown_pct}%
+                              {t.max_drawdown_percent}%
                             </td>
                             <td className="px-4 py-3 text-center whitespace-nowrap">
                               <span
-                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${ddTypeBadgeColor(t.dd_type)}`}
+                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${ddTypeBadgeColor(t.drawdown_type)}`}
                               >
-                                {t.dd_type}
+                                {t.drawdown_type}
                               </span>
                             </td>
                             <td className="px-4 py-3 text-center whitespace-nowrap">
@@ -267,10 +269,10 @@ export function FirmDetailPage() {
                               {t.min_trading_days != null ? t.min_trading_days : '—'}
                             </td>
                             <td className="px-4 py-3 text-right font-mono-nums text-slate-300 whitespace-nowrap">
-                              {t.max_trading_days != null ? t.max_trading_days : '—'}
+                              {t.max_calendar_days != null ? t.max_calendar_days : '—'}
                             </td>
                             <td className="px-4 py-3 text-center whitespace-nowrap">
-                              {t.news_restricted ? (
+                              {t.news_trading_restricted ? (
                                 <Check size={16} className="inline text-neon-green" />
                               ) : (
                                 <X size={16} className="inline text-terminal-muted" />

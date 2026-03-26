@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-12-30"
 
 [vars]
-CORS_ORIGINS = "https://edgerelay.com,https://app.edgerelay.com,https://edgerelay-web.pages.dev"
+CORS_ORIGINS = "https://trademetricspro.com,https://www.trademetricspro.com,https://edgerelay.com,https://app.edgerelay.com,https://edgerelay-web.pages.dev"
 JWT_EXPIRY_HOURS = "24"
 
 [[kv_namespaces]]

@@ -24,6 +24,7 @@ import { JournalTradeDetailPage } from '@/pages/JournalTradeDetailPage';
 import { CommandCenterPage } from '@/pages/CommandCenterPage';
 import { FirmDirectoryPage } from '@/pages/FirmDirectoryPage';
 import { FirmDetailPage } from '@/pages/FirmDetailPage';
+import { RiskDashboardPage } from '@/pages/RiskDashboardPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -66,6 +67,7 @@ function App() {
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/command-center" element={<CommandCenterPage />} />
+          <Route path="/risk" element={<RiskDashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/signals" element={<SignalLogPage />} />
           <Route path="/journal" element={<JournalPage />} />

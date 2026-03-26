@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -6,133 +6,70 @@ import {
   Pause,
   Play,
   Filter,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
+import { api } from '@/lib/api';
+import { useAccountsStore } from '@/stores/accounts';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
 /* ------------------------------------------------------------------ */
 
-interface FollowerExecution {
-  follower_alias: string;
-  status: 'executed' | 'blocked' | 'failed';
-  executed_price: number | null;
-  slippage: number | null;
-  execution_time_ms: number;
-  block_reason?: string;
-}
-
-interface Signal {
-  signal_id: string;
+interface ApiSignal {
+  id: string;
+  master_account_id: string;
   sequence_num: number;
-  magic_number: number;
-  time: string;
-  date: string;
-  master_alias: string;
+  action: string;
+  order_type: string;
   symbol: string;
-  action: 'OPEN BUY' | 'OPEN SELL' | 'CLOSE' | 'MODIFY';
   volume: number;
   price: number;
   sl: number | null;
   tp: number | null;
-  latency_ms: number;
-  status: 'executed' | 'blocked' | 'failed';
-  block_reason?: string;
-  executions: FollowerExecution[];
+  magic_number: number;
+  ticket: number;
+  comment: string;
+  received_at: string;
 }
 
+type DisplayAction = 'OPEN BUY' | 'OPEN SELL' | 'CLOSE' | 'MODIFY';
+
 /* ------------------------------------------------------------------ */
-/*  Mock data generator                                               */
+/*  Helpers                                                           */
 /* ------------------------------------------------------------------ */
 
-const SYMBOLS = ['XAUUSD', 'EURUSD', 'GBPJPY', 'USDJPY', 'BTCUSD', 'NAS100', 'US30'];
-const MASTERS = ['Gold Scalper', 'Trend Hunter', 'News Sniper'];
-const ACTIONS: Signal['action'][] = ['OPEN BUY', 'OPEN SELL', 'CLOSE', 'MODIFY'];
-const STATUSES: Signal['status'][] = ['executed', 'executed', 'executed', 'blocked', 'failed'];
-const BLOCK_REASONS = [
-  'Max daily loss reached',
-  'Symbol not mapped',
-  'Outside trading hours',
-  'Max drawdown exceeded',
-];
-const FOLLOWER_ALIASES = ['Copy Acc 1', 'Live Fund', 'Demo Tester', 'Prop Firm'];
-
-function randomBetween(min: number, max: number) {
-  return min + Math.random() * (max - min);
-}
-
-function generateMockSignals(): Signal[] {
-  const signals: Signal[] = [];
-  const now = new Date();
-
-  for (let i = 0; i < 20; i++) {
-    const d = new Date(now.getTime() - i * 47_000 - Math.random() * 30_000);
-    const symbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-    const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
-    const status = STATUSES[Math.floor(Math.random() * STATUSES.length)];
-
-    const isForex = ['EURUSD', 'GBPJPY', 'USDJPY'].includes(symbol);
-    const basePrice = symbol === 'XAUUSD'
-      ? randomBetween(2620, 2680)
-      : symbol === 'BTCUSD'
-        ? randomBetween(94000, 98000)
-        : symbol === 'NAS100'
-          ? randomBetween(19500, 20200)
-          : symbol === 'US30'
-            ? randomBetween(42000, 43500)
-            : isForex
-              ? randomBetween(0.9, 1.8)
-              : randomBetween(140, 160);
-
-    const pricePrecision = isForex ? 5 : symbol === 'BTCUSD' ? 1 : 2;
-    const slDistance = basePrice * (isForex ? 0.002 : 0.003);
-    const tpDistance = basePrice * (isForex ? 0.004 : 0.006);
-
-    const executions: FollowerExecution[] = [];
-    const followerCount = 1 + Math.floor(Math.random() * 3);
-    for (let j = 0; j < followerCount; j++) {
-      const execStatus = status === 'blocked' ? 'blocked' : (['executed', 'executed', 'failed'] as const)[Math.floor(Math.random() * 3)];
-      executions.push({
-        follower_alias: FOLLOWER_ALIASES[j % FOLLOWER_ALIASES.length],
-        status: execStatus,
-        executed_price: execStatus === 'executed' ? Number((basePrice + randomBetween(-0.5, 0.5)).toFixed(pricePrecision)) : null,
-        slippage: execStatus === 'executed' ? Number(randomBetween(-0.3, 0.5).toFixed(1)) : null,
-        execution_time_ms: Math.floor(randomBetween(3, 45)),
-        block_reason: execStatus === 'blocked' ? BLOCK_REASONS[Math.floor(Math.random() * BLOCK_REASONS.length)] : undefined,
-      });
-    }
-
-    signals.push({
-      signal_id: `sig_${crypto.randomUUID().slice(0, 8)}`,
-      sequence_num: 1000 - i,
-      magic_number: 100000 + Math.floor(Math.random() * 900000),
-      time: d.toLocaleTimeString('en-GB', { hour12: false }),
-      date: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-      master_alias: MASTERS[Math.floor(Math.random() * MASTERS.length)],
-      symbol,
-      action,
-      volume: Number((Math.ceil(Math.random() * 10) * 0.1).toFixed(2)),
-      price: Number(basePrice.toFixed(pricePrecision)),
-      sl: action !== 'CLOSE' ? Number((basePrice - slDistance).toFixed(pricePrecision)) : null,
-      tp: action !== 'CLOSE' ? Number((basePrice + tpDistance).toFixed(pricePrecision)) : null,
-      latency_ms: Math.floor(randomBetween(3, 120)),
-      status,
-      block_reason: status === 'blocked' ? BLOCK_REASONS[Math.floor(Math.random() * BLOCK_REASONS.length)] : undefined,
-      executions,
-    });
+function deriveDisplayAction(signal: ApiSignal): DisplayAction {
+  const action = signal.action.toLowerCase();
+  if (action === 'open') {
+    const ot = signal.order_type?.toLowerCase();
+    if (ot === 'sell') return 'OPEN SELL';
+    return 'OPEN BUY';
   }
+  if (action === 'close') return 'CLOSE';
+  if (action === 'modify') return 'MODIFY';
+  // Fallback: try to parse combined strings like "open_buy"
+  if (action.includes('sell')) return 'OPEN SELL';
+  if (action.includes('buy')) return 'OPEN BUY';
+  return 'MODIFY';
+}
 
-  return signals;
+function formatReceivedAt(receivedAt: string): { time: string; date: string } {
+  const d = new Date(receivedAt.replace(' ', 'T') + 'Z');
+  return {
+    time: d.toLocaleTimeString('en-GB', { hour12: false }),
+    date: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+  };
 }
 
 /* ------------------------------------------------------------------ */
 /*  Action / Status badge helpers                                     */
 /* ------------------------------------------------------------------ */
 
-function ActionBadge({ action }: { action: Signal['action'] }) {
+function ActionBadge({ action }: { action: DisplayAction }) {
   const variant =
     action === 'OPEN BUY'
       ? 'green'
@@ -144,102 +81,86 @@ function ActionBadge({ action }: { action: Signal['action'] }) {
   return <Badge variant={variant}>{action}</Badge>;
 }
 
-function StatusBadge({ status }: { status: Signal['status'] }) {
-  const variant = status === 'executed' ? 'green' : status === 'blocked' ? 'amber' : 'red';
-  return <Badge variant={variant}>{status}</Badge>;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Latency display helper                                            */
-/* ------------------------------------------------------------------ */
-
-function LatencyDisplay({ ms }: { ms: number }) {
-  const color = ms < 50 ? 'text-neon-green' : ms <= 200 ? 'text-neon-amber' : 'text-neon-red';
-  return <span className={`font-mono-nums ${color}`}>{ms}ms</span>;
-}
-
 /* ------------------------------------------------------------------ */
 /*  Expandable Row                                                    */
 /* ------------------------------------------------------------------ */
 
-function ExpandedDetails({ signal }: { signal: Signal }) {
+function ExpandedDetails({
+  signal,
+  masterAlias,
+}: {
+  signal: ApiSignal;
+  masterAlias: string;
+}) {
   return (
     <tr>
-      <td colSpan={10} className="border-b border-terminal-border p-0">
+      <td colSpan={9} className="border-b border-terminal-border p-0">
         <div className="bg-terminal-surface/50 border-l-2 border-neon-cyan px-6 py-5">
           <div className="space-y-4 max-w-3xl">
             {/* Signal metadata */}
-            <div className="grid grid-cols-3 gap-4 text-xs">
+            <div className="grid grid-cols-4 gap-4 text-xs">
               <div>
                 <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
                   <span className="h-1 w-1 rounded-full bg-neon-cyan" />
                   Signal ID
                 </span>
-                <p className="font-mono-nums text-slate-300 mt-1">{signal.signal_id}</p>
+                <p className="font-mono-nums text-slate-300 mt-1 truncate">
+                  {signal.id}
+                </p>
               </div>
               <div>
                 <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
                   <span className="h-1 w-1 rounded-full bg-neon-cyan" />
                   Sequence
                 </span>
-                <p className="font-mono-nums text-slate-300 mt-1">{signal.sequence_num}</p>
+                <p className="font-mono-nums text-slate-300 mt-1">
+                  {signal.sequence_num}
+                </p>
               </div>
               <div>
                 <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
                   <span className="h-1 w-1 rounded-full bg-neon-cyan" />
                   Magic Number
                 </span>
-                <p className="font-mono-nums text-slate-300 mt-1">{signal.magic_number}</p>
+                <p className="font-mono-nums text-slate-300 mt-1">
+                  {signal.magic_number}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
+                  Ticket
+                </span>
+                <p className="font-mono-nums text-slate-300 mt-1">
+                  {signal.ticket}
+                </p>
               </div>
             </div>
 
-            {signal.block_reason && (
-              <div className="rounded-xl border border-neon-amber/30 bg-neon-amber/5 px-4 py-2.5 text-xs text-neon-amber flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-neon-amber" />
-                Blocked: {signal.block_reason}
+            <div className="grid grid-cols-3 gap-4 text-xs">
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-purple" />
+                  Master
+                </span>
+                <p className="text-slate-300 mt-1">{masterAlias}</p>
               </div>
-            )}
-
-            {/* Execution chain */}
-            <div>
-              <h4 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5 mb-3">
-                <span className="h-1 w-1 rounded-full bg-neon-purple" />
-                Execution Chain
-              </h4>
-              <div className="space-y-1.5">
-                {signal.executions.map((exec, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-4 rounded-xl glass px-4 py-2.5 text-xs"
-                  >
-                    <span className="text-slate-300 font-medium w-24 shrink-0">
-                      {exec.follower_alias}
-                    </span>
-                    <StatusBadge status={exec.status} />
-                    {exec.executed_price != null && (
-                      <span className="font-mono-nums text-slate-400">
-                        @ {exec.executed_price}
-                      </span>
-                    )}
-                    {exec.slippage != null && (
-                      <span
-                        className={`font-mono-nums ${
-                          exec.slippage > 0 ? 'text-neon-red' : 'text-neon-green'
-                        }`}
-                      >
-                        {exec.slippage > 0 ? '+' : ''}
-                        {exec.slippage} slip
-                      </span>
-                    )}
-                    <span className="font-mono-nums text-terminal-muted ml-auto">
-                      {exec.execution_time_ms}ms
-                    </span>
-                    {exec.block_reason && (
-                      <span className="text-neon-amber">{exec.block_reason}</span>
-                    )}
-                  </div>
-                ))}
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                  <span className="h-1 w-1 rounded-full bg-neon-purple" />
+                  Order Type
+                </span>
+                <p className="text-slate-300 mt-1">{signal.order_type}</p>
               </div>
+              {signal.comment && (
+                <div>
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                    <span className="h-1 w-1 rounded-full bg-neon-purple" />
+                    Comment
+                  </span>
+                  <p className="text-slate-300 mt-1">{signal.comment}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -252,63 +173,117 @@ function ExpandedDetails({ signal }: { signal: Signal }) {
 /*  Signal Log Page                                                   */
 /* ------------------------------------------------------------------ */
 
+const LIMIT = 50;
+
 export function SignalLogPage() {
-  const [signals] = useState<Signal[]>(() => generateMockSignals());
+  const [signals, setSignals] = useState<ApiSignal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   // Filters
   const [filterMaster, setFilterMaster] = useState('all');
   const [filterSymbol, setFilterSymbol] = useState('');
   const [filterAction, setFilterAction] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+
+  // Accounts for alias mapping
+  const { accounts, fetchAccounts } = useAccountsStore();
+
+  const accountAliasMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const acc of accounts) {
+      map.set(acc.id, acc.alias);
+    }
+    return map;
+  }, [accounts]);
+
+  const getMasterAlias = useCallback(
+    (masterAccountId: string) =>
+      accountAliasMap.get(masterAccountId) ?? masterAccountId.slice(0, 8),
+    [accountAliasMap],
+  );
+
+  // Build query params from filters
+  const buildQueryParams = useCallback(
+    (cursor?: string) => {
+      const params = new URLSearchParams();
+      params.set('limit', String(LIMIT));
+      if (filterSymbol) params.set('symbol', filterSymbol.toUpperCase());
+      if (filterAction !== 'all') params.set('action', filterAction);
+      if (filterMaster !== 'all') params.set('master_account_id', filterMaster);
+      if (cursor) params.set('cursor', cursor);
+      return params.toString();
+    },
+    [filterSymbol, filterAction, filterMaster],
+  );
+
+  // Fetch signals
+  const fetchSignals = useCallback(
+    async (cursor?: string) => {
+      setIsLoading(true);
+      try {
+        const qs = buildQueryParams(cursor);
+        const res = await api.get<ApiSignal[]>(`/signals?${qs}`);
+        if (res.data) {
+          if (cursor) {
+            setSignals((prev) => [...prev, ...res.data!]);
+          } else {
+            setSignals(res.data);
+          }
+          const meta = res.meta as
+            | { has_more?: boolean; next_cursor?: string }
+            | undefined;
+          setHasMore(meta?.has_more ?? false);
+          setNextCursor(meta?.next_cursor);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [buildQueryParams],
+  );
+
+  // Fetch accounts on mount
+  useEffect(() => {
+    if (accounts.length === 0) {
+      fetchAccounts();
+    }
+  }, [accounts.length, fetchAccounts]);
+
+  // Fetch signals on mount and when filters change
+  useEffect(() => {
+    setNextCursor(undefined);
+    fetchSignals();
+  }, [fetchSignals]);
 
   // Auto-refresh
   useEffect(() => {
     if (!autoRefresh) return;
     const interval = setInterval(() => {
-      setRefreshKey((k) => k + 1);
+      fetchSignals();
     }, 5000);
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, fetchSignals]);
 
-  // Unique masters for filter dropdown
+  // Unique masters for filter dropdown (from accounts store)
   const masterOptions = useMemo(
     () => [
       { value: 'all', label: 'All Masters' },
-      ...Array.from(new Set(signals.map((s) => s.master_alias))).map((m) => ({
-        value: m,
-        label: m,
-      })),
+      ...accounts
+        .filter((a) => a.role === 'master')
+        .map((a) => ({ value: a.id, label: a.alias })),
     ],
-    [signals],
+    [accounts],
   );
 
   const actionOptions = [
     { value: 'all', label: 'All Actions' },
-    { value: 'OPEN BUY', label: 'Open Buy' },
-    { value: 'OPEN SELL', label: 'Open Sell' },
-    { value: 'CLOSE', label: 'Close' },
-    { value: 'MODIFY', label: 'Modify' },
+    { value: 'open', label: 'Open' },
+    { value: 'close', label: 'Close' },
+    { value: 'modify', label: 'Modify' },
   ];
-
-  const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'executed', label: 'Executed' },
-    { value: 'blocked', label: 'Blocked' },
-    { value: 'failed', label: 'Failed' },
-  ];
-
-  const filtered = useMemo(() => {
-    return signals.filter((s) => {
-      if (filterMaster !== 'all' && s.master_alias !== filterMaster) return false;
-      if (filterSymbol && !s.symbol.toLowerCase().includes(filterSymbol.toLowerCase())) return false;
-      if (filterAction !== 'all' && s.action !== filterAction) return false;
-      if (filterStatus !== 'all' && s.status !== filterStatus) return false;
-      return true;
-    });
-  }, [signals, filterMaster, filterSymbol, filterAction, filterStatus]);
 
   return (
     <div className="space-y-6">
@@ -371,19 +346,22 @@ export function SignalLogPage() {
               onChange={(e) => setFilterAction(e.target.value)}
             />
           </div>
-          <div className="w-36">
-            <Select
-              label="Status"
-              options={statusOptions}
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            />
-          </div>
         </div>
       </div>
 
       {/* Table */}
-      {filtered.length === 0 ? (
+      {isLoading && signals.length === 0 ? (
+        <div
+          className="flex flex-col items-center justify-center py-20 text-center animate-fade-in-up"
+          style={{ animationDelay: '120ms' }}
+        >
+          <Loader2
+            size={40}
+            className="text-neon-cyan mb-4 animate-spin"
+          />
+          <p className="text-sm text-terminal-muted">Loading signals...</p>
+        </div>
+      ) : signals.length === 0 ? (
         <div
           className="flex flex-col items-center justify-center py-20 text-center animate-fade-in-up"
           style={{ animationDelay: '120ms' }}
@@ -425,22 +403,22 @@ export function SignalLogPage() {
                     SL / TP
                   </th>
                   <th className="px-3 py-3 text-right text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
-                    Latency
-                  </th>
-                  <th className="px-3 py-3 text-center text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">
-                    Status
+                    Ticket
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((signal) => {
-                  const isExpanded = expandedRow === signal.signal_id;
+                {signals.map((signal) => {
+                  const isExpanded = expandedRow === signal.id;
+                  const displayAction = deriveDisplayAction(signal);
+                  const { time, date } = formatReceivedAt(signal.received_at);
+                  const masterAlias = getMasterAlias(signal.master_account_id);
                   return (
                     <>
                       <tr
-                        key={signal.signal_id}
+                        key={signal.id}
                         onClick={() =>
-                          setExpandedRow(isExpanded ? null : signal.signal_id)
+                          setExpandedRow(isExpanded ? null : signal.id)
                         }
                         className="cursor-pointer border-b border-terminal-border/50 data-row transition-colors"
                       >
@@ -453,20 +431,20 @@ export function SignalLogPage() {
                         </td>
                         <td className="px-3 py-2.5">
                           <span className="font-mono-nums text-neon-cyan/70 text-xs block">
-                            {signal.time}
+                            {time}
                           </span>
                           <span className="font-mono-nums text-xs text-terminal-muted">
-                            {signal.date}
+                            {date}
                           </span>
                         </td>
                         <td className="px-3 py-2.5">
-                          <Badge variant="purple">{signal.master_alias}</Badge>
+                          <Badge variant="purple">{masterAlias}</Badge>
                         </td>
                         <td className="px-3 py-2.5">
                           <Badge variant="cyan">{signal.symbol}</Badge>
                         </td>
                         <td className="px-3 py-2.5">
-                          <ActionBadge action={signal.action} />
+                          <ActionBadge action={displayAction} />
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
                           {signal.volume.toFixed(2)}
@@ -488,17 +466,15 @@ export function SignalLogPage() {
                               })}`
                             : '\u2014'}
                         </td>
-                        <td className="px-3 py-2.5 text-right text-xs">
-                          <LatencyDisplay ms={signal.latency_ms} />
-                        </td>
-                        <td className="px-3 py-2.5 text-center">
-                          <StatusBadge status={signal.status} />
+                        <td className="px-3 py-2.5 text-right font-mono-nums text-slate-400 text-xs">
+                          {signal.ticket}
                         </td>
                       </tr>
                       {isExpanded && (
                         <ExpandedDetails
-                          key={`${signal.signal_id}-details`}
+                          key={`${signal.id}-details`}
                           signal={signal}
+                          masterAlias={masterAlias}
                         />
                       )}
                     </>
@@ -507,6 +483,26 @@ export function SignalLogPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Load More */}
+          {hasMore && (
+            <div className="flex justify-center py-4 border-t border-terminal-border/50">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fetchSignals(nextCursor)}
+                disabled={isLoading}
+                className="focus-ring"
+              >
+                {isLoading ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={14} />
+                )}
+                Load More
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

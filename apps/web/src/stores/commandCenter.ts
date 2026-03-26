@@ -44,31 +44,31 @@ export const useCommandCenterStore = create<CommandCenterState>()((set) => ({
 
   fetchHealth: async () => {
     set({ isLoading: true, error: null });
-    const res = await api.get<AccountHealthResult[]>('/command/health');
+    const res = await api.get<{ accounts: AccountHealthResult[] }>('/command/health');
     if (res.data) {
-      set({ healthResults: res.data, isLoading: false, error: null });
+      set({ healthResults: res.data.accounts ?? [], isLoading: false, error: null });
     } else {
-      set({ isLoading: false, error: res.error?.message ?? 'Failed to load health data' });
+      set({ healthResults: [], isLoading: false, error: res.error?.message ?? 'Failed to load health data' });
     }
   },
 
   fetchFirms: async () => {
     set({ isLoading: true, error: null });
-    const res = await api.get<FirmListItem[]>('/firms');
+    const res = await api.get<{ firms: FirmListItem[] }>('/firms');
     if (res.data) {
-      set({ firms: res.data, isLoading: false, error: null });
+      set({ firms: res.data.firms ?? [], isLoading: false, error: null });
     } else {
-      set({ isLoading: false, error: res.error?.message ?? 'Failed to load firms' });
+      set({ firms: [], isLoading: false, error: res.error?.message ?? 'Failed to load firms' });
     }
   },
 
   fetchFirmTemplates: async (firmName: string) => {
     set({ isLoading: true, error: null });
-    const res = await api.get<any[]>(`/firms/${firmName}/templates`);
+    const res = await api.get<{ templates: any[] }>(`/firms/${firmName}/templates`);
     if (res.data) {
-      set({ firmTemplates: res.data, selectedFirm: firmName, isLoading: false, error: null });
+      set({ firmTemplates: res.data.templates ?? [], selectedFirm: firmName, isLoading: false, error: null });
     } else {
-      set({ isLoading: false, error: res.error?.message ?? 'Failed to load templates' });
+      set({ firmTemplates: [], isLoading: false, error: res.error?.message ?? 'Failed to load templates' });
     }
   },
 

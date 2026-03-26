@@ -64,6 +64,8 @@ function App() {
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/billing/callback" element={<BillingCallbackPage />} />
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
+          <Route path="/firms" element={<FirmDirectoryPage />} />
+          <Route path="/firms/:firmName" element={<FirmDetailPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

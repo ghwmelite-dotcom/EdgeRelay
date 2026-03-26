@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#00e5ff" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <!-- Dark background circle -->
+  <circle cx="256" cy="256" r="240" fill="#05080d" stroke="url(#glow)" stroke-width="3"/>
+  <!-- Inner ring -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#00e5ff" stroke-width="1" stroke-opacity="0.15"/>
+  <!-- Signal arcs (relay concept) -->
+  <path d="M 340 160 A 120 120 0 0 1 340 352" fill="none" stroke="#00e5ff" stroke-width="6" stroke-linecap="round" stroke-opacity="0.3" filter="url(#shadow)"/>
+  <path d="M 370 190 A 100 100 0 0 1 370 322" fill="none" stroke="#00e5ff" stroke-width="5" stroke-linecap="round" stroke-opacity="0.2"/>
+  <path d="M 396 216 A 80 80 0 0 1 396 296" fill="none" stroke="#00e5ff" stroke-width="4" stroke-linecap="round" stroke-opacity="0.12"/>
+  <!-- E letterform -->
+  <path d="M 140 148 L 300 148 L 300 178 L 176 178 L 176 240 L 280 240 L 280 270 L 176 270 L 176 334 L 300 334 L 300 364 L 140 364 Z" fill="url(#glow)" filter="url(#shadow)"/>
+  <!-- Bolt accent (relay/signal) -->
+  <path d="M 290 200 L 320 200 L 300 252 L 330 252 L 280 320 L 295 264 L 268 264 Z" fill="#00ff9d" fill-opacity="0.9"/>
+</svg>

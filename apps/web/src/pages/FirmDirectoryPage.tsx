@@ -70,7 +70,7 @@ export function FirmDirectoryPage() {
               Login
             </Link>
             <Link
-              to="/register"
+              to={isInApp ? "/command-center" : "/register"}
               className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
             >
               Get Started Free
@@ -177,7 +177,7 @@ export function FirmDirectoryPage() {
           <div className="glass-premium rounded-2xl p-8 inline-block">
             <p className="text-slate-300 mb-4 text-sm">Know a firm we're missing?</p>
             <Link
-              to="/register"
+              to={isInApp ? "/command-center" : "/register"}
               className="btn-premium inline-flex items-center gap-2 rounded-lg bg-neon-cyan px-6 py-3 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
             >
               Submit firm rules

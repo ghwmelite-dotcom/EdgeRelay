@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './app.css';
 
 import { useAuthStore } from '@/stores/auth';
@@ -38,9 +38,13 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 }
 
 /** Show standalone public page if not logged in, redirect to in-app version if logged in */
-function PublicOrAppRoute({ children, appPath }: { children: React.ReactNode; appPath: string }) {
+function PublicOrAppRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (isAuthenticated) return <Navigate to={appPath} replace />;
+  const location = useLocation();
+  if (isAuthenticated) {
+    // /firms/FTMO → /app/firms/FTMO
+    return <Navigate to={`/app${location.pathname}`} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -51,8 +55,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
 
         {/* Public firms pages — redirect to in-app version if logged in */}
-        <Route path="/firms" element={<PublicOrAppRoute appPath="/app/firms"><FirmDirectoryPage /></PublicOrAppRoute>} />
-        <Route path="/firms/:firmName" element={<PublicOrAppRoute appPath="/app/firms"><FirmDetailPage /></PublicOrAppRoute>} />
+        <Route path="/firms" element={<PublicOrAppRoute><FirmDirectoryPage /></PublicOrAppRoute>} />
+        <Route path="/firms/:firmName" element={<PublicOrAppRoute><FirmDetailPage /></PublicOrAppRoute>} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

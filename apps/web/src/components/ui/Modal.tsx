@@ -23,7 +23,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-xl"
@@ -33,8 +33,8 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
       {/* Modal Card */}
       <div
         className={clsx(
-          'relative z-10 w-full max-w-lg rounded-2xl p-6 shadow-2xl',
-          'glass backdrop-blur-2xl border-gradient overflow-hidden',
+          'relative z-10 w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl p-6 shadow-2xl',
+          'glass backdrop-blur-2xl border-gradient',
           'animate-fade-in-scale',
           className,
         )}
@@ -68,8 +68,8 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
           <div className="divider absolute bottom-0 left-0 right-0" />
         </div>
 
-        {/* Content */}
-        <div className="relative z-10">{children}</div>
+        {/* Content — scrollable */}
+        <div className="relative z-10 flex-1 overflow-y-auto">{children}</div>
       </div>
     </div>
   );

@@ -133,13 +133,13 @@ export function RiskDashboardPage() {
     const accountIds = healthResults.map((r) => r.account_id);
 
     const symbolPromises = accountIds.map(async (id) => {
-      const res = await api.get<SymbolStat[]>(`/journal/stats/${id}/by-symbol`);
-      return { id, data: res.data ?? [] };
+      const res = await api.get<{ symbols: SymbolStat[] }>(`/journal/stats/${id}/by-symbol`);
+      return { id, data: res.data?.symbols ?? [] };
     });
 
     const dailyPromises = accountIds.map(async (id) => {
-      const res = await api.get<DailyPnl[]>(`/journal/stats/${id}/daily`);
-      return { id, data: res.data ?? [] };
+      const res = await api.get<{ days: DailyPnl[] }>(`/journal/stats/${id}/daily`);
+      return { id, data: res.data?.days ?? [] };
     });
 
     Promise.all([Promise.all(symbolPromises), Promise.all(dailyPromises)])

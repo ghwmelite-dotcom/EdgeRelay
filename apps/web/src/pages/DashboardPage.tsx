@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -18,52 +18,25 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useAccountsStore, type Account } from '@/stores/accounts';
+import { useCommandCenterStore, type AccountHealthResult } from '@/stores/commandCenter';
+import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusDot } from '@/components/ui/StatusDot';
 
-// ── Mock Data ──────────────────────────────────────────────────
-// TODO: wire to real API
+// ── Signal type from API ─────────────────────────────────────────
 
-const MOCK_STATS = {
-  signalsToday: 142,
-  signalsChange: 12,
-  avgLatency: 38,
-  successRate: 99.2,
-  activeAccounts: 8,
-  accountLimit: 10,
-} as const;
-
-const MOCK_PNL: Record<string, { pnl: number; equity: number; drawdownPct: number }> = {};
-
-function getMockPnl(id: string) {
-  if (!MOCK_PNL[id]) {
-    const pnl = Math.random() > 0.35 ? +(Math.random() * 3000).toFixed(2) : -(Math.random() * 500).toFixed(2);
-    MOCK_PNL[id] = {
-      pnl,
-      equity: +(20000 + Math.random() * 15000).toFixed(2),
-      drawdownPct: +(Math.random() * 75).toFixed(1),
-    };
-  }
-  return MOCK_PNL[id];
-}
-
-interface MockSignal {
+interface ApiSignal {
   id: string;
-  time: string;
+  master_account_id: string;
+  sequence_num: number;
+  action: string;
+  order_type: string;
   symbol: string;
-  action: 'buy_open' | 'sell_open' | 'close';
   volume: number;
-  status: 'executed' | 'blocked' | 'failed';
+  price: number;
+  received_at: string;
 }
-
-const MOCK_SIGNALS: MockSignal[] = [
-  { id: '1', time: '14:32:07', symbol: 'EURUSD', action: 'buy_open', volume: 0.5, status: 'executed' },
-  { id: '2', time: '14:31:44', symbol: 'XAUUSD', action: 'sell_open', volume: 1.0, status: 'executed' },
-  { id: '3', time: '14:28:19', symbol: 'GBPJPY', action: 'close', volume: 0.3, status: 'executed' },
-  { id: '4', time: '14:25:02', symbol: 'USDJPY', action: 'buy_open', volume: 0.2, status: 'blocked' },
-  { id: '5', time: '14:22:58', symbol: 'EURUSD', action: 'sell_open', volume: 0.1, status: 'failed' },
-];
 
 // ── Helpers ────────────────────────────────────────────────────
 
@@ -111,6 +84,14 @@ function useRealtimeClock(): string {
   }, []);
 
   return time;
+}
+
+/** Map API action strings to display-friendly action types */
+function normalizeAction(action: string): 'buy_open' | 'sell_open' | 'close' {
+  const lower = action.toLowerCase();
+  if (lower.includes('buy')) return 'buy_open';
+  if (lower.includes('sell')) return 'sell_open';
+  return 'close';
 }
 
 // ── Sparkline Component ────────────────────────────────────────
@@ -230,14 +211,45 @@ function StatCard({ label, value, sub, delay, glowValue, extra, borderClass, ico
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const { accounts, fetchAccounts } = useAccountsStore();
+  const { healthResults, fetchHealth } = useCommandCenterStore();
   const clock = useRealtimeClock();
+
+  // Fetch recent signals from API
+  const [recentSignals, setRecentSignals] = useState<ApiSignal[]>([]);
 
   useEffect(() => {
     fetchAccounts();
-  }, [fetchAccounts]);
+    fetchHealth();
+
+    api.get<ApiSignal[]>('/signals?limit=5').then((res) => {
+      if (res.data) {
+        setRecentSignals(res.data);
+      }
+    });
+  }, [fetchAccounts, fetchHealth]);
 
   const masters = accounts.filter((a) => a.role === 'master');
   const followers = accounts.filter((a) => a.role === 'follower');
+
+  // Derive stats from real account data
+  const signalsToday = useMemo(
+    () => masters.reduce((sum, m) => sum + (m.signals_today ?? 0), 0),
+    [masters],
+  );
+  const activeAccounts = useMemo(
+    () => accounts.filter((a) => isConnected(a.last_heartbeat)).length,
+    [accounts],
+  );
+  const accountLimit = accounts.length > 0 ? Math.max(accounts.length, 10) : 10;
+
+  // Build health lookup for followers
+  const healthByAccountId = useMemo(() => {
+    const map = new Map<string, AccountHealthResult>();
+    for (const h of healthResults) {
+      map.set(h.account_id, h);
+    }
+    return map;
+  }, [healthResults]);
 
   return (
     <div className="space-y-8">
@@ -285,21 +297,20 @@ export function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Signals Today"
-          value={String(MOCK_STATS.signalsToday)}
+          value={String(signalsToday)}
           delay={100}
           glowValue
           borderClass="stat-card-cyan"
           icon={<Zap size={12} />}
           sub={
-            <span className="inline-flex items-center gap-1 text-xs text-neon-green glow-text-green font-medium">
-              <ArrowUpRight size={12} />
-              +{MOCK_STATS.signalsChange}% from yesterday
+            <span className="inline-flex items-center gap-1 text-xs text-terminal-muted font-medium">
+              From {masters.length} source{masters.length !== 1 ? 's' : ''}
             </span>
           }
         />
         <StatCard
           label="Avg Copy Latency"
-          value={`${MOCK_STATS.avgLatency}ms`}
+          value="--ms"
           delay={160}
           borderClass="stat-card-cyan"
           icon={<Gauge size={12} />}
@@ -307,7 +318,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Success Rate"
-          value={`${MOCK_STATS.successRate}%`}
+          value="--"
           delay={220}
           borderClass="stat-card-green"
           icon={<Target size={12} />}
@@ -320,7 +331,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="Active Accounts"
-          value={`${MOCK_STATS.activeAccounts}/${MOCK_STATS.accountLimit}`}
+          value={`${activeAccounts}/${accountLimit}`}
           delay={280}
           borderClass="stat-card-amber"
           icon={<Radio size={12} />}
@@ -330,13 +341,13 @@ export function DashboardPage() {
                 <div
                   className="h-full rounded-full bg-neon-amber"
                   style={{
-                    width: `${(MOCK_STATS.activeAccounts / MOCK_STATS.accountLimit) * 100}%`,
+                    width: `${(activeAccounts / accountLimit) * 100}%`,
                     boxShadow: '0 0 6px #ffb80060',
                   }}
                 />
               </div>
               <span className="text-[10px] font-mono-nums text-terminal-muted">
-                {MOCK_STATS.accountLimit - MOCK_STATS.activeAccounts} free
+                {accountLimit - activeAccounts} free
               </span>
             </div>
           }
@@ -423,7 +434,12 @@ export function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {followers.map((account, i) => (
-              <FollowerCard key={account.id} account={account} delay={i * 80} />
+              <FollowerCard
+                key={account.id}
+                account={account}
+                healthData={healthByAccountId.get(account.id) ?? null}
+                delay={i * 80}
+              />
             ))}
           </div>
         )}
@@ -468,36 +484,44 @@ export function DashboardPage() {
                     Volume
                   </th>
                   <th className="px-5 py-3.5 text-right text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
-                    Status
+                    Price
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {MOCK_SIGNALS.map((sig, i) => (
-                  <tr
-                    key={sig.id}
-                    className={`data-row border-b border-terminal-border/40 last:border-0 transition-colors ${
-                      i % 2 === 0 ? 'bg-neon-cyan/[0.015]' : ''
-                    }`}
-                    style={{ animationDelay: `${420 + i * 50}ms` }}
-                  >
-                    <td className="px-5 py-3.5 font-mono-nums text-neon-cyan text-sm glow-text-cyan">
-                      {sig.time}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <Badge variant="cyan" className="font-mono-nums font-bold">{sig.symbol}</Badge>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <ActionLabel action={sig.action} />
-                    </td>
-                    <td className="px-5 py-3.5 text-right font-mono-nums text-slate-200 font-semibold">
-                      {sig.volume.toFixed(2)}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <SignalStatusBadge status={sig.status} />
+                {recentSignals.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-terminal-muted text-sm">
+                      No signals received yet
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  recentSignals.map((sig, i) => (
+                    <tr
+                      key={sig.id}
+                      className={`data-row border-b border-terminal-border/40 last:border-0 transition-colors ${
+                        i % 2 === 0 ? 'bg-neon-cyan/[0.015]' : ''
+                      }`}
+                      style={{ animationDelay: `${420 + i * 50}ms` }}
+                    >
+                      <td className="px-5 py-3.5 font-mono-nums text-neon-cyan text-sm glow-text-cyan">
+                        {new Date(sig.received_at).toLocaleTimeString('en-US', { hour12: false })}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <Badge variant="cyan" className="font-mono-nums font-bold">{sig.symbol}</Badge>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <ActionLabel action={normalizeAction(sig.action)} />
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-mono-nums text-slate-200 font-semibold">
+                        {sig.volume.toFixed(2)}
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-mono-nums text-slate-400">
+                        {sig.price.toFixed(sig.price > 100 ? 2 : 5)}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -505,7 +529,7 @@ export function DashboardPage() {
           {/* Feed footer */}
           <div className="px-5 py-3 border-t border-terminal-border/30 flex items-center justify-between bg-terminal-surface/40">
             <span className="text-[10px] font-mono-nums text-terminal-muted">
-              Showing last {MOCK_SIGNALS.length} signals
+              Showing last {recentSignals.length} signals
             </span>
             <Link
               to="/signals"
@@ -581,15 +605,27 @@ function MasterCard({ account, delay }: { account: Account; delay: number }) {
   );
 }
 
-function FollowerCard({ account, delay }: { account: Account; delay: number }) {
+function FollowerCard({
+  account,
+  healthData,
+  delay,
+}: {
+  account: Account;
+  healthData: AccountHealthResult | null;
+  delay: number;
+}) {
   const connected = isConnected(account.last_heartbeat);
-  const mock = getMockPnl(account.id); // TODO: wire to real API
-  const pnlPositive = mock.pnl >= 0;
   const lotMode = account.follower_config?.lot_mode ?? 'mirror';
   const maxDrawdown = account.follower_config?.max_total_drawdown_percent ?? 20;
 
+  const hasHealth = healthData !== null;
+  const drawdownPct = hasHealth ? healthData.health.drawdown.current_percent : 0;
+  const drawdownUsedPct = hasHealth ? healthData.health.drawdown.used_percent : 0;
+
+  // Use used_percent from health (percentage of limit consumed) for gauge
+  const drawdownPctOfMax = hasHealth ? drawdownUsedPct : 0;
+
   // Drawdown color logic
-  const drawdownPctOfMax = (mock.drawdownPct / maxDrawdown) * 100;
   const drawdownColor =
     drawdownPctOfMax > 80
       ? 'bg-neon-red'
@@ -648,41 +684,59 @@ function FollowerCard({ account, delay }: { account: Account; delay: number }) {
 
       <div className="divider mb-4" />
 
-      {/* P&L + Equity */}
+      {/* P&L + Equity / Not linked */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold mb-1">
             P&L
           </p>
-          <p
-            className={`font-mono-nums text-xl font-bold ${
-              pnlPositive
-                ? 'text-neon-green glow-text-green'
-                : 'text-neon-red glow-text-red'
-            }`}
-          >
-            <span className="inline-flex items-center gap-1">
-              {pnlPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-              {formatCurrency(mock.pnl)}
-            </span>
-          </p>
+          {hasHealth && healthData.health.daily_loss ? (
+            <p
+              className={`font-mono-nums text-xl font-bold ${
+                healthData.health.daily_loss.current_percent <= 0
+                  ? 'text-neon-green glow-text-green'
+                  : 'text-neon-red glow-text-red'
+              }`}
+            >
+              <span className="inline-flex items-center gap-1">
+                {healthData.health.daily_loss.current_percent <= 0 ? (
+                  <ArrowUpRight size={14} />
+                ) : (
+                  <ArrowDownRight size={14} />
+                )}
+                {healthData.health.daily_loss.current_percent.toFixed(2)}%
+              </span>
+            </p>
+          ) : (
+            <p className="font-mono-nums text-xl font-bold text-terminal-muted">&mdash;</p>
+          )}
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold mb-1">
-            Equity
+            Drawdown
           </p>
-          <p className="font-mono-nums text-xl font-bold text-white">
-            ${mock.equity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </p>
+          {hasHealth ? (
+            <p className="font-mono-nums text-xl font-bold text-white">
+              {drawdownPct.toFixed(2)}%
+            </p>
+          ) : (
+            <p className="font-mono-nums text-xl font-bold text-terminal-muted">&mdash;</p>
+          )}
         </div>
       </div>
 
       {/* Lot mode badge */}
       <div className="flex items-center justify-between mb-4">
         <Badge variant="purple">{lotModeLabel(lotMode)}</Badge>
-        <span className={`text-[9px] uppercase tracking-[0.15em] font-mono-nums font-bold ${fuelLabelColor}`}>
-          {fuelLabel}
-        </span>
+        {hasHealth ? (
+          <span className={`text-[9px] uppercase tracking-[0.15em] font-mono-nums font-bold ${fuelLabelColor}`}>
+            {fuelLabel}
+          </span>
+        ) : (
+          <span className="text-[9px] uppercase tracking-[0.15em] font-mono-nums font-bold text-terminal-muted">
+            NOT LINKED
+          </span>
+        )}
       </div>
 
       {/* Fuel gauge drawdown bar */}
@@ -693,7 +747,8 @@ function FollowerCard({ account, delay }: { account: Account; delay: number }) {
             Drawdown Gauge
           </p>
           <p className="text-xs font-mono-nums text-terminal-muted font-bold">
-            {mock.drawdownPct}% <span className="text-terminal-muted/50">/</span> {maxDrawdown}%
+            {hasHealth ? `${drawdownPct.toFixed(1)}%` : '--'}{' '}
+            <span className="text-terminal-muted/50">/</span> {maxDrawdown}%
           </p>
         </div>
         <div className="h-2 w-full rounded-full bg-terminal-border/60 overflow-hidden relative">
@@ -720,7 +775,7 @@ function FollowerCard({ account, delay }: { account: Account; delay: number }) {
   );
 }
 
-function ActionLabel({ action }: { action: MockSignal['action'] }) {
+function ActionLabel({ action }: { action: 'buy_open' | 'sell_open' | 'close' }) {
   if (action === 'buy_open') {
     return (
       <span
@@ -747,20 +802,5 @@ function ActionLabel({ action }: { action: MockSignal['action'] }) {
     <span className="text-terminal-muted font-bold text-xs bg-terminal-border/30 border border-terminal-border px-2.5 py-1 rounded-md">
       CLOSE
     </span>
-  );
-}
-
-function SignalStatusBadge({ status }: { status: MockSignal['status'] }) {
-  const map: Record<MockSignal['status'], { variant: 'green' | 'amber' | 'red'; icon: React.ReactNode }> = {
-    executed: { variant: 'green', icon: <CheckCircle size={11} /> },
-    blocked: { variant: 'amber', icon: <AlertTriangle size={11} /> },
-    failed: { variant: 'red', icon: <AlertTriangle size={11} /> },
-  };
-  const { variant, icon } = map[status];
-  return (
-    <Badge variant={variant}>
-      {icon}
-      <span className="uppercase font-bold text-[10px] tracking-wider">{status}</span>
-    </Badge>
   );
 }

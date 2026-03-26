@@ -126,7 +126,7 @@ const BENEFITS = [
 
 const TESTIMONIALS = [
   {
-    quote: 'EdgeRelay replaced my VPS setup entirely. Signals hit my 6 funded accounts faster than my old copier handled one.',
+    quote: 'TradeMetrics Pro replaced my VPS setup entirely. Signals hit my 6 funded accounts faster than my old copier handled one.',
     name: 'Alex M.',
     context: 'Managing 6 FTMO accounts',
   },
@@ -207,8 +207,9 @@ export function LandingPage() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <a href="#" className="flex items-center gap-2 font-display text-xl tracking-tight">
-            <span className="font-bold text-white">EDGE</span>
-            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">RELAY</span>
+            <span className="font-bold text-white">TRADE</span>
+            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">METRICS</span>
+            <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
             <span className="live-dot ml-1" />
           </a>
 
@@ -541,7 +542,7 @@ export function LandingPage() {
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
           </div>
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
-            The EdgeRelay Ecosystem
+            The TradeMetrics Pro Ecosystem
           </h2>
           <p
             className="animate-fade-in-up mt-4 text-center text-slate-400"
@@ -741,9 +742,9 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          7. WHY EDGERELAY — 2x2 grid with large numbers
+          7. WHY TRADEMETRICS PRO — 2x2 grid with large numbers
           ══════════════════════════════════════════════════════════ */}
-      <section id="why-edgerelay" className="px-6 py-20 md:py-32">
+      <section id="why-trademetrics" className="px-6 py-20 md:py-32">
         <div className="mx-auto max-w-5xl">
           <div className="mb-4 flex items-center justify-center gap-3">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
@@ -753,7 +754,7 @@ export function LandingPage() {
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
           </div>
           <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
-            Why Traders Choose EdgeRelay
+            Why Traders Choose TradeMetrics Pro
           </h2>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2">
@@ -880,7 +881,7 @@ export function LandingPage() {
             className="animate-fade-in-up mt-6 text-lg text-slate-400"
             style={{ animationDelay: '80ms' }}
           >
-            EdgeRelay is completely free until 2027 — no per-account fees, no monthly subscription, no credit card required.
+            TradeMetrics Pro is completely free until 2027 — no per-account fees, no monthly subscription, no credit card required.
             While competitors charge $20-100/month, you pay nothing.
           </p>
           <Link
@@ -905,10 +906,11 @@ export function LandingPage() {
                 href="#"
                 className="flex items-center gap-2 font-display text-lg tracking-tight"
               >
-                <span className="font-bold text-white">EDGE</span>
+                <span className="font-bold text-white">TRADE</span>
                 <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">
-                  RELAY
+                  METRICS
                 </span>
+                <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
               </a>
               <p className="mt-1 text-xs text-terminal-muted">
                 &copy; 2026 Hodges &amp; Co. Limited

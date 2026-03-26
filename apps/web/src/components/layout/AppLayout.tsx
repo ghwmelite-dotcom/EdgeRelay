@@ -98,8 +98,9 @@ export function AppLayout() {
         <div className="relative flex h-16 items-center justify-between px-5 border-b border-terminal-border/40">
           <div className="flex items-center gap-2.5">
             <span className="text-xl tracking-tighter">
-              <span className="text-white font-black">EDGE</span>
-              <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">RELAY</span>
+              <span className="text-white font-black">TRADE</span>
+              <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">METRICS</span>
+              <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
             </span>
             <span className="live-dot" />
           </div>
@@ -171,8 +172,9 @@ export function AppLayout() {
             <Menu className="h-5 w-5" />
           </button>
           <span className="ml-3 text-lg tracking-tighter">
-            <span className="text-white font-black">EDGE</span>
-            <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">RELAY</span>
+            <span className="text-white font-black">TRADE</span>
+            <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">METRICS</span>
+            <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
           </span>
         </header>
 

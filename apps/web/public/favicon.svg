@@ -7,8 +7,8 @@
   </defs>
   <rect width="32" height="32" rx="6" fill="#05080d"/>
   <rect x="1" y="1" width="30" height="30" rx="5" fill="none" stroke="#00e5ff" stroke-width="0.5" stroke-opacity="0.3"/>
-  <!-- E letterform -->
-  <path d="M 7 7 L 20 7 L 20 10 L 10.5 10 L 10.5 14.5 L 18.5 14.5 L 18.5 17.5 L 10.5 17.5 L 10.5 22 L 20 22 L 20 25 L 7 25 Z" fill="url(#g)"/>
-  <!-- Bolt -->
-  <path d="M 19 10 L 23 10 L 20.5 15.5 L 24.5 15.5 L 18 24 L 20 17.5 L 17 17.5 Z" fill="#00ff9d" fill-opacity="0.85"/>
+  <!-- TM monogram -->
+  <text x="16" y="22" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="14" fill="url(#g)">TM</text>
+  <!-- Bolt accent -->
+  <path d="M 23 8 L 26 8 L 24.5 12 L 27 12 L 22 18 L 23.5 13 L 21.5 13 Z" fill="#00ff9d" fill-opacity="0.85"/>
 </svg>

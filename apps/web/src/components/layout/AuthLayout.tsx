@@ -90,8 +90,9 @@ export function AuthLayout() {
           </div>
 
           <h1 className="font-display text-4xl font-black tracking-tight">
-            <span className="text-white">EDGE</span>
-            <span className="glow-text-cyan text-neon-cyan logo-shimmer">RELAY</span>
+            <span className="text-white">TRADE</span>
+            <span className="glow-text-cyan text-neon-cyan logo-shimmer">METRICS</span>
+            <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
           </h1>
           <p className="mt-3 text-sm text-terminal-muted">
             {isLogin ? 'Sign in to your trading terminal' : 'Create your trading account'}

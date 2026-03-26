@@ -58,8 +58,9 @@ export function FirmDirectoryPage() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-tight">
-            <span className="font-bold text-white">EDGE</span>
-            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">RELAY</span>
+            <span className="font-bold text-white">TRADE</span>
+            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">METRICS</span>
+            <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
           </Link>
 
           <div className="flex items-center gap-8">

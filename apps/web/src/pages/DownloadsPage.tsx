@@ -26,7 +26,7 @@ const setupSteps: SetupStep[] = [
         </li>
         <li className="flex items-start gap-2">
           <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-neon-green" />
-          EdgeRelay account created with at least one master or follower account
+          TradeMetrics Pro account created with at least one master or follower account
         </li>
         <li className="flex items-start gap-2">
           <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-neon-green" />
@@ -74,7 +74,7 @@ const setupSteps: SetupStep[] = [
         </p>
         <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside" start={3}>
           <li>Restart MT5 or right-click in Navigator \u2192 Refresh</li>
-          <li>Drag "EdgeRelay_Master" onto any chart</li>
+          <li>Drag "TradeMetrics_Master" onto any chart</li>
         </ol>
       </div>
     ),
@@ -106,7 +106,7 @@ const setupSteps: SetupStep[] = [
               </tr>
               <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Endpoint</td>
-                <td className="px-4 py-2.5 text-slate-300">EdgeRelay server</td>
+                <td className="px-4 py-2.5 text-slate-300">TradeMetrics Pro server</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">https://signal.edgerelay.io</td>
               </tr>
               <tr className="data-row">
@@ -294,7 +294,7 @@ function EADownloadCard({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = isJournal ? 'TradeJournal_Sync.ex5' : `EdgeRelay_${isMaster ? 'Master' : 'Follower'}.ex5`;
+      a.download = isJournal ? 'TradeJournal_Sync.ex5' : `TradeMetrics_${isMaster ? 'Master' : 'Follower'}.ex5`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -314,7 +314,7 @@ function EADownloadCard({
         </div>
         <div className="flex-1 space-y-1">
           <h3 className="font-display text-base font-semibold text-slate-100">
-            {isJournal ? 'TradeJournal Sync' : `EdgeRelay ${isMaster ? 'Master' : 'Follower'}`} EA
+            {isJournal ? 'TradeJournal Sync' : `TradeMetrics ${isMaster ? 'Master' : 'Follower'}`} EA
           </h3>
           <p className="text-sm text-slate-400">
             {isJournal

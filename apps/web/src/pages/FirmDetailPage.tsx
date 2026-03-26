@@ -103,8 +103,9 @@ export function FirmDetailPage() {
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 font-display text-xl tracking-tight">
-            <span className="font-bold text-white">EDGE</span>
-            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">RELAY</span>
+            <span className="font-bold text-white">TRADE</span>
+            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">METRICS</span>
+            <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
           </Link>
 
           <div className="flex items-center gap-8">
@@ -321,7 +322,7 @@ export function FirmDetailPage() {
         <div className="mt-12 text-center animate-fade-in-up" style={{ animationDelay: '200ms' }}>
           <div className="glass-premium rounded-2xl p-8 inline-block">
             <p className="text-slate-300 mb-4 text-sm">
-              Monitor this firm with EdgeRelay
+              Monitor this firm with TradeMetrics Pro
             </p>
             <Link
               to="/register"

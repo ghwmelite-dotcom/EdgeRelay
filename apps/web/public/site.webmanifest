@@ -1,7 +1,7 @@
 {
-  "name": "EdgeRelay — Edge Signal Copier",
-  "short_name": "EdgeRelay",
-  "description": "The world's only free cross-VPS trade copier for prop firm traders",
+  "name": "TradeMetrics Pro — Edge Signal Copier",
+  "short_name": "TradeMetrics Pro",
+  "description": "TradeMetrics Pro — the world's only free cross-VPS trade copier for prop firm traders",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#05080d",

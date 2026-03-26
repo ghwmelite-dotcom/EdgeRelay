@@ -152,6 +152,7 @@ export const DailyLossCalculation = z.enum([
   'balance_start_of_day',
   'equity_high_of_day',
   'previous_day_balance',
+  'higher_of_both',
 ]);
 export type DailyLossCalculation = z.infer<typeof DailyLossCalculation>;
 
@@ -164,7 +165,10 @@ export const PropGuardStatus = z.enum([
 ]);
 export type PropGuardStatus = z.infer<typeof PropGuardStatus>;
 
-export const ChallengePhase = z.enum(['evaluation', 'verification', 'funded']);
+export const ChallengePhase = z.enum([
+  'evaluation', 'verification', 'funded',
+  'evaluation_1', 'evaluation_2', 'express', 'instant',
+]);
 export type ChallengePhase = z.infer<typeof ChallengePhase>;
 
 // ── PropGuard Rule Set ──────────────────────────────────────────
@@ -421,4 +425,90 @@ export const JOURNAL_RATE_LIMIT_PER_MINUTE = 120;
 
 export function validateJournalSyncPayload(data: unknown) {
   return JournalSyncPayload.safeParse(data);
+}
+
+// ── Firm Templates ──────────────────────────────────────────
+
+export const DailyLossType = z.enum(['balance', 'equity', 'higher_of_both']);
+export type DailyLossType = z.infer<typeof DailyLossType>;
+
+export const FirmTemplate = z.object({
+  id: z.string(),
+  firm_name: z.string(),
+  plan_name: z.string(),
+  challenge_phase: ChallengePhase,
+  initial_balance: z.number(),
+  profit_target_percent: z.number().nullable(),
+  profit_target_amount: z.number().nullable(),
+  daily_loss_percent: z.number(),
+  max_drawdown_percent: z.number(),
+  max_drawdown_amount: z.number().nullable(),
+  daily_loss_type: DailyLossType,
+  drawdown_type: z.enum(['static', 'trailing', 'eod_trailing']),
+  min_trading_days: z.number().nullable(),
+  max_calendar_days: z.number().nullable(),
+  news_trading_restricted: z.boolean(),
+  news_minutes_before: z.number(),
+  news_minutes_after: z.number(),
+  weekend_holding_allowed: z.boolean(),
+  max_lot_size: z.number().nullable(),
+  consistency_rule: z.boolean(),
+  max_daily_profit_percent: z.number().nullable(),
+  source_url: z.string().nullable(),
+  verified: z.boolean(),
+  version: z.number(),
+});
+export type FirmTemplate = z.infer<typeof FirmTemplate>;
+
+export const FirmTemplateSubmission = z.object({
+  firm_name: z.string().min(1),
+  plan_name: z.string().min(1),
+  challenge_phase: ChallengePhase,
+  initial_balance: z.number().positive(),
+  profit_target_percent: z.number().nullable().optional(),
+  profit_target_amount: z.number().nullable().optional(),
+  daily_loss_percent: z.number().positive(),
+  max_drawdown_percent: z.number().positive(),
+  max_drawdown_amount: z.number().nullable().optional(),
+  daily_loss_type: DailyLossType,
+  drawdown_type: z.enum(['static', 'trailing', 'eod_trailing']),
+  min_trading_days: z.number().int().nullable().optional(),
+  max_calendar_days: z.number().int().nullable().optional(),
+  news_trading_restricted: z.boolean().optional().default(false),
+  news_minutes_before: z.number().int().optional().default(2),
+  news_minutes_after: z.number().int().optional().default(2),
+  weekend_holding_allowed: z.boolean().optional().default(true),
+  max_lot_size: z.number().nullable().optional(),
+  consistency_rule: z.boolean().optional().default(false),
+  max_daily_profit_percent: z.number().nullable().optional(),
+  source_url: z.string().url(),
+});
+export type FirmTemplateSubmission = z.infer<typeof FirmTemplateSubmission>;
+
+export interface AccountHealth {
+  status: 'safe' | 'caution' | 'danger';
+  score: number;
+  daily_loss: {
+    current_percent: number;
+    limit_percent: number;
+    used_percent: number;
+    status: 'safe' | 'caution' | 'danger';
+  } | null;
+  drawdown: {
+    current_percent: number;
+    limit_percent: number;
+    used_percent: number;
+    status: 'safe' | 'caution' | 'danger';
+  };
+  profit_target: {
+    current_percent: number;
+    target_percent: number;
+    progress_percent: number;
+  } | null;
+  time: {
+    days_used: number;
+    days_remaining: number | null;
+    min_days_met: boolean;
+  } | null;
+  warnings: string[];
 }

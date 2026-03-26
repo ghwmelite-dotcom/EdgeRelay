@@ -394,3 +394,37 @@ command.post('/link/:accountId', async (c) => {
     error: null,
   });
 });
+
+// ── POST /unlink/:accountId — Unlink account from firm template ──
+
+command.post('/unlink/:accountId', async (c) => {
+  const accountId = c.req.param('accountId');
+  const userId = c.get('userId');
+
+  const owns = await verifyAccountOwnership(c.env.DB, accountId, userId);
+  if (!owns) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'FORBIDDEN', message: 'Account not found or not owned by user' } },
+      403,
+    );
+  }
+
+  try {
+    await c.env.DB.prepare(
+      `UPDATE prop_rules SET firm_template_id = NULL, template_version = NULL, updated_at = datetime('now') WHERE account_id = ?`,
+    )
+      .bind(accountId)
+      .run();
+
+    return c.json<ApiResponse>({
+      data: { unlinked: true },
+      error: null,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'INTERNAL_ERROR', message: msg } },
+      500,
+    );
+  }
+});

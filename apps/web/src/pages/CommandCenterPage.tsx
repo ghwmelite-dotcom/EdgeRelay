@@ -26,7 +26,7 @@ function statusChipVariant(status: 'safe' | 'caution' | 'danger'): 'green' | 'am
 
 export function CommandCenterPage() {
   const { accounts, fetchAccounts } = useAccountsStore();
-  const { healthResults, isLoading, error, fetchHealth, fetchFirms } = useCommandCenterStore();
+  const { healthResults, isLoading, error, fetchHealth, fetchFirms, unlinkAccount } = useCommandCenterStore();
 
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkingAccountId, setLinkingAccountId] = useState<string | null>(null);
@@ -64,6 +64,11 @@ export function CommandCenterPage() {
 
   const handleLinked = () => {
     fetchHealth();
+  };
+
+  const handleUnlink = async (accountId: string) => {
+    const success = await unlinkAccount(accountId);
+    if (success) fetchHealth();
   };
 
   // ── Loading state ─────────────────────────────────────────────
@@ -208,7 +213,7 @@ export function CommandCenterPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {healthResults.map((result, i) => (
-              <AccountHealthCard key={result.account_id} result={result} delay={i * 80} />
+              <AccountHealthCard key={result.account_id} result={result} delay={i * 80} onUnlink={() => handleUnlink(result.account_id)} />
             ))}
           </div>
         </section>
@@ -278,7 +283,7 @@ export function CommandCenterPage() {
 
 // ── Account Health Card ─────────────────────────────────────────
 
-function AccountHealthCard({ result, delay }: { result: AccountHealthResult; delay: number }) {
+function AccountHealthCard({ result, delay, onUnlink }: { result: AccountHealthResult; delay: number; onUnlink: () => void }) {
   const { health, alias, firm_name, plan_name } = result;
 
   return (
@@ -340,6 +345,14 @@ function AccountHealthCard({ result, delay }: { result: AccountHealthResult; del
           ))}
         </div>
       )}
+
+      {/* Unlink button */}
+      <button
+        onClick={onUnlink}
+        className="mt-4 w-full text-xs text-terminal-muted hover:text-neon-red transition-colors py-1.5 rounded-lg hover:bg-neon-red/5"
+      >
+        Unlink from firm
+      </button>
     </div>
   );
 }

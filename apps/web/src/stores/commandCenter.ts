@@ -27,6 +27,7 @@ interface CommandCenterState {
   fetchFirms: () => Promise<void>;
   fetchFirmTemplates: (firmName: string) => Promise<void>;
   linkAccount: (accountId: string, templateId: string) => Promise<boolean>;
+  unlinkAccount: (accountId: string) => Promise<boolean>;
   reset: () => void;
 }
 
@@ -90,6 +91,21 @@ export const useCommandCenterStore = create<CommandCenterState>()((set) => ({
         return true;
       } else {
         set({ error: res.error?.message ?? 'Failed to link account' });
+        return false;
+      }
+    } catch {
+      set({ error: 'Network error' });
+      return false;
+    }
+  },
+
+  unlinkAccount: async (accountId: string) => {
+    try {
+      const res = await api.post(`/command/unlink/${accountId}`);
+      if (res.data) {
+        return true;
+      } else {
+        set({ error: res.error?.message ?? 'Failed to unlink account' });
         return false;
       }
     } catch {

@@ -13,6 +13,7 @@ import { news } from './routes/news.js';
 import { journal } from './routes/journal.js';
 import { firms } from './routes/firms.js';
 import { command } from './routes/command.js';
+import { propguardEa } from './routes/propguardEa.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -70,6 +71,9 @@ app.route('/v1/billing', billing);
 
 // Firm templates — GET endpoints public, POST applies auth internally
 app.route('/v1/firms', firms);
+
+// PropGuard EA endpoints — API key auth (not JWT), called by MQL5 EAs
+app.route('/v1/propguard', propguardEa);
 
 // ── Protected Routes ────────────────────────────────────────────
 const protectedApp = new Hono<{ Bindings: Env }>();

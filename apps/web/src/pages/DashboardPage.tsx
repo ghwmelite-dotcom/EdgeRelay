@@ -19,10 +19,12 @@ import {
 import { useAuthStore } from '@/stores/auth';
 import { useAccountsStore, type Account } from '@/stores/accounts';
 import { useCommandCenterStore, type AccountHealthResult } from '@/stores/commandCenter';
+import { useNotificationStore } from '@/stores/notifications';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusDot } from '@/components/ui/StatusDot';
+import { TelegramBanner } from '@/components/dashboard/TelegramBanner';
 
 // ── Signal type from API ─────────────────────────────────────────
 
@@ -218,7 +220,10 @@ export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const { accounts, fetchAccounts } = useAccountsStore();
   const { healthResults, fetchHealth } = useCommandCenterStore();
+  const { checkTelegramStatus } = useNotificationStore();
   const clock = useRealtimeClock();
+
+  useEffect(() => { checkTelegramStatus(); }, []);
 
   // Fetch recent signals and total P&L from API
   const [recentSignals, setRecentSignals] = useState<ApiSignal[]>([]);
@@ -329,6 +334,9 @@ export function DashboardPage() {
 
       {/* ── Divider ──────────────────────────────────────────────── */}
       <div className="divider-diamond" />
+
+      {/* ── Telegram Banner ──────────────────────────────────────── */}
+      <TelegramBanner />
 
       {/* ── Stats Bar ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { Send, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Send, X, ExternalLink, Loader2 } from 'lucide-react';
 import { useNotificationStore } from '@/stores/notifications';
 
 export function TelegramBanner() {
   const { telegramConnected, isLinking, generateDeepLink, checkTelegramStatus } =
     useNotificationStore();
   const [dismissed, setDismissed] = useState(false);
-  const [pollTimeout, setPollTimeout] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [deepLinkUrl, setDeepLinkUrl] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     const dismissedAt = localStorage.getItem('tg-banner-dismissed');
@@ -21,33 +21,30 @@ export function TelegramBanner() {
     }
   }, []);
 
+  // When user returns to the tab, check connection status
+  const handleVisibilityChange = useCallback(() => {
+    if (document.visibilityState === 'visible' && deepLinkUrl) {
+      setChecking(true);
+      checkTelegramStatus().finally(() => setChecking(false));
+    }
+  }, [deepLinkUrl, checkTelegramStatus]);
+
   useEffect(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, []);
+  }, [handleVisibilityChange]);
 
   if (telegramConnected || dismissed) return null;
 
   const handleConnect = async () => {
     const deepLink = await generateDeepLink();
     if (!deepLink) return;
-
-    window.open(deepLink, '_blank');
-
-    setPollTimeout(false);
-    let elapsed = 0;
-    pollRef.current = setInterval(async () => {
-      elapsed += 2000;
-      await checkTelegramStatus();
-      const { telegramConnected: connected } = useNotificationStore.getState();
-      if (connected || elapsed >= 30000) {
-        if (pollRef.current) clearInterval(pollRef.current);
-        pollRef.current = null;
-        useNotificationStore.setState({ isLinking: false });
-        if (!connected) setPollTimeout(true);
-      }
-    }, 2000);
+    setDeepLinkUrl(deepLink);
+    useNotificationStore.setState({ isLinking: false });
   };
 
   const handleDismiss = () => {
@@ -72,13 +69,18 @@ export function TelegramBanner() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {pollTimeout ? (
-            <button
-              onClick={handleConnect}
-              className="rounded-xl bg-[#0088cc] px-4 py-2 text-xs font-bold text-white transition-all hover:bg-[#0099dd] hover:shadow-[0_0_16px_#0088cc40]"
-            >
-              Retry
-            </button>
+          {deepLinkUrl ? (
+            <div className="flex items-center gap-2">
+              <a
+                href={deepLinkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-xl bg-[#0088cc] px-4 py-2 text-xs font-bold text-white transition-all hover:bg-[#0099dd] hover:shadow-[0_0_16px_#0088cc40]"
+              >
+                Open Telegram <ExternalLink size={12} />
+              </a>
+              {checking && <Loader2 size={14} className="text-neon-cyan animate-spin" />}
+            </div>
           ) : (
             <button
               onClick={handleConnect}
@@ -96,9 +98,9 @@ export function TelegramBanner() {
           </button>
         </div>
       </div>
-      {pollTimeout && (
-        <p className="text-xs text-terminal-muted mt-2">
-          Didn't complete? Try again or check Telegram.
+      {deepLinkUrl && (
+        <p className="text-xs text-neon-cyan mt-2">
+          Click "Open Telegram" above, then tap <b>Start</b> in the bot. Come back here and it will update automatically.
         </p>
       )}
     </div>

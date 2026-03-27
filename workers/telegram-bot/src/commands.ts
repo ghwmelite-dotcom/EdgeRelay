@@ -60,7 +60,7 @@ export async function handleStart(
         '• 🔐 Login alerts',
         '• 📊 Trade signal notifications',
         '• 🛡 Equity guard alerts',
-        '• 📈 Daily & weekly performance summaries',
+        '• 📈 Daily &amp; weekly performance summaries',
         '',
         'Manage your preferences at trademetricspro.com/settings',
       ].join('\n'),
@@ -457,9 +457,14 @@ function escapeHtml(text: string): string {
 
 function getConnectionStatus(isActive: number, lastHeartbeat: string | null): string {
   if (isActive && lastHeartbeat) {
-    const hbAge = Date.now() - new Date(lastHeartbeat + 'Z').getTime();
+    // Handle both Unix timestamp ("1774625280.0") and ISO date formats
+    const ts = parseFloat(lastHeartbeat);
+    const heartbeatMs = !isNaN(ts) && ts > 1e9 && ts < 1e12
+      ? ts * 1000
+      : new Date(lastHeartbeat).getTime();
+    const hbAge = Date.now() - heartbeatMs;
     // Consider connected if heartbeat within last 5 minutes
-    if (hbAge < 5 * 60 * 1000) {
+    if (!isNaN(hbAge) && hbAge < 5 * 60 * 1000) {
       return '\ud83d\udfe2 Connected';
     }
   }

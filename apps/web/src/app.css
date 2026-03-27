@@ -30,6 +30,7 @@
 }
 
 /* ── Light Mode ("Frosted Glass Light") ─────────────────────────── */
+@layer base {
 html.light {
   --color-terminal-bg: #f8fafc;
   --color-terminal-surface: #ffffff;
@@ -50,6 +51,7 @@ html.light {
   --color-neon-purple: #7c3aed;
   --color-neon-purple-dim: #7c3aed15;
 }
+} /* end @layer base for light mode variables */
 
 /* ── Base ───────────────────────────────────────────────────── */
 html {
@@ -786,8 +788,9 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LIGHT MODE EFFECT OVERRIDES
+   LIGHT MODE EFFECT OVERRIDES — in @layer base so Tailwind 4 preserves them
    ══════════════════════════════════════════════════════════════ */
+@layer base {
 
 /* Light mode glass */
 html.light .glass {
@@ -840,11 +843,8 @@ html.light .bg-grid-dense {
   opacity: 0.03;
 }
 
-/* Light mode text overrides for white text that won't auto-swap */
-html.light .text-white {
-  color: #1e293b;
-}
-
+/* Light mode text overrides — only for slate/muted text, NOT text-white
+   (text-white is intentional on colored backgrounds like buttons) */
 html.light .text-slate-200,
 html.light .text-slate-300 {
   color: #334155;
@@ -890,3 +890,5 @@ html.light ::-webkit-scrollbar-thumb {
 html.light ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+} /* end @layer base — light mode effects */

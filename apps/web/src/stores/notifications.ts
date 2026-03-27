@@ -41,9 +41,13 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
 
   generateDeepLink: async () => {
     set({ isLinking: true });
-    const res = await api.post<{ deepLink: string }>('/notifications/telegram/link');
-    if (res.data) {
-      return res.data.deepLink;
+    try {
+      const res = await api.post<{ deepLink: string }>('/notifications/telegram/link');
+      if (res.data) {
+        return res.data.deepLink;
+      }
+    } catch {
+      // API call failed
     }
     set({ isLinking: false });
     return null;

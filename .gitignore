@@ -9,3 +9,5 @@ dist/
 .turbo/
 .DS_Store
 Thumbs.db
+.superpowers/
+apps/web/tsconfig.tsbuildinfo

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="384">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020508"/>
+      <stop offset="50%" stop-color="#05080d"/>
+      <stop offset="100%" stop-color="#080d15"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <filter id="gf"><feGaussianBlur stdDeviation="40"/></filter>
+    <filter id="tg">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1920" height="384" fill="url(#bg)"/>
+
+  <!-- Grid -->
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+    <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#00e5ff" stroke-width="0.3" stroke-opacity="0.06"/>
+  </pattern>
+  <rect width="1920" height="384" fill="url(#grid)"/>
+
+  <!-- Glow orbs -->
+  <circle cx="350" cy="192" r="250" fill="#00e5ff" opacity="0.04" filter="url(#gf)"/>
+  <circle cx="1580" cy="150" r="200" fill="#b18cff" opacity="0.03" filter="url(#gf)"/>
+  <circle cx="960" cy="320" r="300" fill="#00ff9d" opacity="0.015" filter="url(#gf)"/>
+
+  <!-- Signal arcs right -->
+  <path d="M 1540 110 A 130 130 0 0 1 1540 274" fill="none" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" stroke-opacity="0.15"/>
+  <path d="M 1575 135 A 105 105 0 0 1 1575 249" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.1"/>
+  <path d="M 1605 158 A 82 82 0 0 1 1605 226" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" stroke-opacity="0.06"/>
+
+  <!-- Signal arcs left -->
+  <path d="M 380 110 A 130 130 0 0 0 380 274" fill="none" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" stroke-opacity="0.15"/>
+  <path d="M 345 135 A 105 105 0 0 0 345 249" fill="none" stroke="#00e5ff" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.1"/>
+
+  <!-- Accent lines -->
+  <line x1="0" y1="380" x2="1920" y2="380" stroke="url(#cyan)" stroke-width="2" stroke-opacity="0.4"/>
+  <line x1="0" y1="2" x2="1920" y2="2" stroke="url(#cyan)" stroke-width="1" stroke-opacity="0.2"/>
+
+  <!-- Logo -->
+  <text x="625" y="168" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="78" fill="white" letter-spacing="2">TRADE</text>
+  <text x="990" y="168" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="78" fill="#00e5ff" letter-spacing="2" filter="url(#tg)">METRICS</text>
+  <text x="1400" y="155" font-family="Arial, sans-serif" font-weight="700" font-size="22" fill="#3d4f63" letter-spacing="8">PRO</text>
+
+  <!-- Tagline -->
+  <text x="960" y="218" text-anchor="middle" font-family="Arial, sans-serif" font-weight="400" font-size="20" fill="#64748b" letter-spacing="6">THE WORLD'S ONLY FREE CROSS-VPS TRADE COPIER</text>
+
+  <!-- Feature pills -->
+  <rect x="470" y="252" rx="18" ry="18" width="190" height="34" fill="#00e5ff" fill-opacity="0.08" stroke="#00e5ff" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="565" y="274" text-anchor="middle" font-family="Arial, sans-serif" font-weight="600" font-size="12" fill="#00e5ff" letter-spacing="2">SUB-500MS</text>
+
+  <rect x="690" y="252" rx="18" ry="18" width="190" height="34" fill="#00ff9d" fill-opacity="0.08" stroke="#00ff9d" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="785" y="274" text-anchor="middle" font-family="Arial, sans-serif" font-weight="600" font-size="12" fill="#00ff9d" letter-spacing="2">PROPGUARD</text>
+
+  <rect x="910" y="252" rx="18" ry="18" width="230" height="34" fill="#ffb800" fill-opacity="0.08" stroke="#ffb800" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="1025" y="274" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="12" fill="#ffb800" letter-spacing="2">FREE UNTIL 2027</text>
+
+  <rect x="1170" y="252" rx="18" ry="18" width="210" height="34" fill="#b18cff" fill-opacity="0.08" stroke="#b18cff" stroke-width="1" stroke-opacity="0.25"/>
+  <text x="1275" y="274" text-anchor="middle" font-family="Arial, sans-serif" font-weight="600" font-size="12" fill="#b18cff" letter-spacing="2">300+ EDGE LOCS</text>
+
+  <!-- URL -->
+  <text x="960" y="335" text-anchor="middle" font-family="Courier New, monospace" font-weight="400" font-size="16" fill="#00e5ff" opacity="0.5" letter-spacing="3">trademetricspro.com</text>
+</svg>

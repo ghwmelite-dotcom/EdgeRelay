@@ -42,7 +42,13 @@ interface ApiSignal {
 
 function isConnected(heartbeat: string | null): boolean {
   if (!heartbeat) return false;
-  return Date.now() - new Date(heartbeat).getTime() < 30_000;
+  // Heartbeat can be Unix timestamp (e.g., "1774578171.0") or ISO string
+  const ts = parseFloat(heartbeat);
+  const heartbeatMs = !isNaN(ts) && ts > 1e9 && ts < 1e12
+    ? ts * 1000                      // Unix seconds → ms
+    : new Date(heartbeat).getTime(); // ISO string
+  if (isNaN(heartbeatMs)) return false;
+  return Date.now() - heartbeatMs < 120_000; // 2 minutes tolerance (was 30s — too strict)
 }
 
 function formatCurrency(n: number): string {
@@ -619,11 +625,12 @@ function FollowerCard({
   const maxDrawdown = account.follower_config?.max_total_drawdown_percent ?? 20;
 
   const hasHealth = healthData !== null;
-  const drawdownPct = hasHealth ? healthData.health.drawdown.current_percent : 0;
-  const drawdownUsedPct = hasHealth ? healthData.health.drawdown.used_percent : 0;
+  // Clamp drawdown to 0 — negative means in profit (no drawdown)
+  const drawdownPct = hasHealth ? Math.max(0, healthData.health.drawdown.current_percent) : 0;
+  const drawdownUsedPct = hasHealth ? Math.max(0, healthData.health.drawdown.used_percent) : 0;
 
   // Use used_percent from health (percentage of limit consumed) for gauge
-  const drawdownPctOfMax = hasHealth ? drawdownUsedPct : 0;
+  const drawdownPctOfMax = hasHealth ? Math.max(0, drawdownUsedPct) : 0;
 
   // Drawdown color logic
   const drawdownColor =
@@ -690,24 +697,31 @@ function FollowerCard({
           <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold mb-1">
             P&L
           </p>
-          {hasHealth && healthData.health.daily_loss ? (
-            <p
-              className={`font-mono-nums text-xl font-bold ${
-                healthData.health.daily_loss.current_percent <= 0
-                  ? 'text-neon-green glow-text-green'
-                  : 'text-neon-red glow-text-red'
-              }`}
-            >
-              <span className="inline-flex items-center gap-1">
-                {healthData.health.daily_loss.current_percent <= 0 ? (
-                  <ArrowUpRight size={14} />
-                ) : (
-                  <ArrowDownRight size={14} />
-                )}
-                {healthData.health.daily_loss.current_percent.toFixed(2)}%
-              </span>
-            </p>
-          ) : (
+          {hasHealth ? (() => {
+            // Calculate actual P&L from health score context
+            // score > 50 means account is healthy (profitable or minimal loss)
+            // drawdown 0 = in profit
+            const isPositive = drawdownPct === 0;
+            const pnlDisplay = hasHealth && healthData.health.daily_loss
+              ? healthData.health.daily_loss.current_percent
+              : 0;
+            return (
+              <p
+                className={`font-mono-nums text-xl font-bold ${
+                  isPositive
+                    ? 'text-neon-green glow-text-green'
+                    : pnlDisplay > 3
+                      ? 'text-neon-red glow-text-red'
+                      : 'text-neon-amber'
+                }`}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  {isPositive ? '+' : '-'}{pnlDisplay.toFixed(2)}%
+                </span>
+              </p>
+            );
+          })() : (
             <p className="font-mono-nums text-xl font-bold text-terminal-muted">&mdash;</p>
           )}
         </div>

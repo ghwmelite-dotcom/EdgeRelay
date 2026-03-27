@@ -6,23 +6,80 @@ interface CommandResult {
 }
 
 // ── /start ─────────────────────────────────────────────────────────
-export function handleStart(): CommandResult {
+export async function handleStart(
+  env: Env,
+  user: TelegramUser,
+  chatId: number,
+  args?: string,
+): Promise<CommandResult> {
+  // Deep-link flow: /start {code}
+  if (args && args.length > 0) {
+    const code = args.trim();
+    const userId = await env.BOT_STATE.get(`tg-link:${code}`);
+
+    if (!userId) {
+      return {
+        text: '❌ This link has expired. Please generate a new one from your dashboard at trademetricspro.com/settings',
+      };
+    }
+
+    // Check if already linked
+    const existing = await env.BOT_STATE.get(`user:${userId}:tg`);
+    if (existing) {
+      await env.BOT_STATE.delete(`tg-link:${code}`);
+      return { text: "✅ You're already connected! Your notifications are active." };
+    }
+
+    const linkedAt = new Date().toISOString();
+
+    // Store both mappings (include telegramUserId in forward mapping for unlinking from dashboard)
+    await env.BOT_STATE.put(
+      `user:${userId}:tg`,
+      JSON.stringify({ chatId, linked_at: linkedAt, telegramUserId: user.id }),
+    );
+    await env.BOT_STATE.put(
+      `tg:${user.id}`,
+      JSON.stringify({ user_id: userId, chat_id: chatId, linked_at: linkedAt }),
+    );
+
+    // Create notification preferences row (ON CONFLICT DO NOTHING to preserve existing)
+    await env.DB.prepare(
+      `INSERT INTO notification_preferences (id, user_id) VALUES (lower(hex(randomblob(16))), ?) ON CONFLICT(user_id) DO NOTHING`,
+    )
+      .bind(userId)
+      .run();
+
+    // Delete one-time code
+    await env.BOT_STATE.delete(`tg-link:${code}`);
+
+    return {
+      text: [
+        '✅ <b>Connected to TradeMetrics Pro!</b>',
+        '',
+        "You'll now receive:",
+        '• 🔐 Login alerts',
+        '• 📊 Trade signal notifications',
+        '• 🛡 Equity guard alerts',
+        '• 📈 Daily & weekly performance summaries',
+        '',
+        'Manage your preferences at trademetricspro.com/settings',
+      ].join('\n'),
+    };
+  }
+
+  // Default welcome (no code)
   return {
     text: [
-      '<b>Welcome to EdgeRelay Bot!</b>',
+      '👋 Welcome to <b>TradeMetrics Pro</b>!',
       '',
-      'Monitor your signal copying, account status, and receive real-time notifications right here in Telegram.',
+      'To connect your account, use the "Connect Telegram" button in your dashboard.',
       '',
-      'To get started, link your EdgeRelay account:',
-      '<code>/link &lt;your_api_key&gt;</code>',
-      '',
-      '<b>Available Commands</b>',
-      '/link &lt;api_key&gt; — Link your EdgeRelay account',
-      '/unlink — Unlink your account',
-      '/status — Account & connection status',
-      '/signals [count] — Recent signals (default: 5)',
-      '/accounts — List all trading accounts',
-      '/help — Show this help message',
+      'Available commands:',
+      '/status — Check connection status',
+      '/accounts — List trading accounts',
+      '/signals — Recent signals',
+      '/unlink — Disconnect Telegram',
+      '/help — Show all commands',
     ].join('\n'),
   };
 }
@@ -94,6 +151,11 @@ export async function handleUnlink(env: Env, user: TelegramUser): Promise<Comman
     // Remove both mappings
     await env.BOT_STATE.delete(`tg:${user.id}`);
     await env.BOT_STATE.delete(`user:${mapping.user_id}:tg`);
+
+    // Delete notification preferences from D1
+    await env.DB.prepare('DELETE FROM notification_preferences WHERE user_id = ?')
+      .bind(mapping.user_id)
+      .run();
 
     return { text: 'Unlinked. You won\'t receive notifications anymore.\n\nUse /link &lt;api_key&gt; to re-link at any time.' };
   } catch (err) {
@@ -350,8 +412,10 @@ export async function routeCommand(
   const args = parts.slice(1);
 
   switch (command) {
-    case '/start':
-      return handleStart();
+    case '/start': {
+      const startArgs = text.split(' ').slice(1).join(' ').trim() || undefined;
+      return handleStart(env, user, chatId, startArgs);
+    }
     case '/link':
       return handleLink(env, user, chatId, args[0]);
     case '/unlink':

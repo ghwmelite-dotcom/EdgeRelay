@@ -124,8 +124,17 @@ export async function notifyDisconnect(
 async function getChatId(env: Env, userId: string): Promise<number | null> {
   const raw = await env.BOT_STATE.get(`user:${userId}:tg`);
   if (!raw) return null;
-  const chatId = parseInt(raw, 10);
-  return isNaN(chatId) ? null : chatId;
+
+  // Try JSON format first (new: {chatId, linked_at, telegramUserId})
+  try {
+    const parsed = JSON.parse(raw);
+    const chatId = parseInt(String(parsed.chatId), 10);
+    return isNaN(chatId) ? null : chatId;
+  } catch {
+    // Fallback: legacy plain string format
+    const chatId = parseInt(raw, 10);
+    return isNaN(chatId) ? null : chatId;
+  }
 }
 
 function escapeHtml(text: string): string {

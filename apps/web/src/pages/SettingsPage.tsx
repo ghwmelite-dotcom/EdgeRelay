@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { User, Lock, Bell, AlertTriangle, Trash2, Send, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Bell, AlertTriangle, Trash2, Send, CheckCircle2, ExternalLink, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
@@ -160,12 +160,15 @@ export function SettingsPage() {
     telegramConnected,
     linkedAt,
     preferences,
+    isLinking,
     checkTelegramStatus,
     generateDeepLink,
     unlinkTelegram,
     fetchPreferences,
     updatePreferences,
   } = useNotificationStore();
+  const [tgDeepLink, setTgDeepLink] = useState<string | null>(null);
+  const [tgChecking, setTgChecking] = useState(false);
 
   /* -- Danger Zone -- */
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -188,6 +191,28 @@ export function SettingsPage() {
     checkTelegramStatus();
     fetchPreferences();
   }, []);
+
+  // When user returns to tab after clicking the Telegram deep link, re-check status
+  const handleTgVisibilityChange = useCallback(() => {
+    if (document.visibilityState === 'visible' && tgDeepLink) {
+      setTgChecking(true);
+      checkTelegramStatus().finally(() => setTgChecking(false));
+    }
+  }, [tgDeepLink, checkTelegramStatus]);
+
+  useEffect(() => {
+    document.addEventListener('visibilitychange', handleTgVisibilityChange);
+    window.addEventListener('focus', handleTgVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleTgVisibilityChange);
+      window.removeEventListener('focus', handleTgVisibilityChange);
+    };
+  }, [handleTgVisibilityChange]);
+
+  // Clear deep link once connected
+  useEffect(() => {
+    if (telegramConnected) setTgDeepLink(null);
+  }, [telegramConnected]);
 
   /* -- Handlers -- */
 
@@ -342,23 +367,40 @@ export function SettingsPage() {
                   Receive instant trade alerts, equity guard warnings, and daily summaries straight to Telegram.
                 </p>
               </div>
-              <button
-                onClick={async () => {
-                  const { isLinking } = useNotificationStore.getState();
-                  if (isLinking) return;
-                  const link = await generateDeepLink();
-                  if (link) {
-                    window.open(link, '_blank');
-                    setTimeout(() => {
+              {tgDeepLink ? (
+                <div className="flex flex-col items-center gap-2 w-full">
+                  <a
+                    href={tgDeepLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-xl bg-[#0088cc] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#0099dd]"
+                  >
+                    Open Telegram <ExternalLink size={14} />
+                  </a>
+                  {tgChecking && (
+                    <span className="flex items-center gap-1.5 text-xs text-neon-cyan">
+                      <Loader2 size={12} className="animate-spin" /> Checking connection…
+                    </span>
+                  )}
+                  <p className="text-xs text-terminal-muted text-center mt-1">
+                    Tap <b>Start</b> in the bot, then come back — this page will update automatically.
+                  </p>
+                </div>
+              ) : (
+                <button
+                  disabled={isLinking}
+                  onClick={async () => {
+                    const link = await generateDeepLink();
+                    if (link) {
                       useNotificationStore.setState({ isLinking: false });
-                      checkTelegramStatus();
-                    }, 30000);
-                  }
-                }}
-                className="rounded-xl bg-[#0088cc] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
-              >
-                Connect Telegram
-              </button>
+                      setTgDeepLink(link);
+                    }
+                  }}
+                  className="rounded-xl bg-[#0088cc] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
+                >
+                  {isLinking ? 'Generating link…' : 'Connect Telegram'}
+                </button>
+              )}
             </div>
 
             {/* Preview toggles — greyed out */}

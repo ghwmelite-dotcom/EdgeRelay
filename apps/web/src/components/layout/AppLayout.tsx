@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, AlertTriangle, Users, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send } from 'lucide-react';
+import { LayoutDashboard, Shield, AlertTriangle, Users, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
@@ -68,10 +68,36 @@ export function AppLayout() {
 
   const { telegramConnected, checkTelegramStatus, generateDeepLink, isLinking } =
     useNotificationStore();
+  const [sidebarTgLink, setSidebarTgLink] = useState<string | null>(null);
+  const [sidebarChecking, setSidebarChecking] = useState(false);
+  const sidebarTgLinkRef = useRef<string | null>(null);
+
+  // Keep ref in sync so the stable callback can read the latest value
+  useEffect(() => {
+    sidebarTgLinkRef.current = sidebarTgLink;
+  }, [sidebarTgLink]);
+
+  const handleSidebarVisibility = useCallback(() => {
+    if (document.visibilityState === 'visible' && sidebarTgLinkRef.current) {
+      setSidebarChecking(true);
+      checkTelegramStatus().finally(() => setSidebarChecking(false));
+    }
+  }, [checkTelegramStatus]);
 
   useEffect(() => {
     checkTelegramStatus();
-  }, []);
+    document.addEventListener('visibilitychange', handleSidebarVisibility);
+    window.addEventListener('focus', handleSidebarVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleSidebarVisibility);
+      window.removeEventListener('focus', handleSidebarVisibility);
+    };
+  }, [handleSidebarVisibility]);
+
+  // Clear link once connected
+  useEffect(() => {
+    if (telegramConnected) setSidebarTgLink(null);
+  }, [telegramConnected]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-terminal-bg">
@@ -160,22 +186,37 @@ export function AppLayout() {
                 <span className="text-xs font-semibold text-[#0088cc]">Telegram Alerts</span>
               </div>
               <p className="text-[10px] text-terminal-muted mb-2">Get instant trade alerts</p>
-              <button
-                onClick={async () => {
-                  const link = await generateDeepLink();
-                  if (link) {
-                    window.open(link, '_blank');
-                    setTimeout(() => {
+              {sidebarTgLink ? (
+                <div className="space-y-1.5">
+                  <a
+                    href={sidebarTgLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0088cc] py-1.5 text-[11px] font-semibold text-white transition-all hover:bg-[#0099dd]"
+                  >
+                    Open Telegram <ExternalLink size={11} />
+                  </a>
+                  {sidebarChecking && (
+                    <p className="flex items-center justify-center gap-1 text-[10px] text-neon-cyan">
+                      <Loader2 size={10} className="animate-spin" /> Checking…
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={async () => {
+                    const link = await generateDeepLink();
+                    if (link) {
                       useNotificationStore.setState({ isLinking: false });
-                      checkTelegramStatus();
-                    }, 30000);
-                  }
-                }}
-                disabled={isLinking}
-                className="w-full rounded-lg bg-[#0088cc] py-1.5 text-[11px] font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
-              >
-                {isLinking ? 'Connecting...' : 'Connect'}
-              </button>
+                      setSidebarTgLink(link);
+                    }
+                  }}
+                  disabled={isLinking}
+                  className="w-full rounded-lg bg-[#0088cc] py-1.5 text-[11px] font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
+                >
+                  {isLinking ? 'Generating…' : 'Connect'}
+                </button>
+              )}
             </div>
           )}
         </div>

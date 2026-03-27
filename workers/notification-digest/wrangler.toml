@@ -1,0 +1,18 @@
+name = "edgerelay-notification-digest"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[triggers]
+crons = ["0 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "edgerelay-db"
+database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
+
+[[kv_namespaces]]
+binding = "BOT_STATE"
+id = "cccd807ee9d64f3d84ace82529092566"
+
+# Set via wrangler secret:
+# TELEGRAM_BOT_TOKEN

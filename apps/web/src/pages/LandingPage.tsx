@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthModal } from '@/components/AuthModal';
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -181,6 +182,7 @@ const SIGNAL_LINES = [
 
 export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register' }>({ open: false, mode: 'register' });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -223,18 +225,18 @@ export function LandingPage() {
                 {l.label}
               </a>
             ))}
-            <Link
-              to="/login"
-              className="nav-glow-line hidden text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan sm:inline"
+            <button
+              onClick={() => setAuthModal({ open: true, mode: 'login' })}
+              className="nav-glow-line hidden text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan sm:inline cursor-pointer"
             >
               Login
-            </Link>
-            <Link
-              to="/register"
-              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)]"
+            </button>
+            <button
+              onClick={() => setAuthModal({ open: true, mode: 'register' })}
+              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)] cursor-pointer"
             >
               Get Started Free
-            </Link>
+            </button>
           </div>
         </div>
       </nav>
@@ -327,12 +329,12 @@ export function LandingPage() {
               className="animate-fade-in-up mt-10 flex flex-col gap-4 sm:flex-row"
               style={{ animationDelay: '700ms' }}
             >
-              <Link
-                to="/register"
-                className="btn-premium signal-pulse inline-flex items-center justify-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)]"
+              <button
+                onClick={() => setAuthModal({ open: true, mode: 'register' })}
+                className="btn-premium signal-pulse inline-flex items-center justify-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)] cursor-pointer"
               >
                 Get Started Free <ArrowRight className="h-4 w-4" />
-              </Link>
+              </button>
               <a
                 href="#how-it-works"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 px-10 py-4 text-base font-semibold text-slate-200 backdrop-blur transition-all hover:border-terminal-border-hover hover:bg-terminal-border/40"
@@ -884,13 +886,13 @@ export function LandingPage() {
             TradeMetrics Pro is completely free until 2027 — no per-account fees, no monthly subscription, no credit card required.
             While competitors charge $20-100/month, you pay nothing.
           </p>
-          <Link
-            to="/register"
-            className="btn-premium signal-pulse animate-fade-in-up mt-10 inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-12 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)]"
+          <button
+            onClick={() => setAuthModal({ open: true, mode: 'register' })}
+            className="btn-premium signal-pulse animate-fade-in-up mt-10 inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-12 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)] cursor-pointer"
             style={{ animationDelay: '160ms' }}
           >
             Get Started Free <ArrowRight className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
       </section>
 
@@ -945,6 +947,13 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModal.open}
+        onClose={() => setAuthModal({ ...authModal, open: false })}
+        initialMode={authModal.mode}
+      />
     </div>
   );
 }

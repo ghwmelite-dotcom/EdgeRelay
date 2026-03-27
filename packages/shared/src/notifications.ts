@@ -1,5 +1,14 @@
 // packages/shared/src/notifications.ts
 
+// Minimal structural interfaces so this file compiles in non-Worker contexts
+// (web app, tests) without requiring @cloudflare/workers-types.
+interface D1Like {
+  prepare(query: string): { bind(...args: unknown[]): { first<T = Record<string, unknown>>(): Promise<T | null> } };
+}
+interface KVLike {
+  get(key: string): Promise<string | null>;
+}
+
 // Only boolean toggle columns — excludes timezone/summary_hour
 const TOGGLE_COLUMNS = [
   'login_alerts',
@@ -13,8 +22,8 @@ const TOGGLE_COLUMNS = [
 export type NotificationToggle = (typeof TOGGLE_COLUMNS)[number];
 
 export async function shouldNotify(
-  db: D1Database,
-  kv: KVNamespace,
+  db: D1Like,
+  kv: KVLike,
   userId: string,
   eventType: NotificationToggle,
 ): Promise<{ shouldSend: boolean; chatId: string | null }> {

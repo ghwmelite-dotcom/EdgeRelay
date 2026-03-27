@@ -10,6 +10,9 @@ interface PrefRow {
   user_id: string;
   daily_summary: number;
   weekly_digest: number;
+  morning_brief: number;
+  news_alerts: number;
+  session_alerts: number;
   timezone: string;
   summary_hour: number;
 }
@@ -24,68 +27,266 @@ interface JournalStats {
   worst_pnl: number;
 }
 
+const SESSION_TIMES = [
+  { name: 'Sydney', openHour: 21, closeHour: 6 },
+  { name: 'Tokyo', openHour: 0, closeHour: 9 },
+  { name: 'London', openHour: 7, closeHour: 16 },
+  { name: 'New York', openHour: 12, closeHour: 21 },
+];
+
 export default {
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    // Pre-event alerts (every minute)
+    await checkPreEventAlerts(env, ctx);
+
+    // Session alerts (every minute, fires only at exact session times)
+    await checkSessionAlerts(env, ctx);
+
+    // Daily/weekly/morning summaries (only at the top of each hour)
     const now = new Date();
-    const utcHour = now.getUTCHours();
-    const isFriday = now.getUTCDay() === 5;
+    if (now.getUTCMinutes() === 0) {
+      await sendDigests(env, ctx, now);
+    }
+  },
+};
 
-    // Get all users with summaries enabled
-    const { results } = await env.DB.prepare(
-      'SELECT user_id, daily_summary, weekly_digest, timezone, summary_hour FROM notification_preferences WHERE daily_summary = 1 OR weekly_digest = 1',
-    ).all<PrefRow>();
+async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<void> {
+  const now = new Date();
 
-    if (!results || results.length === 0) return;
+  // Find HIGH-impact events starting in 30±1 or 5±1 minutes
+  for (const minutesBefore of [30, 5]) {
+    const targetTime = new Date(now.getTime() + minutesBefore * 60000);
+    const windowStart = new Date(targetTime.getTime() - 60000).toISOString();
+    const windowEnd = new Date(targetTime.getTime() + 60000).toISOString();
 
-    for (const pref of results) {
-      // Calculate the user's current hour
-      const userHour = getUserHour(utcHour, pref.timezone);
-      if (userHour !== pref.summary_hour) continue;
+    const { results: events } = await env.DB.prepare(
+      `SELECT id, event_name, currency, event_time, forecast, previous
+       FROM news_events
+       WHERE impact = 'high' AND event_time >= ? AND event_time <= ?`,
+    )
+      .bind(windowStart, windowEnd)
+      .all<{
+        id: string;
+        event_name: string;
+        currency: string;
+        event_time: string;
+        forecast: string | null;
+        previous: string | null;
+      }>();
 
-      // Get chatId
-      const raw = await env.BOT_STATE.get(`user:${pref.user_id}:tg`);
+    if (!events || events.length === 0) continue;
+
+    // Get all users with news_alerts enabled
+    const { results: users } = await env.DB.prepare(
+      `SELECT user_id FROM notification_preferences WHERE news_alerts = 1`,
+    ).all<{ user_id: string }>();
+
+    if (!users) continue;
+
+    for (const event of events) {
+      for (const user of users) {
+        const dedupKey = `alert-sent:${user.user_id}:${event.id}:${minutesBefore}`;
+        const alreadySent = await env.BOT_STATE.get(dedupKey);
+        if (alreadySent) continue;
+
+        const raw = await env.BOT_STATE.get(`user:${user.user_id}:tg`);
+        if (!raw) continue;
+
+        let chatId: string;
+        try {
+          chatId = String((JSON.parse(raw) as { chatId?: unknown }).chatId);
+        } catch {
+          chatId = raw;
+        }
+
+        const emoji = minutesBefore === 30 ? '⚠️' : '🚨';
+        const label = minutesBefore === 30 ? 'Heads Up' : 'Imminent';
+        const forecastInfo = event.forecast ? ` (forecast: ${event.forecast})` : '';
+
+        const msg = `${emoji} <b>${label}: ${event.event_name}</b> in ${minutesBefore} min${forecastInfo}\n\nCurrency: ${event.currency}\nTime: ${event.event_time}`;
+
+        ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
+        await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 3600 });
+      }
+    }
+  }
+}
+
+async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void> {
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  const utcMinute = now.getUTCMinutes();
+  // Only fire on the exact top of the hour
+  if (utcMinute !== 0) return;
+
+  const today = now.toISOString().slice(0, 10);
+  // Skip weekends
+  const day = now.getUTCDay();
+  if (day === 6 || (day === 0 && utcHour < 21) || (day === 5 && utcHour >= 21)) return;
+
+  for (const session of SESSION_TIMES) {
+    let type: 'open' | 'close' | null = null;
+    if (utcHour === session.openHour) type = 'open';
+    if (utcHour === session.closeHour) type = 'close';
+    if (!type) continue;
+
+    const { results: users } = await env.DB.prepare(
+      `SELECT user_id FROM notification_preferences WHERE session_alerts = 1`,
+    ).all<{ user_id: string }>();
+    if (!users) continue;
+
+    for (const user of users) {
+      const dedupKey = `session-alert:${user.user_id}:${session.name}:${type}:${today}`;
+      const alreadySent = await env.BOT_STATE.get(dedupKey);
+      if (alreadySent) continue;
+
+      const raw = await env.BOT_STATE.get(`user:${user.user_id}:tg`);
       if (!raw) continue;
 
       let chatId: string;
       try {
-        const parsed = JSON.parse(raw) as { chatId?: unknown };
-        chatId = String(parsed.chatId);
+        chatId = String((JSON.parse(raw) as { chatId?: unknown }).chatId);
       } catch {
         chatId = raw;
       }
 
-      // Daily summary
-      if (pref.daily_summary) {
-        const dedupKey = `digest-sent:${pref.user_id}:daily:${now.toISOString().slice(0, 10)}`;
-        const alreadySent = await env.BOT_STATE.get(dedupKey);
-        if (!alreadySent) {
-          const stats = await getDailyStats(env.DB, pref.user_id);
-          if (stats) {
-            const msg = formatDailySummary(stats, now);
-            ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
-            await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
-          }
-        }
-      }
+      const emoji = type === 'open' ? '🟢' : '🔴';
+      const msg = `${emoji} <b>${session.name} Session ${type === 'open' ? 'Open' : 'Closed'}</b> (${String(utcHour).padStart(2, '0')}:00 UTC)`;
 
-      // Weekly digest (Friday only)
-      if (pref.weekly_digest && isFriday) {
-        const weekKey = getWeekKey(now);
-        const dedupKey = `digest-sent:${pref.user_id}:weekly:${weekKey}`;
-        const alreadySent = await env.BOT_STATE.get(dedupKey);
-        if (!alreadySent) {
-          const stats = await getWeeklyStats(env.DB, pref.user_id);
-          if (stats) {
-            const activeAccounts = await getActiveAccountCount(env.DB, pref.user_id);
-            const msg = formatWeeklyDigest(stats, activeAccounts, now);
-            ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
-            await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 604800 });
-          }
+      ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
+      await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+    }
+  }
+}
+
+async function formatMorningBrief(db: D1Database, now: Date): Promise<string | null> {
+  const today = now.toISOString().slice(0, 10);
+  const utcHour = now.getUTCHours();
+
+  // Sessions status
+  const sessions = SESSION_TIMES.map((s) => {
+    const open =
+      s.openHour <= s.closeHour
+        ? utcHour >= s.openHour && utcHour < s.closeHour
+        : utcHour >= s.openHour || utcHour < s.closeHour;
+    return `${s.name} ${open ? '🟢' : '🔴'}`;
+  });
+
+  // Today's high-impact events
+  const { results: events } = await db
+    .prepare(
+      `SELECT event_name, currency, event_time, forecast FROM news_events
+       WHERE impact = 'high' AND DATE(event_time) = ? ORDER BY event_time`,
+    )
+    .bind(today)
+    .all<{ event_name: string; currency: string; event_time: string; forecast: string | null }>();
+
+  // Top 3 headlines
+  const { results: news } = await db
+    .prepare(`SELECT headline, source FROM market_news ORDER BY published_at DESC LIMIT 3`)
+    .all<{ headline: string; source: string }>();
+
+  const lines = [
+    `🌅 <b>Market Brief — ${today}</b>`,
+    '',
+    `📊 Sessions: ${sessions.join(' • ')}`,
+  ];
+
+  if (events && events.length > 0) {
+    lines.push('', `⚡ ${events.length} high-impact event${events.length > 1 ? 's' : ''} today:`);
+    for (const e of events) {
+      const time = e.event_time.slice(11, 16);
+      const forecast = e.forecast ? ` (forecast: ${e.forecast})` : '';
+      lines.push(`• ${time} UTC — ${e.event_name}${forecast}`);
+    }
+  } else {
+    lines.push('', '✅ No high-impact events today');
+  }
+
+  if (news && news.length > 0) {
+    lines.push('', '📰 Latest:');
+    for (const n of news) {
+      lines.push(`• ${n.headline.slice(0, 80)} — ${n.source}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<void> {
+  const utcHour = now.getUTCHours();
+  const isFriday = now.getUTCDay() === 5;
+
+  // Get all users with any digest/alert pref enabled
+  const { results } = await env.DB.prepare(
+    `SELECT user_id, daily_summary, weekly_digest, morning_brief, news_alerts, session_alerts, timezone, summary_hour
+     FROM notification_preferences
+     WHERE daily_summary = 1 OR weekly_digest = 1 OR morning_brief = 1 OR news_alerts = 1 OR session_alerts = 1`,
+  ).all<PrefRow>();
+
+  if (!results || results.length === 0) return;
+
+  for (const pref of results) {
+    // Only send hourly digests when the user's local hour matches their preference
+    const userHour = getUserHour(utcHour, pref.timezone);
+    if (userHour !== pref.summary_hour) continue;
+
+    // Get chatId
+    const raw = await env.BOT_STATE.get(`user:${pref.user_id}:tg`);
+    if (!raw) continue;
+
+    let chatId: string;
+    try {
+      const parsed = JSON.parse(raw) as { chatId?: unknown };
+      chatId = String(parsed.chatId);
+    } catch {
+      chatId = raw;
+    }
+
+    // Daily summary
+    if (pref.daily_summary) {
+      const dedupKey = `digest-sent:${pref.user_id}:daily:${now.toISOString().slice(0, 10)}`;
+      const alreadySent = await env.BOT_STATE.get(dedupKey);
+      if (!alreadySent) {
+        const stats = await getDailyStats(env.DB, pref.user_id);
+        if (stats) {
+          const msg = formatDailySummary(stats, now);
+          ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
+          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
         }
       }
     }
-  },
-};
+
+    // Weekly digest (Friday only)
+    if (pref.weekly_digest && isFriday) {
+      const weekKey = getWeekKey(now);
+      const dedupKey = `digest-sent:${pref.user_id}:weekly:${weekKey}`;
+      const alreadySent = await env.BOT_STATE.get(dedupKey);
+      if (!alreadySent) {
+        const stats = await getWeeklyStats(env.DB, pref.user_id);
+        if (stats) {
+          const activeAccounts = await getActiveAccountCount(env.DB, pref.user_id);
+          const msg = formatWeeklyDigest(stats, activeAccounts, now);
+          ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
+          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 604800 });
+        }
+      }
+    }
+
+    // Morning brief (independent from daily_summary — different content)
+    if (pref.morning_brief) {
+      const dedupKey = `digest-sent:${pref.user_id}:morning:${now.toISOString().slice(0, 10)}`;
+      const alreadySent = await env.BOT_STATE.get(dedupKey);
+      if (!alreadySent) {
+        const brief = await formatMorningBrief(env.DB, now);
+        if (brief) {
+          ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, brief));
+          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+        }
+      }
+    }
+  }
+}
 
 function getUserHour(utcHour: number, timezone: string): number {
   try {

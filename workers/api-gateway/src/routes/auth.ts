@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
 import { generateToken, hashPassword, verifyPassword } from '../middleware/auth.js';
+import { notifyLogin } from '../lib/notifyLogin.js';
 
 const auth = new Hono<{ Bindings: Env }>();
 
@@ -120,6 +121,11 @@ auth.post('/login', async (c) => {
     `session:${user.id}:${token}`,
     JSON.stringify({ userId: user.id, createdAt: Date.now() }),
     { expirationTtl: expiryHours * 3600 },
+  );
+
+  // Send login alert via Telegram (non-blocking)
+  c.executionCtx.waitUntil(
+    notifyLogin(c.env, user.id, new Date().toISOString()),
   );
 
   return c.json<ApiResponse>({

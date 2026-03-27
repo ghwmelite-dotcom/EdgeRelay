@@ -25,6 +25,8 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { TelegramBanner } from '@/components/dashboard/TelegramBanner';
+import { MarketHoursWidget } from '@/components/dashboard/MarketHoursWidget';
+import { MarketIntelWidget } from '@/components/dashboard/MarketIntelWidget';
 
 // ── Signal type from API ─────────────────────────────────────────
 
@@ -407,6 +409,12 @@ export function DashboardPage() {
             </div>
           }
         />
+      </div>
+
+      {/* Market Hours + Intel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+        <MarketHoursWidget />
+        <MarketIntelWidget />
       </div>
 
       {/* ── Master Accounts — Signal Sources ──────────────────────── */}

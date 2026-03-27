@@ -10,6 +10,10 @@ JWT_EXPIRY_HOURS = "24"
 binding = "SESSIONS"
 id = "ce38cc917a3d42ed99702ea2e369482d"
 
+[[kv_namespaces]]
+binding = "BOT_STATE"
+id = "cccd807ee9d64f3d84ace82529092566"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "edgerelay-db"

@@ -11,6 +11,12 @@ export interface Env {
   /** Durable Object binding for account relay */
   ACCOUNT_RELAY: DurableObjectNamespace;
 
+  /** KV namespace for Telegram bot state (chat IDs, verification tokens) */
+  BOT_STATE: KVNamespace;
+
+  /** Telegram bot token (set via wrangler secret) */
+  TELEGRAM_BOT_TOKEN: string;
+
   /** Comma-separated allowed CORS origins */
   CORS_ORIGINS: string;
 

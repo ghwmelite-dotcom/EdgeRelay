@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, AlertTriangle, Users, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Shield, AlertTriangle, Users, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
+import { useNotificationStore } from '@/stores/notifications';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
@@ -64,6 +65,13 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuthStore();
   const location = useLocation();
+
+  const { telegramConnected, checkTelegramStatus, generateDeepLink, isLinking } =
+    useNotificationStore();
+
+  useEffect(() => {
+    checkTelegramStatus();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-terminal-bg">
@@ -137,6 +145,40 @@ export function AppLayout() {
             );
           })}
         </nav>
+
+        {/* Telegram Widget */}
+        <div className="shrink-0 px-4 pb-2">
+          {telegramConnected ? (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-500/5 border border-emerald-500/20 px-3 py-2.5">
+              <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#22c55e80]" />
+              <span className="text-xs font-medium text-emerald-400">Telegram Connected</span>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-[#0088cc]/5 border border-[#0088cc]/20 p-3">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Send size={14} className="text-[#0088cc]" />
+                <span className="text-xs font-semibold text-[#0088cc]">Telegram Alerts</span>
+              </div>
+              <p className="text-[10px] text-terminal-muted mb-2">Get instant trade alerts</p>
+              <button
+                onClick={async () => {
+                  const link = await generateDeepLink();
+                  if (link) {
+                    window.open(link, '_blank');
+                    setTimeout(() => {
+                      useNotificationStore.setState({ isLinking: false });
+                      checkTelegramStatus();
+                    }, 30000);
+                  }
+                }}
+                disabled={isLinking}
+                className="w-full rounded-lg bg-[#0088cc] py-1.5 text-[11px] font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
+              >
+                {isLinking ? 'Connecting...' : 'Connect'}
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Bottom section — always visible, pinned to bottom */}
         <div className="relative shrink-0 p-4 space-y-3 border-t border-terminal-border/30">

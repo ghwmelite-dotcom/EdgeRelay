@@ -513,7 +513,7 @@ export function SettingsPage() {
               <div>
                 <ToggleSwitch
                   label="Morning market brief"
-                  checked={preferences.morning_brief}
+                  checked={preferences?.morning_brief ?? false}
                   onChange={(v) => updatePreferences({ morning_brief: v })}
                 />
                 <p className="text-xs text-terminal-muted mt-0.5">Daily overview of sessions, events, and headlines</p>
@@ -522,7 +522,7 @@ export function SettingsPage() {
               <div>
                 <ToggleSwitch
                   label="Event alerts"
-                  checked={preferences.news_alerts}
+                  checked={preferences?.news_alerts ?? false}
                   onChange={(v) => updatePreferences({ news_alerts: v })}
                 />
                 <p className="text-xs text-terminal-muted mt-0.5">30min + 5min warnings before high-impact events</p>
@@ -531,7 +531,7 @@ export function SettingsPage() {
               <div>
                 <ToggleSwitch
                   label="Session alerts"
-                  checked={preferences.session_alerts}
+                  checked={preferences?.session_alerts ?? false}
                   onChange={(v) => updatePreferences({ session_alerts: v })}
                 />
                 <p className="text-xs text-terminal-muted mt-0.5">When forex sessions open or close (8 alerts/day)</p>

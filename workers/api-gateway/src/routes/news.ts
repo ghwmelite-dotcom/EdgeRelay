@@ -21,7 +21,7 @@ news.get('/calendar', async (c) => {
     `SELECT * FROM news_events
      WHERE currency IN (${placeholders})
        AND event_time >= ? AND event_time <= ?
-       AND impact = 'high'
+       AND impact IN ('high', 'medium')
      ORDER BY event_time ASC`,
   )
     .bind(...currencies, from, to + 'T23:59:59')

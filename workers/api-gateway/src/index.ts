@@ -16,6 +16,7 @@ import { command } from './routes/command.js';
 import { propguardEa } from './routes/propguardEa.js';
 import { tos } from './routes/tos.js';
 import { notifications } from './routes/notifications.js';
+import { marketNews } from './routes/marketNews.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -92,6 +93,7 @@ protectedApp.route('/news', news);
 protectedApp.route('/journal', journal);
 protectedApp.route('/command', command);
 protectedApp.route('/notifications', notifications);
+protectedApp.route('/market-news', marketNews);
 
 app.route('/v1', protectedApp);
 

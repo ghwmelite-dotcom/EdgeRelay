@@ -88,7 +88,7 @@ notifications.get('/preferences', async (c) => {
   const userId = c.get('userId');
 
   const row = await c.env.DB.prepare(
-    'SELECT login_alerts, signal_executed, equity_guard, account_disconnected, daily_summary, weekly_digest, timezone, summary_hour FROM notification_preferences WHERE user_id = ?',
+    'SELECT login_alerts, signal_executed, equity_guard, account_disconnected, daily_summary, weekly_digest, timezone, summary_hour, morning_brief, news_alerts, session_alerts FROM notification_preferences WHERE user_id = ?',
   )
     .bind(userId)
     .first<{
@@ -100,6 +100,9 @@ notifications.get('/preferences', async (c) => {
       weekly_digest: number;
       timezone: string;
       summary_hour: number;
+      morning_brief: number;
+      news_alerts: number;
+      session_alerts: number;
     }>();
 
   if (!row) {
@@ -120,6 +123,9 @@ notifications.get('/preferences', async (c) => {
         weekly_digest: !!row.weekly_digest,
         timezone: row.timezone,
         summary_hour: row.summary_hour,
+        morning_brief: !!row.morning_brief,
+        news_alerts: !!row.news_alerts,
+        session_alerts: !!row.session_alerts,
       },
     },
     error: null,
@@ -141,6 +147,9 @@ notifications.put('/preferences', async (c) => {
     'weekly_digest',
     'timezone',
     'summary_hour',
+    'morning_brief',
+    'news_alerts',
+    'session_alerts',
   ];
 
   const setClauses: string[] = ["updated_at = datetime('now')"];

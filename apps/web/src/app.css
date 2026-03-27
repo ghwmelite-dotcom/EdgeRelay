@@ -202,7 +202,7 @@ html {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 40%, #05080d 100%);
+  background: radial-gradient(ellipse at center, transparent 40%, var(--color-terminal-bg) 100%);
   z-index: 1;
 }
 
@@ -408,7 +408,7 @@ html {
 
 /* ── Shimmer Loading ────────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, #151d28 25%, #1f2d3d 50%, #151d28 75%);
+  background: linear-gradient(90deg, var(--color-terminal-border) 25%, var(--color-terminal-border-hover) 50%, var(--color-terminal-border) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
@@ -445,7 +445,7 @@ html {
 /* ── Focus Ring ─────────────────────────────────────────────── */
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #05080d, 0 0 0 4px #00e5ff60;
+  box-shadow: 0 0 0 2px var(--color-terminal-bg), 0 0 0 4px #00e5ff60;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -601,7 +601,7 @@ html {
 /* ── Enhanced Scrollbar ───────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track {
-  background: #0a0f1620;
+  background: var(--color-terminal-surface);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
@@ -692,9 +692,9 @@ input:focus, select:focus, textarea:focus {
 
 /* ── Tooltip Glow ─────────────────────────────────────────── */
 .tooltip-glow {
-  background: linear-gradient(135deg, #0d1219f0, #0d1219e0);
-  border: 1px solid #00e5ff20;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px #00e5ff08;
+  background: var(--color-terminal-card);
+  border: 1px solid var(--color-terminal-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 20px #00e5ff08;
   backdrop-filter: blur(12px);
 }
 

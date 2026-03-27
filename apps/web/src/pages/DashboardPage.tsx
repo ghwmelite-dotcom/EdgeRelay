@@ -132,7 +132,7 @@ function MiniSparkline() {
 function SystemStatusBar() {
   return (
     <div
-      className="animate-fade-in-up glass-premium rounded-xl px-4 py-2.5 flex items-center justify-between"
+      className="animate-fade-in-up glass-premium rounded-xl px-4 py-2.5 hidden sm:flex items-center justify-between"
       style={{ animationDelay: '0ms' }}
     >
       <div className="flex items-center gap-3">
@@ -197,13 +197,13 @@ function StatCard({ label, value, sub, delay, glowValue, extra, borderClass, ico
 
       <div className="flex items-center gap-2 mb-3">
         {icon && <span className="text-terminal-muted">{icon}</span>}
-        <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+        <p className="text-[11px] sm:text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
           {label}
         </p>
       </div>
       <div className="flex items-end justify-between">
         <p
-          className={`text-3xl font-black font-mono-nums text-white animate-count-up ${
+          className={`text-2xl sm:text-3xl font-black font-mono-nums text-white animate-count-up ${
             glowValue ? 'text-neon-cyan glow-text-cyan' : ''
           }`}
           style={{ animationDelay: `${delay + 200}ms` }}
@@ -307,7 +307,7 @@ export function DashboardPage() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-terminal-muted font-semibold mb-1.5">
             {getGreeting()}, Commander
           </p>
-          <h1 className="text-3xl font-black tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             <span className="text-gradient-animated">{user?.name ?? 'Trader'}</span>
           </h1>
           <p className="text-slate-500 text-sm mt-1.5 flex items-center gap-2">
@@ -326,7 +326,7 @@ export function DashboardPage() {
           <p className="text-[9px] uppercase tracking-[0.2em] text-terminal-muted font-semibold">Local Time</p>
           <div className="flex items-center gap-2">
             <Clock size={14} className="text-neon-cyan/50" />
-            <span className="font-mono-nums text-2xl font-bold text-neon-cyan glow-text-cyan tracking-wider">
+            <span className="font-mono-nums text-lg sm:text-2xl font-bold text-neon-cyan glow-text-cyan tracking-wider">
               {clock}
             </span>
           </div>
@@ -429,7 +429,7 @@ export function DashboardPage() {
               className="h-2 w-2 rounded-full bg-neon-cyan"
               style={{ boxShadow: '0 0 8px #00e5ff80, 0 0 20px #00e5ff40' }}
             />
-            <h2 className="text-xs uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+            <h2 className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-terminal-muted font-semibold">
               Signal Sources
             </h2>
           </div>
@@ -472,7 +472,7 @@ export function DashboardPage() {
               className="h-2 w-2 rounded-full bg-neon-green"
               style={{ boxShadow: '0 0 8px #00ff9d80, 0 0 20px #00ff9d40' }}
             />
-            <h2 className="text-xs uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+            <h2 className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-terminal-muted font-semibold">
               Receiving Terminals
             </h2>
           </div>
@@ -520,7 +520,7 @@ export function DashboardPage() {
         <div className="flex items-center gap-3 mb-5">
           <div className="flex items-center gap-2">
             <Clock size={13} className="text-terminal-muted" />
-            <h2 className="text-xs uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+            <h2 className="text-[11px] sm:text-xs uppercase tracking-[0.18em] text-terminal-muted font-semibold">
               Signal Feed
             </h2>
           </div>
@@ -535,22 +535,22 @@ export function DashboardPage() {
 
         <div className="glass-premium rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="bg-terminal-surface/60">
-                  <th className="px-5 py-3.5 text-left text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+                  <th className="px-5 py-3.5 text-left text-[11px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
                     Time
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+                  <th className="px-5 py-3.5 text-left text-[11px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
                     Symbol
                   </th>
-                  <th className="px-5 py-3.5 text-left text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+                  <th className="px-5 py-3.5 text-left text-[11px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
                     Action
                   </th>
-                  <th className="px-5 py-3.5 text-right text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+                  <th className="px-5 py-3.5 text-right text-[11px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
                     Volume
                   </th>
-                  <th className="px-5 py-3.5 text-right text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
+                  <th className="px-5 py-3.5 text-right text-[11px] uppercase tracking-[0.18em] text-terminal-muted font-semibold">
                     Price
                   </th>
                 </tr>
@@ -631,7 +631,7 @@ function MasterCard({ account, delay }: { account: Account; delay: number }) {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <Signal size={13} className="text-neon-cyan/60" />
-            <p className="font-bold text-slate-100 tracking-tight">{account.alias}</p>
+            <p className="font-bold text-slate-100 tracking-tight text-sm sm:text-base">{account.alias}</p>
           </div>
           <p className="text-xs text-slate-500 ml-[21px]">{account.broker_name ?? 'Unknown broker'}</p>
         </div>
@@ -653,7 +653,7 @@ function MasterCard({ account, delay }: { account: Account; delay: number }) {
           <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold mb-1">
             Signals Today
           </p>
-          <p className="font-mono-nums text-xl font-bold text-neon-cyan glow-text-cyan">
+          <p className="font-mono-nums text-lg sm:text-xl font-bold text-neon-cyan glow-text-cyan">
             {account.signals_today}
           </p>
         </div>
@@ -735,7 +735,7 @@ function FollowerCard({
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <Wifi size={13} className="text-neon-green/60" />
-            <p className="font-bold text-slate-100 tracking-tight">{account.alias}</p>
+            <p className="font-bold text-slate-100 tracking-tight text-sm sm:text-base">{account.alias}</p>
           </div>
           <p className="text-xs text-slate-500 ml-[21px]">{account.broker_name ?? 'Unknown broker'}</p>
         </div>
@@ -768,7 +768,7 @@ function FollowerCard({
               : 0;
             return (
               <p
-                className={`font-mono-nums text-xl font-bold ${
+                className={`font-mono-nums text-lg sm:text-xl font-bold ${
                   isPositive
                     ? 'text-neon-green glow-text-green'
                     : pnlDisplay > 3
@@ -783,7 +783,7 @@ function FollowerCard({
               </p>
             );
           })() : (
-            <p className="font-mono-nums text-xl font-bold text-terminal-muted">&mdash;</p>
+            <p className="font-mono-nums text-lg sm:text-xl font-bold text-terminal-muted">&mdash;</p>
           )}
         </div>
         <div>
@@ -791,11 +791,11 @@ function FollowerCard({
             Drawdown
           </p>
           {hasHealth ? (
-            <p className="font-mono-nums text-xl font-bold text-white">
+            <p className="font-mono-nums text-lg sm:text-xl font-bold text-white">
               {drawdownPct.toFixed(2)}%
             </p>
           ) : (
-            <p className="font-mono-nums text-xl font-bold text-terminal-muted">&mdash;</p>
+            <p className="font-mono-nums text-lg sm:text-xl font-bold text-terminal-muted">&mdash;</p>
           )}
         </div>
       </div>

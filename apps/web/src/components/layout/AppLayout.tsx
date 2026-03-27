@@ -5,21 +5,46 @@ import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
 
-const navItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
-  { label: 'Command Center', icon: Shield, to: '/command-center' },
-  { label: 'Risk', icon: AlertTriangle, to: '/risk' },
-  { label: 'Accounts', icon: Users, to: '/accounts' },
-  { label: 'Signal Log', icon: Activity, to: '/signals' },
-  { label: 'Journal', icon: BookOpen, to: '/journal' },
-  { label: 'Simulator', icon: Dice5, to: '/simulator' },
-  { label: 'Firms', icon: Building2, to: '/app/firms' },
-  { label: 'Downloads', icon: Download, to: '/downloads' },
-  { label: 'Analytics', icon: BarChart3, to: '/analytics' },
-  { label: 'Usage', icon: Gauge, to: '/usage' },
-  { label: 'Settings', icon: Settings, to: '/settings' },
-  { label: 'Billing', icon: CreditCard, to: '/billing' },
-] as const;
+const NAV_GROUPS = [
+  {
+    label: null,
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, to: '/dashboard' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { label: 'Command Center', icon: Shield, to: '/command-center' },
+      { label: 'Risk Monitor', icon: AlertTriangle, to: '/risk' },
+      { label: 'Signal Log', icon: Activity, to: '/signals' },
+    ],
+  },
+  {
+    label: 'Portfolio',
+    items: [
+      { label: 'Accounts', icon: Users, to: '/accounts' },
+      { label: 'Journal', icon: BookOpen, to: '/journal' },
+      { label: 'Analytics', icon: BarChart3, to: '/analytics' },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { label: 'Simulator', icon: Dice5, to: '/simulator' },
+      { label: 'Firm Directory', icon: Building2, to: '/app/firms' },
+      { label: 'Downloads', icon: Download, to: '/downloads' },
+    ],
+  },
+  {
+    label: 'Account',
+    items: [
+      { label: 'Usage', icon: Gauge, to: '/usage' },
+      { label: 'Settings', icon: Settings, to: '/settings' },
+      { label: 'Billing', icon: CreditCard, to: '/billing' },
+    ],
+  },
+];
 
 const planBadgeVariant = (plan: string) => {
   switch (plan.toLowerCase()) {
@@ -147,29 +172,43 @@ export function AppLayout() {
         </div>
 
         {/* Navigation — scrollable if items overflow */}
-        <nav className="relative flex-1 overflow-y-auto space-y-1 px-3 py-4">
-          {navItems.map(({ label, icon: Icon, to }) => {
-            const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setSidebarOpen(false)}
-                className={`
-                  flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
-                  transition-all duration-200 ease-out
-                  focus-ring
-                  ${isActive
-                    ? 'border-l-2 border-neon-cyan bg-neon-cyan/8 text-neon-cyan glow-text-cyan sidebar-active-glow'
-                    : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50 nav-glow-line'
-                  }
-                `}
-              >
-                <Icon className="h-[18px] w-[18px] shrink-0" />
-                {label}
-              </NavLink>
-            );
-          })}
+        <nav className="relative flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {NAV_GROUPS.map((group, gi) => (
+            <div key={gi}>
+              {group.label && (
+                <div className="flex items-center gap-2 px-3 mb-2">
+                  <span className="text-[9px] uppercase tracking-[2.5px] font-semibold text-terminal-muted/50">
+                    {group.label}
+                  </span>
+                  <div className="flex-1 h-px bg-terminal-border/30" />
+                </div>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map(({ label, icon: Icon, to }) => {
+                  const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
+                  return (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`
+                        flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+                        transition-all duration-200 ease-out
+                        focus-ring
+                        ${isActive
+                          ? 'border-l-2 border-neon-cyan bg-neon-cyan/8 text-neon-cyan glow-text-cyan sidebar-active-glow'
+                          : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50 nav-glow-line'
+                        }
+                      `}
+                    >
+                      <Icon className="h-[18px] w-[18px] shrink-0" />
+                      {label}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Telegram Widget */}
@@ -273,7 +312,7 @@ export function AppLayout() {
           <div className="ambient-glow" />
 
           {/* Content */}
-          <div className="relative z-10 p-6">
+          <div className="relative z-10 p-4 sm:p-6">
             <Outlet />
           </div>
         </main>

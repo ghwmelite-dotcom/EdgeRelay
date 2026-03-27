@@ -27,9 +27,11 @@ accounts.get('/', async (c) => {
   const userId = c.get('userId');
 
   const result = await c.env.DB.prepare(
-    `SELECT id, role, alias, broker_name, mt5_login, api_key, master_account_id,
-            is_active, last_heartbeat, last_signal_at, signals_today, created_at
-     FROM accounts WHERE user_id = ? ORDER BY created_at DESC`,
+    `SELECT a.id, a.role, a.alias, a.broker_name, a.mt5_login, a.api_key, a.master_account_id,
+            a.is_active, a.last_heartbeat, a.last_signal_at,
+            COALESCE((SELECT COUNT(*) FROM signals s WHERE s.master_account_id = a.id AND s.received_at >= datetime('now', 'start of day')), 0) as signals_today,
+            a.created_at
+     FROM accounts a WHERE a.user_id = ? ORDER BY a.created_at DESC`,
   )
     .bind(userId)
     .all();
@@ -185,8 +187,10 @@ accounts.get('/usage/summary', authMiddleware, async (c) => {
 
   // Get all user's master accounts
   const masterAccounts = await c.env.DB.prepare(
-    `SELECT id, alias, signals_today, last_signal_at, last_heartbeat
-     FROM accounts WHERE user_id = ? AND role = 'master' AND is_active = true`,
+    `SELECT a.id, a.alias,
+            COALESCE((SELECT COUNT(*) FROM signals s WHERE s.master_account_id = a.id AND s.received_at >= datetime('now', 'start of day')), 0) as signals_today,
+            a.last_signal_at, a.last_heartbeat
+     FROM accounts a WHERE a.user_id = ? AND a.role = 'master' AND a.is_active = true`,
   )
     .bind(userId)
     .all();
@@ -289,7 +293,10 @@ accounts.get('/:id/usage', authMiddleware, async (c) => {
 
   // Verify ownership
   const account = await c.env.DB.prepare(
-    'SELECT id, role, alias, signals_today, last_signal_at, last_heartbeat FROM accounts WHERE id = ? AND user_id = ? AND is_active = true',
+    `SELECT a.id, a.role, a.alias,
+            COALESCE((SELECT COUNT(*) FROM signals s WHERE s.master_account_id = a.id AND s.received_at >= datetime('now', 'start of day')), 0) as signals_today,
+            a.last_signal_at, a.last_heartbeat
+     FROM accounts a WHERE a.id = ? AND a.user_id = ? AND a.is_active = true`,
   )
     .bind(accountId, userId)
     .first();
@@ -380,9 +387,11 @@ accounts.get('/:id', async (c) => {
   const accountId = c.req.param('id');
 
   const account = await c.env.DB.prepare(
-    `SELECT id, role, alias, broker_name, mt5_login, api_key, master_account_id,
-            is_active, last_heartbeat, last_signal_at, signals_today, created_at
-     FROM accounts WHERE id = ? AND user_id = ?`,
+    `SELECT a.id, a.role, a.alias, a.broker_name, a.mt5_login, a.api_key, a.master_account_id,
+            a.is_active, a.last_heartbeat, a.last_signal_at,
+            COALESCE((SELECT COUNT(*) FROM signals s WHERE s.master_account_id = a.id AND s.received_at >= datetime('now', 'start of day')), 0) as signals_today,
+            a.created_at
+     FROM accounts a WHERE a.id = ? AND a.user_id = ?`,
   )
     .bind(accountId, userId)
     .first();

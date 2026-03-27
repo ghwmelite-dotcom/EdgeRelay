@@ -175,7 +175,8 @@ export async function handleStatus(env: Env, user: TelegramUser): Promise<Comman
     const accounts = await env.DB.prepare(
       `SELECT
         a.id, a.role, a.alias, a.is_active, a.last_heartbeat,
-        a.signals_today, a.last_signal_at, a.master_account_id,
+        COALESCE((SELECT COUNT(*) FROM signals s WHERE s.master_account_id = a.id AND s.received_at >= datetime('now', 'start of day')), 0) as signals_today,
+        a.last_signal_at, a.master_account_id,
         fc.lot_mode, fc.max_daily_loss_percent
       FROM accounts a
       LEFT JOIN follower_config fc ON fc.account_id = a.id

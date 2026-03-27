@@ -17,6 +17,9 @@ const TOGGLE_COLUMNS = [
   'account_disconnected',
   'daily_summary',
   'weekly_digest',
+  'morning_brief',
+  'news_alerts',
+  'session_alerts',
 ] as const;
 
 export type NotificationToggle = (typeof TOGGLE_COLUMNS)[number];

@@ -496,11 +496,25 @@ export interface NotificationPreferences {
   weekly_digest: boolean;
   timezone: string;
   summary_hour: number;
+  morning_brief: boolean;
+  news_alerts: boolean;
+  session_alerts: boolean;
 }
 
 export interface TelegramStatus {
   connected: boolean;
   linked_at: string | null;
+}
+
+export interface MarketHeadline {
+  id: string;
+  headline: string;
+  summary: string | null;
+  source: string;
+  url: string | null;
+  sentiment: number | null;
+  related_currencies: string | null;
+  published_at: string;
 }
 
 export interface AccountHealth {

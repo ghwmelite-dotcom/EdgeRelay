@@ -5,7 +5,7 @@
 
 PRAGMA foreign_keys = OFF;
 
-CREATE TABLE accounts_new (
+CREATE TABLE IF NOT EXISTS accounts_new (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL REFERENCES users(id),
   role TEXT NOT NULL CHECK(role IN ('master','follower','journal')),
@@ -22,15 +22,15 @@ CREATE TABLE accounts_new (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
-INSERT INTO accounts_new (id, user_id, role, alias, broker_name, mt5_login, api_key, api_secret, master_account_id, is_active, last_heartbeat, last_signal_at, signals_today, created_at)
+INSERT OR IGNORE INTO accounts_new (id, user_id, role, alias, broker_name, mt5_login, api_key, api_secret, master_account_id, is_active, last_heartbeat, last_signal_at, signals_today, created_at)
 SELECT id, user_id, role, alias, broker_name, mt5_login, api_key, api_secret, master_account_id, is_active, last_heartbeat, last_signal_at, signals_today, created_at FROM accounts;
 
-DROP TABLE accounts;
+DROP TABLE IF EXISTS accounts;
 ALTER TABLE accounts_new RENAME TO accounts;
 
 -- Recreate indexes from 0002_indexes.sql
-CREATE INDEX idx_accounts_user ON accounts(user_id);
-CREATE INDEX idx_accounts_master ON accounts(master_account_id);
-CREATE INDEX idx_accounts_api_key ON accounts(api_key);
+CREATE INDEX IF NOT EXISTS idx_accounts_user ON accounts(user_id);
+CREATE INDEX IF NOT EXISTS idx_accounts_master ON accounts(master_account_id);
+CREATE INDEX IF NOT EXISTS idx_accounts_api_key ON accounts(api_key);
 
 PRAGMA foreign_keys = ON;

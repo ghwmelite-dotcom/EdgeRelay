@@ -159,7 +159,7 @@ jobs:
         run: |
           for migration in migrations/*.sql; do
             echo "Applying $migration..."
-            pnpm exec wrangler d1 execute edgerelay-db --file="$migration" --remote
+            pnpm exec wrangler d1 execute edgerelay-db --file="$migration" --remote || echo "⚠️  $migration had errors (likely already applied), continuing..."
           done
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

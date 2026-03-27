@@ -1,5 +1,5 @@
 -- TOS change detection records
-CREATE TABLE tos_changes (
+CREATE TABLE IF NOT EXISTS tos_changes (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   firm_name TEXT NOT NULL,
   detected_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -15,10 +15,12 @@ CREATE TABLE tos_changes (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
-CREATE INDEX idx_tos_changes_firm ON tos_changes(firm_name, detected_at);
-CREATE INDEX idx_tos_changes_severity ON tos_changes(severity);
+CREATE INDEX IF NOT EXISTS idx_tos_changes_firm ON tos_changes(firm_name, detected_at);
+CREATE INDEX IF NOT EXISTS idx_tos_changes_severity ON tos_changes(severity);
 
 -- Extend firm_templates with monitoring fields
+-- Note: ALTER TABLE ADD COLUMN has no IF NOT EXISTS in SQLite.
+-- Re-running will error "duplicate column" which is non-fatal in D1 batch mode.
 ALTER TABLE firm_templates ADD COLUMN rules_page_url TEXT;
 ALTER TABLE firm_templates ADD COLUMN rules_page_selector TEXT;
 

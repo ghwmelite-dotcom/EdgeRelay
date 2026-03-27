@@ -1,6 +1,6 @@
 -- EdgeRelay Initial Schema
 -- Users & Auth
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE users (
 );
 
 -- Trading Accounts (both master and follower)
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL REFERENCES users(id),
   role TEXT NOT NULL CHECK(role IN ('master','follower')),
@@ -31,7 +31,7 @@ CREATE TABLE accounts (
 );
 
 -- Follower Configuration
-CREATE TABLE follower_config (
+CREATE TABLE IF NOT EXISTS follower_config (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   account_id TEXT UNIQUE NOT NULL REFERENCES accounts(id),
   lot_mode TEXT DEFAULT 'mirror' CHECK(lot_mode IN ('mirror','fixed','multiplier','risk_percent')),
@@ -50,7 +50,7 @@ CREATE TABLE follower_config (
 );
 
 -- Symbol Mappings (per follower account)
-CREATE TABLE symbol_mappings (
+CREATE TABLE IF NOT EXISTS symbol_mappings (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   account_id TEXT NOT NULL REFERENCES accounts(id),
   master_symbol TEXT NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE symbol_mappings (
 );
 
 -- Signals (master trade events)
-CREATE TABLE signals (
+CREATE TABLE IF NOT EXISTS signals (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   master_account_id TEXT NOT NULL REFERENCES accounts(id),
   sequence_num INTEGER NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE signals (
 );
 
 -- Executions (follower trade results)
-CREATE TABLE executions (
+CREATE TABLE IF NOT EXISTS executions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   signal_id TEXT NOT NULL REFERENCES signals(id),
   follower_account_id TEXT NOT NULL REFERENCES accounts(id),

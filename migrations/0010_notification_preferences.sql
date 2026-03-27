@@ -1,5 +1,5 @@
 -- migrations/0010_notification_preferences.sql
-CREATE TABLE notification_preferences (
+CREATE TABLE IF NOT EXISTS notification_preferences (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT UNIQUE NOT NULL REFERENCES users(id),
   channel TEXT DEFAULT 'telegram' CHECK(channel IN ('telegram')),

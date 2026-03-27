@@ -1,4 +1,4 @@
-CREATE TABLE journal_trades (
+CREATE TABLE IF NOT EXISTS journal_trades (
   id TEXT PRIMARY KEY,
   account_id TEXT NOT NULL REFERENCES accounts(id),
   deal_ticket INTEGER NOT NULL,
@@ -29,6 +29,6 @@ CREATE TABLE journal_trades (
   UNIQUE(account_id, deal_ticket)
 );
 
-CREATE INDEX idx_journal_account ON journal_trades(account_id);
-CREATE INDEX idx_journal_account_time ON journal_trades(account_id, time);
-CREATE INDEX idx_journal_account_symbol ON journal_trades(account_id, symbol);
+CREATE INDEX IF NOT EXISTS idx_journal_account ON journal_trades(account_id);
+CREATE INDEX IF NOT EXISTS idx_journal_account_time ON journal_trades(account_id, time);
+CREATE INDEX IF NOT EXISTS idx_journal_account_symbol ON journal_trades(account_id, symbol);

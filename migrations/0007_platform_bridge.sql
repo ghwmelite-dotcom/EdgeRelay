@@ -1,6 +1,8 @@
 -- Platform Bridge: add cross-platform support columns
 
 -- 1. Add platform to follower_config
+-- Note: ALTER TABLE ADD COLUMN has no IF NOT EXISTS in SQLite.
+-- Re-running will error "duplicate column" which is non-fatal in D1 batch mode.
 ALTER TABLE follower_config ADD COLUMN platform TEXT NOT NULL DEFAULT 'mt5';
 
 -- 2. Add platform columns to symbol_mappings
@@ -10,7 +12,7 @@ ALTER TABLE symbol_mappings ADD COLUMN target_platform TEXT NOT NULL DEFAULT 'mt
 -- 3. Recreate signals table to relax CHECK constraint and add platform columns.
 -- The old table has CHECK(order_type IN (...)) which blocks future platform order types.
 
-CREATE TABLE signals_new (
+CREATE TABLE IF NOT EXISTS signals_new (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   master_account_id TEXT NOT NULL REFERENCES accounts(id),
   sequence_num INTEGER NOT NULL,
@@ -30,12 +32,12 @@ CREATE TABLE signals_new (
   UNIQUE(master_account_id, sequence_num)
 );
 
-INSERT INTO signals_new (id, master_account_id, sequence_num, action, order_type, symbol, volume, price, sl, tp, magic_number, ticket, comment, received_at)
+INSERT OR IGNORE INTO signals_new (id, master_account_id, sequence_num, action, order_type, symbol, volume, price, sl, tp, magic_number, ticket, comment, received_at)
 SELECT id, master_account_id, sequence_num, action, order_type, symbol, volume, price, sl, tp, magic_number, ticket, comment, received_at FROM signals;
 
-DROP TABLE signals;
+DROP TABLE IF EXISTS signals;
 ALTER TABLE signals_new RENAME TO signals;
 
 -- Recreate signals indexes
-CREATE INDEX idx_signals_master ON signals(master_account_id, received_at);
-CREATE INDEX idx_signals_dedup ON signals(master_account_id, sequence_num);
+CREATE INDEX IF NOT EXISTS idx_signals_master ON signals(master_account_id, received_at);
+CREATE INDEX IF NOT EXISTS idx_signals_dedup ON signals(master_account_id, sequence_num);

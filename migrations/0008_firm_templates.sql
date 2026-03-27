@@ -5,7 +5,7 @@
 -- Part 1: Create firm_templates table
 -- ============================================================
 
-CREATE TABLE firm_templates (
+CREATE TABLE IF NOT EXISTS firm_templates (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   firm_name TEXT NOT NULL,
   plan_name TEXT NOT NULL,
@@ -36,8 +36,8 @@ CREATE TABLE firm_templates (
   UNIQUE(firm_name, plan_name, challenge_phase)
 );
 
-CREATE INDEX idx_firm_templates_firm ON firm_templates(firm_name);
-CREATE INDEX idx_firm_templates_verified ON firm_templates(verified);
+CREATE INDEX IF NOT EXISTS idx_firm_templates_firm ON firm_templates(firm_name);
+CREATE INDEX IF NOT EXISTS idx_firm_templates_verified ON firm_templates(verified);
 
 -- ============================================================
 -- Part 2: Extend prop_rules with template reference
@@ -97,53 +97,53 @@ CREATE TABLE IF NOT EXISTS prop_rules (
 -- ---------------------------------------------------------
 
 -- FTMO $10K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $10K', 'evaluation_1', 10000, 10.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 30, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $10K', 'evaluation_2', 10000, 5.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 60, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $10K', 'funded', 10000, 5.0, 10.0, 'higher_of_both', 'static', 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
 -- FTMO $25K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $25K', 'evaluation_1', 25000, 10.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 30, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $25K', 'evaluation_2', 25000, 5.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 60, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $25K', 'funded', 25000, 5.0, 10.0, 'higher_of_both', 'static', 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
 -- FTMO $50K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $50K', 'evaluation_1', 50000, 10.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 30, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $50K', 'evaluation_2', 50000, 5.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 60, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $50K', 'funded', 50000, 5.0, 10.0, 'higher_of_both', 'static', 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
 -- FTMO $100K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $100K', 'evaluation_1', 100000, 10.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 30, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $100K', 'evaluation_2', 100000, 5.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 60, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $100K', 'funded', 100000, 5.0, 10.0, 'higher_of_both', 'static', 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
 -- FTMO $200K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $200K', 'evaluation_1', 200000, 10.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 30, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $200K', 'evaluation_2', 200000, 5.0, 5.0, 10.0, 'higher_of_both', 'static', 4, 60, 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, news_trading_restricted, news_minutes_before, news_minutes_after, weekend_holding_allowed, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $200K', 'funded', 200000, 5.0, 10.0, 'higher_of_both', 'static', 1, 2, 2, 1, 'https://ftmo.com/en/trading-objectives/', 1);
 
 -- ---------------------------------------------------------
@@ -151,27 +151,27 @@ VALUES (lower(hex(randomblob(16))), 'FTMO', 'FTMO $200K', 'funded', 200000, 5.0,
 -- ---------------------------------------------------------
 
 -- Stellar $25K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Stellar $25K', 'evaluation_1', 25000, 8.0, 5.0, 10.0, 'balance', 'static', 5, 30, 'https://fundednext.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Stellar $25K', 'evaluation_2', 25000, 5.0, 5.0, 10.0, 'balance', 'static', 5, 60, 'https://fundednext.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Stellar $25K', 'funded', 25000, 5.0, 10.0, 'balance', 'static', 'https://fundednext.com/', 1);
 
 -- Stellar $100K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Stellar $100K', 'evaluation_1', 100000, 8.0, 5.0, 10.0, 'balance', 'static', 5, 30, 'https://fundednext.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Stellar $100K', 'evaluation_2', 100000, 5.0, 5.0, 10.0, 'balance', 'static', 5, 60, 'https://fundednext.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Stellar $100K', 'funded', 100000, 5.0, 10.0, 'balance', 'static', 'https://fundednext.com/', 1);
 
 -- Express $100K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Express $100K', 'express', 100000, 25.0, 5.0, 10.0, 'balance', 'trailing', 10, 1, 40.0, 'https://fundednext.com/', 1);
 
 -- ---------------------------------------------------------
@@ -179,24 +179,24 @@ VALUES (lower(hex(randomblob(16))), 'FundedNext', 'Express $100K', 'express', 10
 -- ---------------------------------------------------------
 
 -- Growth $6K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $6K', 'evaluation_1', 6000, 8.0, 3.0, 6.0, 'balance', 'static', 3, 'https://the5ers.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $6K', 'funded', 6000, 3.0, 6.0, 'balance', 'static', 'https://the5ers.com/', 1);
 
 -- Growth $40K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $40K', 'evaluation_1', 40000, 8.0, 3.0, 6.0, 'balance', 'static', 3, 'https://the5ers.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $40K', 'funded', 40000, 3.0, 6.0, 'balance', 'static', 'https://the5ers.com/', 1);
 
 -- Growth $100K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $100K', 'evaluation_1', 100000, 8.0, 3.0, 6.0, 'balance', 'static', 3, 'https://the5ers.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $100K', 'funded', 100000, 3.0, 6.0, 'balance', 'static', 'https://the5ers.com/', 1);
 
 -- ---------------------------------------------------------
@@ -204,23 +204,23 @@ VALUES (lower(hex(randomblob(16))), 'The5ers', 'Growth $100K', 'funded', 100000,
 -- ---------------------------------------------------------
 
 -- MyFundedFX $50K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $50K', 'evaluation_1', 50000, 8.0, 5.0, 10.0, 'balance', 'static', 5, 30, 'https://myfundedfx.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $50K', 'evaluation_2', 50000, 5.0, 5.0, 10.0, 'balance', 'static', 5, 60, 'https://myfundedfx.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $50K', 'funded', 50000, 5.0, 10.0, 'balance', 'static', 'https://myfundedfx.com/', 1);
 
 -- MyFundedFX $100K
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $100K', 'evaluation_1', 100000, 8.0, 5.0, 10.0, 'balance', 'static', 5, 30, 'https://myfundedfx.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, min_trading_days, max_calendar_days, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $100K', 'evaluation_2', 100000, 5.0, 5.0, 10.0, 'balance', 'static', 5, 60, 'https://myfundedfx.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, daily_loss_type, drawdown_type, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $100K', 'funded', 100000, 5.0, 10.0, 'balance', 'static', 'https://myfundedfx.com/', 1);
 
 -- ---------------------------------------------------------
@@ -229,29 +229,29 @@ VALUES (lower(hex(randomblob(16))), 'MyFundedFX', 'MyFundedFX $100K', 'funded', 
 -- ---------------------------------------------------------
 
 -- Apex $25K (target=$1500/6%, max_dd=$1500/6%)
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $25K', 'evaluation_1', 25000, 6.0, 1500.0, 100.0, 6.0, 1500.0, 'balance', 'eod_trailing', 7, 1, 30.0, 'https://apextraderfunding.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $25K', 'funded', 25000, 100.0, 6.0, 1500.0, 'balance', 'eod_trailing', 1, 30.0, 'https://apextraderfunding.com/', 1);
 
 -- Apex $50K (target=$3000/6%, max_dd=$2500/5%)
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $50K', 'evaluation_1', 50000, 6.0, 3000.0, 100.0, 5.0, 2500.0, 'balance', 'eod_trailing', 7, 1, 30.0, 'https://apextraderfunding.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $50K', 'funded', 50000, 100.0, 5.0, 2500.0, 'balance', 'eod_trailing', 1, 30.0, 'https://apextraderfunding.com/', 1);
 
 -- Apex $100K (target=$6000/6%, max_dd=$3000/3%)
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $100K', 'evaluation_1', 100000, 6.0, 6000.0, 100.0, 3.0, 3000.0, 'balance', 'eod_trailing', 7, 1, 30.0, 'https://apextraderfunding.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $100K', 'funded', 100000, 100.0, 3.0, 3000.0, 'balance', 'eod_trailing', 1, 30.0, 'https://apextraderfunding.com/', 1);
 
 -- Apex $300K (target=$20000/6.67%, max_dd=$7500/2.5%)
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, profit_target_percent, profit_target_amount, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, min_trading_days, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $300K', 'evaluation_1', 300000, 6.67, 20000.0, 100.0, 2.5, 7500.0, 'balance', 'eod_trailing', 7, 1, 30.0, 'https://apextraderfunding.com/', 1);
 
-INSERT INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
+INSERT OR IGNORE INTO firm_templates (id, firm_name, plan_name, challenge_phase, initial_balance, daily_loss_percent, max_drawdown_percent, max_drawdown_amount, daily_loss_type, drawdown_type, consistency_rule, max_daily_profit_percent, source_url, verified)
 VALUES (lower(hex(randomblob(16))), 'Apex Trader Funding', 'Apex $300K', 'funded', 300000, 100.0, 2.5, 7500.0, 'balance', 'eod_trailing', 1, 30.0, 'https://apextraderfunding.com/', 1);

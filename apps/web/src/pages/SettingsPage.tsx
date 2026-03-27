@@ -415,6 +415,14 @@ export function SettingsPage() {
               ].map((label) => (
                 <ToggleSwitch key={label} label={label} checked={false} onChange={() => {}} />
               ))}
+              <div className="border-t border-terminal-border/20 pt-3 mt-1">
+                <p className="text-[10px] uppercase tracking-widest text-terminal-muted mb-3">
+                  Market Alerts
+                </p>
+              </div>
+              <ToggleSwitch label="Morning market brief" checked={true} onChange={() => {}} />
+              <ToggleSwitch label="Event alerts" checked={true} onChange={() => {}} />
+              <ToggleSwitch label="Session alerts" checked={true} onChange={() => {}} />
             </div>
             <p className="text-xs text-terminal-muted text-center">
               Connect Telegram to manage preferences
@@ -493,6 +501,40 @@ export function SettingsPage() {
                   onChange={(v) => updatePreferences({ weekly_digest: v })}
                 />
                 <p className="text-xs text-terminal-muted mt-0.5 px-1">Weekly analytics delivered every Monday</p>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-terminal-border/20 pt-3 mt-1">
+                <p className="text-[10px] uppercase tracking-widest text-terminal-muted mb-3">
+                  Market Alerts
+                </p>
+              </div>
+
+              <div>
+                <ToggleSwitch
+                  label="Morning market brief"
+                  checked={preferences.morning_brief}
+                  onChange={(v) => updatePreferences({ morning_brief: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5">Daily overview of sessions, events, and headlines</p>
+              </div>
+
+              <div>
+                <ToggleSwitch
+                  label="Event alerts"
+                  checked={preferences.news_alerts}
+                  onChange={(v) => updatePreferences({ news_alerts: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5">30min + 5min warnings before high-impact events</p>
+              </div>
+
+              <div>
+                <ToggleSwitch
+                  label="Session alerts"
+                  checked={preferences.session_alerts}
+                  onChange={(v) => updatePreferences({ session_alerts: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5">When forex sessions open or close (8 alerts/day)</p>
               </div>
             </div>
 

@@ -197,27 +197,27 @@ export const useJournalStore = create<JournalState>()((set, get) => ({
   fetchSymbolStats: async (accountId: string) => {
     const { filters } = get();
     const qs = buildDateParams(filters);
-    const res = await api.get<SymbolStat[]>(`/journal/stats/${accountId}/by-symbol${qs}`);
+    const res = await api.get<{ symbols: SymbolStat[] }>(`/journal/stats/${accountId}/by-symbol${qs}`);
     if (res.data) {
-      set({ symbolStats: res.data });
+      set({ symbolStats: res.data.symbols ?? [] });
     }
   },
 
   fetchSessionStats: async (accountId: string) => {
     const { filters } = get();
     const qs = buildDateParams(filters);
-    const res = await api.get<SessionStat[]>(`/journal/stats/${accountId}/by-session${qs}`);
+    const res = await api.get<{ sessions: SessionStat[] }>(`/journal/stats/${accountId}/by-session${qs}`);
     if (res.data) {
-      set({ sessionStats: res.data });
+      set({ sessionStats: res.data.sessions ?? [] });
     }
   },
 
   fetchDailyPnl: async (accountId: string) => {
     const { filters } = get();
     const qs = buildDateParams(filters);
-    const res = await api.get<DailyPnl[]>(`/journal/stats/${accountId}/daily${qs}`);
+    const res = await api.get<{ days: DailyPnl[] }>(`/journal/stats/${accountId}/daily${qs}`);
     if (res.data) {
-      set({ dailyPnl: res.data });
+      set({ dailyPnl: res.data.days ?? [] });
     }
   },
 

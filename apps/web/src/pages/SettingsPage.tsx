@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { User, Lock, Bell, AlertTriangle, Trash2 } from 'lucide-react';
+import { User, Lock, Bell, AlertTriangle, Trash2, Send, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
+import { useNotificationStore } from '@/stores/notifications';
 
 /* ------------------------------------------------------------------ */
 /*  Toggle Switch                                                      */
@@ -155,12 +156,16 @@ export function SettingsPage() {
   });
 
   /* -- Notifications -- */
-  const [eaDisconnect, setEaDisconnect] = useState(true);
-  const [equityGuard, setEquityGuard] = useState(true);
-  const [dailySummary, setDailySummary] = useState(false);
-  const [weeklyReport, setWeeklyReport] = useState(false);
-  const [notifSaving, setNotifSaving] = useState(false);
-  const [notifMsg, setNotifMsg] = useState('');
+  const {
+    telegramConnected,
+    linkedAt,
+    preferences,
+    checkTelegramStatus,
+    generateDeepLink,
+    unlinkTelegram,
+    fetchPreferences,
+    updatePreferences,
+  } = useNotificationStore();
 
   /* -- Danger Zone -- */
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -180,8 +185,9 @@ export function SettingsPage() {
   }, [passwordMsg.text, autoClear]);
 
   useEffect(() => {
-    if (notifMsg) return autoClear(() => setNotifMsg(''));
-  }, [notifMsg, autoClear]);
+    checkTelegramStatus();
+    fetchPreferences();
+  }, []);
 
   /* -- Handlers -- */
 
@@ -220,14 +226,6 @@ export function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     }
-  };
-
-  const handleNotifSave = async () => {
-    setNotifSaving(true);
-    // Placeholder -- just simulate success
-    await new Promise((r) => setTimeout(r, 300));
-    setNotifSaving(false);
-    setNotifMsg('Preferences saved successfully.');
   };
 
   return (
@@ -331,39 +329,155 @@ export function SettingsPage() {
           </CardTitle>
         </CardHeader>
 
-        <div className="space-y-3">
-          <ToggleSwitch
-            label="Email when EA disconnects"
-            checked={eaDisconnect}
-            onChange={setEaDisconnect}
-          />
-          <ToggleSwitch
-            label="Email when equity guard triggers"
-            checked={equityGuard}
-            onChange={setEquityGuard}
-          />
-          <ToggleSwitch
-            label="Daily performance summary"
-            checked={dailySummary}
-            onChange={setDailySummary}
-          />
-          <ToggleSwitch
-            label="Weekly analytics report"
-            checked={weeklyReport}
-            onChange={setWeeklyReport}
-          />
+        {!telegramConnected ? (
+          /* ---- Disconnected State ---- */
+          <div className="space-y-4">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#0088cc]/20 bg-[#0088cc]/5 p-6 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0088cc]/15">
+                <Send size={22} className="text-[#0088cc]" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-200">Connect Telegram</p>
+                <p className="text-xs text-terminal-muted mt-1">
+                  Receive instant trade alerts, equity guard warnings, and daily summaries straight to Telegram.
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  const { isLinking } = useNotificationStore.getState();
+                  if (isLinking) return;
+                  const link = await generateDeepLink();
+                  if (link) {
+                    window.open(link, '_blank');
+                    setTimeout(() => {
+                      useNotificationStore.setState({ isLinking: false });
+                      checkTelegramStatus();
+                    }, 30000);
+                  }
+                }}
+                className="rounded-xl bg-[#0088cc] px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
+              >
+                Connect Telegram
+              </button>
+            </div>
 
-          <p className="text-xs text-terminal-muted pt-1">
-            Email notifications coming soon.
-          </p>
-
-          <div className="pt-1">
-            <Button onClick={handleNotifSave} isLoading={notifSaving}>
-              Save Preferences
-            </Button>
-            <StatusMessage message={notifMsg} type="success" />
+            {/* Preview toggles — greyed out */}
+            <div className="space-y-2 opacity-40 pointer-events-none select-none">
+              {[
+                'Login alerts',
+                'Signal executed',
+                'Equity guard triggered',
+                'Account disconnected',
+                'Daily summary',
+                'Weekly digest',
+              ].map((label) => (
+                <ToggleSwitch key={label} label={label} checked={false} onChange={() => {}} />
+              ))}
+            </div>
+            <p className="text-xs text-terminal-muted text-center">
+              Connect Telegram to manage preferences
+            </p>
           </div>
-        </div>
+        ) : (
+          /* ---- Connected State ---- */
+          <div className="space-y-4">
+            {/* Status bar */}
+            <div className="flex items-center justify-between rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 size={16} className="text-emerald-400" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-400">Connected</p>
+                  {linkedAt && (
+                    <p className="text-[10px] text-terminal-muted">
+                      Since {new Date(linkedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={unlinkTelegram}
+                className="rounded-lg border border-neon-red/30 bg-neon-red/5 px-3 py-1.5 text-xs font-semibold text-neon-red transition-all hover:bg-neon-red/15"
+              >
+                Disconnect
+              </button>
+            </div>
+
+            {/* Preference toggles */}
+            <div className="space-y-2">
+              <div>
+                <ToggleSwitch
+                  label="Login alerts"
+                  checked={preferences?.login_alerts ?? false}
+                  onChange={(v) => updatePreferences({ login_alerts: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5 px-1">Get notified of new sign-ins</p>
+              </div>
+              <div>
+                <ToggleSwitch
+                  label="Signal executed"
+                  checked={preferences?.signal_executed ?? false}
+                  onChange={(v) => updatePreferences({ signal_executed: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5 px-1">Alert on every trade execution</p>
+              </div>
+              <div>
+                <ToggleSwitch
+                  label="Equity guard triggered"
+                  checked={preferences?.equity_guard ?? false}
+                  onChange={(v) => updatePreferences({ equity_guard: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5 px-1">Alert when equity guard halts trading</p>
+              </div>
+              <div>
+                <ToggleSwitch
+                  label="Account disconnected"
+                  checked={preferences?.account_disconnected ?? false}
+                  onChange={(v) => updatePreferences({ account_disconnected: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5 px-1">Alert when an EA loses connection</p>
+              </div>
+              <div>
+                <ToggleSwitch
+                  label="Daily summary"
+                  checked={preferences?.daily_summary ?? false}
+                  onChange={(v) => updatePreferences({ daily_summary: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5 px-1">End-of-day performance recap</p>
+              </div>
+              <div>
+                <ToggleSwitch
+                  label="Weekly digest"
+                  checked={preferences?.weekly_digest ?? false}
+                  onChange={(v) => updatePreferences({ weekly_digest: v })}
+                />
+                <p className="text-xs text-terminal-muted mt-0.5 px-1">Weekly analytics delivered every Monday</p>
+              </div>
+            </div>
+
+            {/* Timezone */}
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Timezone</label>
+              <select
+                value={preferences?.timezone ?? 'UTC'}
+                onChange={(e) => updatePreferences({ timezone: e.target.value })}
+                className="w-full rounded-xl border border-terminal-border bg-terminal-card px-3 py-2.5 text-sm text-slate-200 focus:border-neon-cyan focus:outline-none focus:shadow-[0_0_0_2px_#00e5ff20] transition-all"
+              >
+                <option value="UTC">UTC</option>
+                <option value="America/New_York">America/New_York (Eastern)</option>
+                <option value="America/Chicago">America/Chicago (Central)</option>
+                <option value="America/Denver">America/Denver (Mountain)</option>
+                <option value="America/Los_Angeles">America/Los_Angeles (Pacific)</option>
+                <option value="Europe/London">Europe/London (GMT)</option>
+                <option value="Europe/Berlin">Europe/Berlin (CET)</option>
+                <option value="Europe/Moscow">Europe/Moscow (MSK)</option>
+                <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                <option value="Australia/Sydney">Australia/Sydney (AEST)</option>
+              </select>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* ---- Danger Zone ---- */}

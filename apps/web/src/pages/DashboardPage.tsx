@@ -220,8 +220,9 @@ export function DashboardPage() {
   const { healthResults, fetchHealth } = useCommandCenterStore();
   const clock = useRealtimeClock();
 
-  // Fetch recent signals from API
+  // Fetch recent signals and total P&L from API
   const [recentSignals, setRecentSignals] = useState<ApiSignal[]>([]);
+  const [totalPnl, setTotalPnl] = useState<{ profit: number; trades: number; winRate: number } | null>(null);
 
   useEffect(() => {
     fetchAccounts();
@@ -233,6 +234,36 @@ export function DashboardPage() {
       }
     });
   }, [fetchAccounts, fetchHealth]);
+
+  // Fetch total P&L across all accounts from journal stats
+  useEffect(() => {
+    if (accounts.length === 0) return;
+    const fetchPnl = async () => {
+      let totalProfit = 0;
+      let totalTrades = 0;
+      let totalWins = 0;
+      for (const account of accounts) {
+        try {
+          const res = await api.get<{
+            net_profit: number;
+            total_trades: number;
+            winning_trades: number;
+          }>(`/journal/stats/${account.id}`);
+          if (res.data) {
+            totalProfit += res.data.net_profit ?? 0;
+            totalTrades += res.data.total_trades ?? 0;
+            totalWins += res.data.winning_trades ?? 0;
+          }
+        } catch { /* skip */ }
+      }
+      setTotalPnl({
+        profit: totalProfit,
+        trades: totalTrades,
+        winRate: totalTrades > 0 ? (totalWins / totalTrades) * 100 : 0,
+      });
+    };
+    fetchPnl();
+  }, [accounts]);
 
   const masters = accounts.filter((a) => a.role === 'master');
   const followers = accounts.filter((a) => a.role === 'follower');
@@ -315,24 +346,34 @@ export function DashboardPage() {
           }
         />
         <StatCard
-          label="Avg Copy Latency"
-          value="--ms"
+          label="Total P&L"
+          value={totalPnl ? `${totalPnl.profit >= 0 ? '+' : ''}$${Math.abs(totalPnl.profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}
           delay={160}
-          borderClass="stat-card-cyan"
-          icon={<Gauge size={12} />}
-          extra={<MiniSparkline />}
+          glowValue
+          borderClass={totalPnl && totalPnl.profit >= 0 ? 'stat-card-green' : 'stat-card-red'}
+          icon={<TrendingUp size={12} />}
+          sub={
+            totalPnl ? (
+              <span className={`inline-flex items-center gap-1 text-xs font-medium ${totalPnl.profit >= 0 ? 'text-neon-green glow-text-green' : 'text-neon-red'}`}>
+                {totalPnl.profit >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                From {totalPnl.trades} closed trade{totalPnl.trades !== 1 ? 's' : ''}
+              </span>
+            ) : undefined
+          }
         />
         <StatCard
-          label="Success Rate"
-          value="--"
+          label="Win Rate"
+          value={totalPnl && totalPnl.trades > 0 ? `${totalPnl.winRate.toFixed(1)}%` : '--'}
           delay={220}
           borderClass="stat-card-green"
           icon={<Target size={12} />}
           sub={
-            <span className="inline-flex items-center gap-1 text-xs text-neon-green glow-text-green font-medium">
-              <CheckCircle size={12} />
-              All Systems Nominal
-            </span>
+            totalPnl && totalPnl.trades > 0 ? (
+              <span className="inline-flex items-center gap-1 text-xs text-neon-green glow-text-green font-medium">
+                <CheckCircle size={12} />
+                {totalPnl.winRate >= 50 ? 'Above average' : 'Needs improvement'}
+              </span>
+            ) : undefined
           }
         />
         <StatCard

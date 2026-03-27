@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthModal } from '@/components/AuthModal';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -225,6 +226,7 @@ export function LandingPage() {
                 {l.label}
               </a>
             ))}
+            <ThemeToggle />
             <button
               onClick={() => setAuthModal({ open: true, mode: 'login' })}
               className="nav-glow-line hidden text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan sm:inline cursor-pointer"

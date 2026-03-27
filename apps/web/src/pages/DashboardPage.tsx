@@ -24,6 +24,7 @@ import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusDot } from '@/components/ui/StatusDot';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { TelegramBanner } from '@/components/dashboard/TelegramBanner';
 import { MarketHoursWidget } from '@/components/dashboard/MarketHoursWidget';
 import { MarketIntelWidget } from '@/components/dashboard/MarketIntelWidget';
@@ -318,7 +319,9 @@ export function DashboardPage() {
           </p>
         </div>
 
-        {/* Live Clock */}
+        {/* Theme Toggle + Live Clock */}
+        <div className="flex items-center gap-3">
+        <ThemeToggle />
         <div className="glass-premium rounded-xl px-5 py-3 flex flex-col items-center gap-1">
           <p className="text-[9px] uppercase tracking-[0.2em] text-terminal-muted font-semibold">Local Time</p>
           <div className="flex items-center gap-2">
@@ -331,6 +334,7 @@ export function DashboardPage() {
             <span className="live-dot" />
             <span className="text-[9px] uppercase tracking-[0.15em] text-neon-green/70 font-medium">Live</span>
           </div>
+        </div>
         </div>
       </div>
 

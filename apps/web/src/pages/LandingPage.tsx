@@ -25,9 +25,9 @@ import {
 /* ────────────────────────────────────────────────────────────── */
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Ecosystem', href: '#ecosystem' },
+  { label: 'Features', href: '#features', color: '#00ff9d' },
+  { label: 'How It Works', href: '#how-it-works', color: '#00e5ff' },
+  { label: 'Ecosystem', href: '#ecosystem', color: '#b18cff' },
 ];
 
 const STATS = [
@@ -144,10 +144,24 @@ const TESTIMONIALS = [
   },
 ];
 
-const FOOTER_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Ecosystem', href: '#ecosystem' },
+const FOOTER_LINKS_PLATFORM = [
+  { label: 'Signal Copier', href: '#ecosystem' },
+  { label: 'PropGuard', href: '#ecosystem' },
+  { label: 'AI Journal', href: '#ecosystem' },
+  { label: 'Platform Bridge', href: '#ecosystem' },
+];
+
+const FOOTER_LINKS_RESOURCES = [
+  { label: 'Documentation', href: '#' },
+  { label: 'API Reference', href: '#' },
+  { label: 'Changelog', href: '#' },
+  { label: 'Status', href: '#' },
+];
+
+const FOOTER_LINKS_LEGAL = [
+  { label: 'Privacy', href: '#' },
+  { label: 'Terms', href: '#' },
+  { label: 'Risk Disclosure', href: '#' },
 ];
 
 /* ────────────────────────────────────────────────────────────── */
@@ -199,7 +213,7 @@ export function LandingPage() {
       <div className="noise-overlay pointer-events-none fixed inset-0 z-[9999]" />
 
       {/* ══════════════════════════════════════════════════════════
-          1. NAV — Minimal, authoritative
+          1. NAV — Living Pulse
           ══════════════════════════════════════════════════════════ */}
       <nav
         className={`sticky top-0 z-50 transition-all duration-300 ${
@@ -208,36 +222,103 @@ export function LandingPage() {
             : 'bg-transparent'
         }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <a href="#" className="flex items-center gap-2 font-display text-xl tracking-tight">
-            <span className="font-bold text-white">TRADE</span>
-            <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">METRICS</span>
-            <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
-            <span className="live-dot ml-1" />
+        {/* EKG Pulse Line — runs through entire header */}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 1200 72"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="ekgGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="20%" stopColor="var(--color-neon-cyan)" stopOpacity="0.1" />
+              <stop offset="40%" stopColor="var(--color-neon-cyan)" stopOpacity="0.35" />
+              <stop offset="60%" stopColor="var(--color-neon-cyan)" stopOpacity="0.35" />
+              <stop offset="80%" stopColor="var(--color-neon-cyan)" stopOpacity="0.1" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+          <path
+            className="ekg-line"
+            d="M0,36 L280,36 L310,36 L325,10 L340,60 L355,24 L365,44 L378,36 L580,36 L610,36 L622,16 L634,54 L644,30 L652,42 L662,36 L1200,36"
+            fill="none"
+            stroke="url(#ekgGrad)"
+            strokeWidth="1.5"
+          />
+          {/* Pulse glow dots at EKG peaks */}
+          <circle className="ekg-glow" cx="325" cy="10" r="2.5" fill="var(--color-neon-cyan)" opacity="0.5" />
+          <circle className="ekg-glow" cx="622" cy="16" r="2.5" fill="var(--color-neon-cyan)" opacity="0.5" />
+        </svg>
+
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          {/* Logo — monogram badge with live heartbeat dot */}
+          <a href="#" className="flex items-center gap-3 font-display tracking-tight">
+            <div className="relative">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-neon-cyan/30 bg-terminal-surface">
+                <div className="absolute inset-[3px] rounded-[7px] border border-neon-cyan/10" />
+                <span className="relative text-[15px] font-black text-neon-cyan" style={{ textShadow: '0 0 12px var(--color-neon-cyan)' }}>
+                  TM
+                </span>
+              </div>
+              {/* Live heartbeat indicator */}
+              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon-green opacity-50" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full border-[1.5px] border-terminal-bg bg-neon-green shadow-[0_0_6px_var(--color-neon-green)]" />
+              </span>
+            </div>
+            <div>
+              <div className="text-[15px] font-bold text-white leading-none">TradeMetrics</div>
+              <div className="font-mono text-[8px] tracking-[3px] uppercase text-neon-cyan/60">
+                Edge Network
+              </div>
+            </div>
           </a>
 
-          <div className="flex items-center gap-8">
+          {/* Nav links — each with colored signal dot */}
+          <div className="hidden items-center gap-7 sm:flex">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
-                className="nav-glow-line hidden text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan sm:inline"
+                className="group flex items-center gap-2 text-[12px] font-medium text-terminal-muted transition-colors duration-200 hover:text-terminal-text"
               >
+                <span
+                  className="nav-signal-dot shadow-[0_0_4px_currentColor]"
+                  style={{ backgroundColor: l.color, boxShadow: `0 0 5px ${l.color}` }}
+                />
                 {l.label}
               </a>
             ))}
+          </div>
+
+          {/* Right side — latency badge + auth */}
+          <div className="flex items-center gap-3">
+            {/* Live latency badge */}
+            <div className="latency-badge hidden items-center gap-1.5 rounded-md border border-neon-cyan/15 bg-neon-cyan/[0.05] px-2.5 py-1 sm:flex">
+              <span className="flex h-[5px] w-[5px]">
+                <span className="relative inline-flex h-full w-full rounded-full bg-neon-green shadow-[0_0_4px_var(--color-neon-green)]" />
+              </span>
+              <span className="font-mono text-[10px] font-medium text-neon-cyan">38ms</span>
+            </div>
+
+            <div className="hidden h-5 w-px bg-terminal-border/50 sm:block" />
+
             <ThemeToggle />
             <button
               onClick={() => setAuthModal({ open: true, mode: 'login' })}
-              className="nav-glow-line hidden text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan sm:inline cursor-pointer"
+              className="hidden text-[12px] font-medium text-terminal-muted transition-colors duration-200 hover:text-neon-cyan sm:inline cursor-pointer"
             >
               Login
             </button>
             <button
               onClick={() => setAuthModal({ open: true, mode: 'register' })}
-              className="btn-premium inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan px-5 py-2.5 text-sm font-semibold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.3)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.5)] cursor-pointer"
+              className="btn-premium group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg bg-neon-cyan px-5 py-2 text-[12px] font-bold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.25)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.45)] cursor-pointer"
             >
-              Get Started Free
+              {/* Inner radial highlight */}
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(255,255,255,0.2),transparent)]" />
+              <span className="relative">Launch App</span>
+              <ArrowRight className="relative h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
         </div>
@@ -899,53 +980,125 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          10. FOOTER — Minimal
+          10. FOOTER — Mission Control
           ══════════════════════════════════════════════════════════ */}
       <footer className="relative z-10">
-        <div className="divider-diamond" />
-        <div className="px-6 py-12">
-          <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 md:flex-row md:justify-between">
-            <div className="text-center md:text-left">
-              <a
-                href="#"
-                className="flex items-center gap-2 font-display text-lg tracking-tight"
-              >
-                <span className="font-bold text-white">TRADE</span>
-                <span className="logo-shimmer font-bold text-neon-cyan glow-text-cyan">
-                  METRICS
+        {/* ── Telemetry Status Bar ─────────────────────────────── */}
+        <div className="telemetry-bar border-y border-terminal-border bg-terminal-surface">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-2">
+            <div className="flex items-center gap-5 sm:gap-8">
+              <div className="telemetry-item flex items-center gap-1.5" style={{ animationDelay: '0ms' }}>
+                <span className="flex h-[5px] w-[5px] rounded-full bg-neon-green shadow-[0_0_6px_var(--color-neon-green)]" />
+                <span className="font-mono text-[9px] tracking-wider text-terminal-muted">
+                  EDGE: <span className="text-neon-green">327 NODES</span>
                 </span>
-                <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
-              </a>
-              <p className="mt-1 text-xs text-terminal-muted">
-                &copy; 2026 Hodges &amp; Co. Limited
-              </p>
-            </div>
-
-            <div className="flex items-center gap-6">
-              {FOOTER_LINKS.map((l) => (
-                <a
-                  key={l.label}
-                  href={l.href}
-                  className="text-[13px] uppercase tracking-widest text-slate-400 transition-colors duration-200 hover:text-neon-cyan"
-                >
-                  {l.label}
-                </a>
-              ))}
-            </div>
-
-            <div className="flex flex-col items-center gap-2 md:items-end">
-              <p className="text-xs text-terminal-muted">
-                Built on{' '}
-                <span className="font-medium text-orange-400">Cloudflare&rsquo;s</span> edge
-                network
-              </p>
-              <div className="flex items-center gap-2">
-                <span className="live-dot" />
-                <span className="font-mono-nums text-[11px] uppercase tracking-widest text-neon-green/80">
-                  System Status: Operational
+              </div>
+              <div className="telemetry-item flex items-center gap-1.5" style={{ animationDelay: '80ms' }}>
+                <span className="flex h-[5px] w-[5px] rounded-full bg-neon-cyan shadow-[0_0_6px_var(--color-neon-cyan)]" />
+                <span className="font-mono text-[9px] tracking-wider text-terminal-muted">
+                  LATENCY: <span className="text-neon-cyan">38MS</span>
+                </span>
+              </div>
+              <div className="telemetry-item hidden items-center gap-1.5 sm:flex" style={{ animationDelay: '160ms' }}>
+                <span className="flex h-[5px] w-[5px] rounded-full bg-neon-amber shadow-[0_0_6px_var(--color-neon-amber)]" />
+                <span className="font-mono text-[9px] tracking-wider text-terminal-muted">
+                  SIGNALS: <span className="text-neon-amber">1,247 TODAY</span>
                 </span>
               </div>
             </div>
+            <span className="font-mono text-[9px] text-terminal-muted/40">v3.2.1</span>
+          </div>
+        </div>
+
+        {/* ── Main Footer Content ──────────────────────────────── */}
+        <div className="px-6 py-10 md:py-14">
+          <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.8fr_1fr_1fr_1fr]">
+            {/* Brand column */}
+            <div>
+              <div className="mb-3 text-[26px] font-black leading-none tracking-tight">
+                <span className="text-white">Trade</span>
+                <span className="text-neon-cyan">Metrics</span>
+              </div>
+              <p className="max-w-[280px] text-[12px] leading-relaxed text-terminal-muted">
+                The world&rsquo;s only free cross-VPS trade copier. Signals travel through
+                Cloudflare&rsquo;s edge &mdash; not your VPS.
+              </p>
+              {/* Mini EKG signature */}
+              <svg className="footer-ekg mt-4" width="140" height="20" viewBox="0 0 140 20" aria-hidden="true">
+                <path
+                  d="M0,10 L30,10 L40,3 L48,17 L56,8 L62,12 L68,10 L140,10"
+                  fill="none"
+                  stroke="var(--color-neon-cyan)"
+                  strokeWidth="1"
+                />
+              </svg>
+            </div>
+
+            {/* Platform column */}
+            <div>
+              <p className="mb-3 text-[9px] font-semibold uppercase tracking-[2px] text-terminal-muted">
+                Platform
+              </p>
+              <div className="flex flex-col gap-2">
+                {FOOTER_LINKS_PLATFORM.map((l) => (
+                  <a
+                    key={l.label}
+                    href={l.href}
+                    className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                  >
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources column */}
+            <div>
+              <p className="mb-3 text-[9px] font-semibold uppercase tracking-[2px] text-terminal-muted">
+                Resources
+              </p>
+              <div className="flex flex-col gap-2">
+                {FOOTER_LINKS_RESOURCES.map((l) => (
+                  <a
+                    key={l.label}
+                    href={l.href}
+                    className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                  >
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Legal column */}
+            <div>
+              <p className="mb-3 text-[9px] font-semibold uppercase tracking-[2px] text-terminal-muted">
+                Legal
+              </p>
+              <div className="flex flex-col gap-2">
+                {FOOTER_LINKS_LEGAL.map((l) => (
+                  <a
+                    key={l.label}
+                    href={l.href}
+                    className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                  >
+                    {l.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bottom Bar ───────────────────────────────────────── */}
+        <div className="border-t border-terminal-border/30 px-6 py-4">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 sm:flex-row">
+            <span className="text-[10px] text-terminal-muted/40">
+              &copy; 2026 Hodges &amp; Co. Limited
+            </span>
+            <span className="font-mono text-[9px] text-terminal-muted/30">
+              Built on Cloudflare&rsquo;s edge network
+            </span>
           </div>
         </div>
       </footer>

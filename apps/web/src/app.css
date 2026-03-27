@@ -30,11 +30,11 @@
 }
 
 /* ── Light Mode ("Frosted Glass Light") ─────────────────────────── */
-@layer base {
+/* Outside @layer so overrides have higher specificity than @theme tokens */
 html.light {
-  --color-terminal-bg: #f8fafc;
-  --color-terminal-surface: #ffffff;
-  --color-terminal-card: #f1f5f9;
+  --color-terminal-bg: #eef2f6;
+  --color-terminal-surface: #f8fafc;
+  --color-terminal-card: #e8edf3;
   --color-terminal-border: #e2e8f0;
   --color-terminal-border-hover: #cbd5e1;
   --color-terminal-muted: #94a3b8;
@@ -51,7 +51,6 @@ html.light {
   --color-neon-purple: #7c3aed;
   --color-neon-purple-dim: #7c3aed15;
 }
-} /* end @layer base for light mode variables */
 
 /* ── Base ───────────────────────────────────────────────────── */
 html {
@@ -138,6 +137,26 @@ html {
   50% { text-shadow: -2px 0 #ff3d5722, 2px 0 #00e5ff22; }
 }
 
+@keyframes ekg-draw {
+  0% { stroke-dashoffset: 1200; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes ekg-glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes latency-tick {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes telemetry-slide-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes travel-right {
   0% { left: 0; opacity: 0; }
   10% { opacity: 1; }
@@ -178,6 +197,45 @@ html {
 .animate-chromatic {
   animation: chromatic-shift 4s ease-in-out infinite;
 }
+
+/* ── Living Pulse Header ──────────────────────────────────── */
+.ekg-line {
+  stroke-dasharray: 1200;
+  animation: ekg-draw 4s linear infinite;
+}
+
+.ekg-glow {
+  animation: ekg-glow-pulse 4s ease-in-out infinite;
+}
+
+.nav-signal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.latency-badge {
+  animation: latency-tick 3s ease-in-out infinite;
+}
+
+/* ── Mission Control Footer ──────────────────────────────── */
+.telemetry-bar {
+  font-family: var(--font-mono);
+}
+
+.telemetry-item {
+  animation: telemetry-slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.footer-ekg {
+  opacity: 0.25;
+}
+
+/* Light mode overrides for Living Pulse */
+html.light .ekg-line { stroke: var(--color-neon-cyan); }
+html.light .telemetry-bar { background: var(--color-terminal-card); border-color: var(--color-terminal-border); }
+html.light .nav-signal-dot { filter: saturate(0.7); }
 
 /* ══════════════════════════════════════════════════════════════
    BACKGROUNDS & ATMOSPHERIC EFFECTS
@@ -788,9 +846,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LIGHT MODE EFFECT OVERRIDES — in @layer base so Tailwind 4 preserves them
+   LIGHT MODE EFFECT OVERRIDES — outside @layer for proper specificity
    ══════════════════════════════════════════════════════════════ */
-@layer base {
 
 /* Light mode glass */
 html.light .glass {
@@ -832,8 +889,12 @@ html.light .border-gradient {
 
 /* Light mode atmospheric effects — hide */
 html.light .ambient-glow,
-html.light .noise-overlay,
-html.light .scan-line {
+html.light .noise-overlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.light .scan-line::before {
   opacity: 0;
   pointer-events: none;
 }
@@ -843,15 +904,58 @@ html.light .bg-grid-dense {
   opacity: 0.03;
 }
 
-/* Light mode text overrides — only for slate/muted text, NOT text-white
-   (text-white is intentional on colored backgrounds like buttons) */
-html.light .text-slate-200,
+/* Light mode text overrides — remap dark-theme text to dark-on-light equivalents. */
+html.light .text-white {
+  color: #0f172a !important;
+}
+
+/* Preserve white text inside neon/gradient backgrounds */
+html.light .bg-neon-cyan,
+html.light .bg-neon-green,
+html.light .bg-neon-red,
+html.light .bg-neon-amber,
+html.light .bg-neon-purple,
+html.light [class*="bg-gradient-to"] {
+  color: #fff !important;
+}
+
+html.light .text-slate-100 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-200 {
+  color: #334155 !important;
+}
+
 html.light .text-slate-300 {
-  color: #334155;
+  color: #475569 !important;
 }
 
 html.light .text-slate-400 {
-  color: #64748b;
+  color: #64748b !important;
+}
+
+html.light .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* Light mode backgrounds that use slate dark values */
+html.light .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+
+html.light .bg-slate-900 {
+  background-color: #f1f5f9 !important;
+}
+
+html.light .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+}
+
+/* Light mode border overrides */
+html.light .border-slate-700,
+html.light .border-slate-800 {
+  border-color: #e2e8f0 !important;
 }
 
 /* Light mode sidebar */
@@ -890,5 +994,3 @@ html.light ::-webkit-scrollbar-thumb {
 html.light ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
-
-} /* end @layer base — light mode effects */

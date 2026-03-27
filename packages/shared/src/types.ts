@@ -485,6 +485,24 @@ export const FirmTemplateSubmission = z.object({
 });
 export type FirmTemplateSubmission = z.infer<typeof FirmTemplateSubmission>;
 
+// ── Notification Preferences ────────────────────────────────────
+
+export interface NotificationPreferences {
+  login_alerts: boolean;
+  signal_executed: boolean;
+  equity_guard: boolean;
+  account_disconnected: boolean;
+  daily_summary: boolean;
+  weekly_digest: boolean;
+  timezone: string;
+  summary_hour: number;
+}
+
+export interface TelegramStatus {
+  connected: boolean;
+  linked_at: string | null;
+}
+
 export interface AccountHealth {
   status: 'safe' | 'caution' | 'danger';
   score: number;

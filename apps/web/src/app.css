@@ -12,6 +12,7 @@
   --color-terminal-border: #151d28;
   --color-terminal-border-hover: #1f2d3d;
   --color-terminal-muted: #3d4f63;
+  --color-terminal-text: #c8d6e5;
 
   --color-neon-cyan: #00e5ff;
   --color-neon-cyan-dim: #00e5ff25;
@@ -28,11 +29,33 @@
   --font-display: 'Outfit', sans-serif;
 }
 
+/* ── Light Mode ("Frosted Glass Light") ─────────────────────────── */
+html.light {
+  --color-terminal-bg: #f8fafc;
+  --color-terminal-surface: #ffffff;
+  --color-terminal-card: #f1f5f9;
+  --color-terminal-border: #e2e8f0;
+  --color-terminal-border-hover: #cbd5e1;
+  --color-terminal-muted: #94a3b8;
+  --color-terminal-text: #1e293b;
+
+  --color-neon-cyan: #0891b2;
+  --color-neon-cyan-dim: #0891b215;
+  --color-neon-green: #059669;
+  --color-neon-green-dim: #05966915;
+  --color-neon-amber: #d97706;
+  --color-neon-amber-dim: #d9770615;
+  --color-neon-red: #dc2626;
+  --color-neon-red-dim: #dc262615;
+  --color-neon-purple: #7c3aed;
+  --color-neon-purple-dim: #7c3aed15;
+}
+
 /* ── Base ───────────────────────────────────────────────────── */
 html {
   font-family: var(--font-sans);
   background-color: var(--color-terminal-bg);
-  color: #c8d6e5;
+  color: var(--color-terminal-text);
   font-feature-settings: 'ss01' on, 'cv01' on;
   scroll-behavior: smooth;
 }
@@ -760,4 +783,110 @@ input:focus, select:focus, textarea:focus {
   transform: translate(-50%, -50%) rotate(45deg);
   background: #00e5ff30;
   border: 1px solid #00e5ff40;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LIGHT MODE EFFECT OVERRIDES
+   ══════════════════════════════════════════════════════════════ */
+
+/* Light mode glass */
+html.light .glass {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(16px) saturate(120%);
+}
+
+html.light .glass-premium {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Light mode glows — soften to subtle shadows */
+html.light .glow-cyan,
+html.light .glow-cyan-strong {
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.1);
+}
+
+html.light .glow-green {
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.1);
+}
+
+html.light .glow-red {
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+
+html.light .glow-text-cyan,
+html.light .glow-text-green,
+html.light .glow-text-red {
+  text-shadow: none;
+}
+
+/* Light mode border gradient */
+html.light .border-gradient {
+  border-image: none;
+  border-color: #e2e8f0;
+}
+
+/* Light mode atmospheric effects — hide */
+html.light .ambient-glow,
+html.light .noise-overlay,
+html.light .scan-line {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.light .bg-grid,
+html.light .bg-grid-dense {
+  opacity: 0.03;
+}
+
+/* Light mode text overrides for white text that won't auto-swap */
+html.light .text-white {
+  color: #1e293b;
+}
+
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: #334155;
+}
+
+html.light .text-slate-400 {
+  color: #64748b;
+}
+
+/* Light mode sidebar */
+html.light .data-stream-bg {
+  opacity: 0.02;
+}
+
+/* Light mode card hover */
+html.light .card-hover:hover,
+html.light .card-hover-premium:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Light mode focus ring */
+html.light .focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-neon-cyan), 0 0 8px rgba(8, 145, 178, 0.15);
+}
+
+/* Light mode dividers */
+html.light .divider {
+  background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+}
+
+/* Light mode data rows */
+html.light .data-row:hover {
+  background: rgba(8, 145, 178, 0.04);
+}
+
+/* Light mode scrollbar */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

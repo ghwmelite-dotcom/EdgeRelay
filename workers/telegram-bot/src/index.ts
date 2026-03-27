@@ -8,9 +8,10 @@ const app = new Hono<{ Bindings: Env }>();
 
 // ── POST /webhook — Telegram update handler ───────────────────────
 app.post('/webhook', async (c) => {
-  // Verify webhook secret
+  // Verify webhook secret (skip if not set)
   const secret = c.req.header('X-Telegram-Bot-Api-Secret-Token');
-  if (secret !== c.env.TELEGRAM_WEBHOOK_SECRET) {
+  if (c.env.TELEGRAM_WEBHOOK_SECRET && secret !== c.env.TELEGRAM_WEBHOOK_SECRET) {
+    console.error('Webhook secret mismatch. Got:', secret?.slice(0, 8), 'Expected:', c.env.TELEGRAM_WEBHOOK_SECRET?.slice(0, 8));
     return c.text('Unauthorized', 401);
   }
 
@@ -21,8 +22,8 @@ app.post('/webhook', async (c) => {
     return c.text('Bad Request', 400);
   }
 
-  // Process asynchronously — respond 200 immediately
-  c.executionCtx.waitUntil(handleUpdate(c.env, update));
+  // Process the update before responding
+  await handleUpdate(c.env, update);
 
   return c.text('OK', 200);
 });
@@ -122,7 +123,18 @@ async function handleUpdate(env: Env, update: TelegramUpdate): Promise<void> {
 
     const result = await routeCommand(env, message.from, message.chat.id, message.text);
 
-    await api.sendMessage(message.chat.id, result.text, 'HTML', result.replyMarkup);
+    const sendResult = await api.sendMessage(message.chat.id, result.text, 'HTML', result.replyMarkup);
+    const sendJson = sendResult as { ok?: boolean; error_code?: number; description?: string };
+    if (!sendJson.ok) {
+      if (sendJson.error_code === 403) {
+        console.error('Bot blocked by user:', message.chat.id);
+        // Don't retry — user has blocked the bot
+        return;
+      }
+      console.error('sendMessage failed:', JSON.stringify(sendJson));
+      // Retry without HTML parse mode as fallback
+      await api.sendMessage(message.chat.id, result.text.replace(/<[^>]+>/g, ''), undefined, result.replyMarkup);
+    }
   } catch (err) {
     console.error('Error handling update:', err);
   }

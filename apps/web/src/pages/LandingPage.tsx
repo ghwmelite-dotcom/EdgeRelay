@@ -18,6 +18,9 @@ import {
   WifiOff,
   Radio,
   Zap,
+  Store,
+  Sparkles,
+  BarChart3,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────── */
@@ -32,9 +35,9 @@ const NAV_LINKS = [
 
 const STATS = [
   { value: '300+', label: 'Edge Locations' },
-  { value: '99.9%', label: 'Uptime' },
+  { value: '8', label: 'Products Live' },
   { value: '<500ms', label: 'Avg Latency' },
-  { value: 'Zero', label: 'VPS Required' },
+  { value: 'Free', label: 'Forever Plan' },
 ];
 
 const ECOSYSTEM = [
@@ -42,6 +45,24 @@ const ECOSYSTEM = [
     icon: Radio,
     title: 'Edge Signal Copier',
     desc: 'The world\'s only free cross-VPS trade copier. Master on VPS 1, followers on VPS 2, 3, 4 — different servers, different brokers, different countries. Sub-500ms via Cloudflare\'s 300+ edge locations.',
+    badge: 'LIVE' as const,
+  },
+  {
+    icon: Store,
+    title: 'Signal Marketplace',
+    desc: 'Browse verified signal providers ranked by real performance. One-click copy any trader — their signals automatically execute on your account with PropGuard protection.',
+    badge: 'LIVE' as const,
+  },
+  {
+    icon: FlaskConical,
+    title: 'Strategy Hub',
+    desc: 'Generate custom Expert Advisors from 5 battle-tested strategies. Configure parameters with sliders, get a production-ready EA with built-in risk management — no coding required.',
+    badge: 'LIVE' as const,
+  },
+  {
+    icon: Sparkles,
+    title: 'AI Trade Insights',
+    desc: 'AI-powered analysis of your trading patterns. Identifies losing sessions, winning instruments, and hidden edge leaks — with actionable recommendations personalized to your data.',
     badge: 'LIVE' as const,
   },
   {
@@ -57,16 +78,16 @@ const ECOSYSTEM = [
     badge: 'LIVE' as const,
   },
   {
+    icon: BarChart3,
+    title: 'Advanced Analytics',
+    desc: 'Institutional-grade analytics — equity curve health, edge validation with Monte Carlo simulation, performance attribution by session, day, and instrument. Know if your edge is real or luck.',
+    badge: 'LIVE' as const,
+  },
+  {
     icon: Link2,
     title: 'Platform Bridge',
     desc: 'Cross-platform trade copier with universal signal format. Symbol normalization across MT5, cTrader, DXTrade, and TradeLocker.',
     badge: 'LIVE' as const,
-  },
-  {
-    icon: FlaskConical,
-    title: 'EA Performance Lab',
-    desc: 'Cloud-based EA monitoring and backtesting. Real-time performance tracking without running MT5.',
-    badge: 'COMING SOON' as const,
   },
 ];
 
@@ -82,19 +103,19 @@ const FEATURES = [
     desc: 'Built-in equity guard for prop firm accounts. Monitors drawdown and blocks dangerous trades.',
   },
   {
-    icon: WifiOff,
-    title: 'Never Miss a Trade',
-    desc: 'Offline queue with auto-retry and crash recovery. Signals wait on the edge until your EA reconnects.',
+    icon: Store,
+    title: 'Copy Top Traders',
+    desc: 'Browse a marketplace of verified signal providers. One-click copy — their trades execute on your account automatically.',
   },
   {
-    icon: Calculator,
-    title: 'Smart Lot Sizing',
-    desc: 'Mirror, fixed, multiplier, or risk-percent modes. Each follower sizes independently.',
+    icon: FlaskConical,
+    title: 'Generate Custom EAs',
+    desc: 'Pick a strategy, configure parameters with sliders, download a production-ready Expert Advisor. No coding required.',
   },
   {
-    icon: ArrowLeftRight,
-    title: 'Symbol Mapping',
-    desc: 'Auto-suffix and custom symbol mappings. EURUSD on master → EURUSD.m on follower, automatically.',
+    icon: Sparkles,
+    title: 'AI-Powered Insights',
+    desc: 'AI analyzes your trades and tells you exactly what\'s working, what\'s bleeding money, and what to change. Personalized to your data.',
   },
   {
     icon: Monitor,

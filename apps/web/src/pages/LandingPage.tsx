@@ -35,7 +35,7 @@ const NAV_LINKS = [
 
 const STATS = [
   { value: '300+', label: 'Edge Locations' },
-  { value: '8', label: 'Products Live' },
+  { value: '10', label: 'EA Strategies' },
   { value: '<500ms', label: 'Avg Latency' },
   { value: 'Free', label: 'Forever Plan' },
 ];

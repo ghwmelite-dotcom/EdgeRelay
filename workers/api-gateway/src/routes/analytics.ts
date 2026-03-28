@@ -120,3 +120,183 @@ analytics.get('/attribution', async (c) => {
     error: null,
   });
 });
+
+// ── GET /analytics/equity-health ────────────────────────────────
+
+analytics.get('/equity-health', async (c) => {
+  const userId = c.get('userId');
+  const accountIds = await getUserAccountIds(c.env.DB, userId);
+
+  if (accountIds.length === 0) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NO_DATA', message: 'No trading data found' } }, 404);
+  }
+
+  const { placeholders, values } = inClause(accountIds);
+  const baseWhere = `account_id IN (${placeholders}) AND deal_entry = 'out'`;
+
+  // Get all trades ordered by time for equity curve computation
+  const { results: trades } = await c.env.DB.prepare(
+    `SELECT profit, balance_at_trade, close_time, DATE(close_time) as trade_date
+     FROM journal_trades WHERE ${baseWhere}
+     ORDER BY close_time ASC`,
+  ).bind(...values).all<{
+    profit: number;
+    balance_at_trade: number;
+    close_time: string;
+    trade_date: string;
+  }>();
+
+  if (!trades || trades.length === 0) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NO_DATA', message: 'No closed trades found' } }, 404);
+  }
+
+  // Equity curve — daily balance snapshots (last balance per day)
+  const dailyBalances: { date: string; balance: number }[] = [];
+  let lastDate = '';
+  for (const t of trades) {
+    if (t.trade_date !== lastDate) {
+      if (lastDate) {
+        // Push the previous day's last balance
+      }
+      lastDate = t.trade_date;
+    }
+    // Always update — last trade of the day wins
+    const idx = dailyBalances.findIndex((d) => d.date === t.trade_date);
+    if (idx >= 0) {
+      dailyBalances[idx].balance = t.balance_at_trade;
+    } else {
+      dailyBalances.push({ date: t.trade_date, balance: t.balance_at_trade });
+    }
+  }
+
+  // Basic stats
+  const profits = trades.map((t) => t.profit);
+  const totalPnl = profits.reduce((a, b) => a + b, 0);
+  const wins = profits.filter((p) => p > 0);
+  const losses = profits.filter((p) => p < 0);
+  const avgWin = wins.length > 0 ? wins.reduce((a, b) => a + b, 0) / wins.length : 0;
+  const avgLoss = losses.length > 0 ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
+  const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
+  const expectancy = trades.length > 0 ? totalPnl / trades.length : 0;
+  const grossProfit = wins.reduce((a, b) => a + b, 0);
+  const grossLoss = Math.abs(losses.reduce((a, b) => a + b, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 999 : 0;
+
+  // Max drawdown
+  let peak = dailyBalances[0]?.balance ?? 0;
+  let maxDdAmount = 0;
+  let maxDdPct = 0;
+  let maxUnderwaterDays = 0;
+  let currentUnderwaterDays = 0;
+
+  for (let i = 0; i < dailyBalances.length; i++) {
+    const bal = dailyBalances[i].balance;
+    if (bal > peak) {
+      peak = bal;
+      if (currentUnderwaterDays > maxUnderwaterDays) {
+        maxUnderwaterDays = currentUnderwaterDays;
+      }
+      currentUnderwaterDays = 0;
+    } else {
+      currentUnderwaterDays++;
+      const dd = peak - bal;
+      if (dd > maxDdAmount) {
+        maxDdAmount = dd;
+        maxDdPct = peak > 0 ? (dd / peak) * 100 : 0;
+      }
+    }
+  }
+  if (currentUnderwaterDays > maxUnderwaterDays) maxUnderwaterDays = currentUnderwaterDays;
+
+  // Recovery factor
+  const recoveryFactor = maxDdAmount > 0 ? totalPnl / maxDdAmount : totalPnl > 0 ? 999 : 0;
+
+  // Total return %
+  const startBalance = dailyBalances[0]?.balance ?? 0;
+  const endBalance = dailyBalances[dailyBalances.length - 1]?.balance ?? 0;
+  const totalReturnPct = startBalance > 0 ? ((endBalance - startBalance) / startBalance) * 100 : 0;
+
+  // Sharpe ratio (daily returns, annualized)
+  let sharpeRatio = 0;
+  if (dailyBalances.length > 2) {
+    const dailyReturns: number[] = [];
+    for (let i = 1; i < dailyBalances.length; i++) {
+      const prev = dailyBalances[i - 1].balance;
+      if (prev > 0) dailyReturns.push((dailyBalances[i].balance - prev) / prev);
+    }
+    if (dailyReturns.length > 1) {
+      const mean = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
+      const variance = dailyReturns.reduce((s, r) => s + (r - mean) ** 2, 0) / dailyReturns.length;
+      const stddev = Math.sqrt(variance);
+      sharpeRatio = stddev > 0 ? (mean / stddev) * Math.sqrt(252) : 0;
+    }
+  }
+
+  // R² (coefficient of determination) — how linear the equity growth is
+  let rSquared = 0;
+  if (dailyBalances.length > 2) {
+    const n = dailyBalances.length;
+    const xs = Array.from({ length: n }, (_, i) => i);
+    const ys = dailyBalances.map((d) => d.balance);
+    const xMean = xs.reduce((a, b) => a + b, 0) / n;
+    const yMean = ys.reduce((a, b) => a + b, 0) / n;
+    let ssRes = 0, ssTot = 0, ssXY = 0, ssXX = 0;
+    for (let i = 0; i < n; i++) {
+      ssXY += (xs[i] - xMean) * (ys[i] - yMean);
+      ssXX += (xs[i] - xMean) ** 2;
+      ssTot += (ys[i] - yMean) ** 2;
+    }
+    const slope = ssXX > 0 ? ssXY / ssXX : 0;
+    const intercept = yMean - slope * xMean;
+    for (let i = 0; i < n; i++) {
+      const predicted = slope * xs[i] + intercept;
+      ssRes += (ys[i] - predicted) ** 2;
+    }
+    rSquared = ssTot > 0 ? 1 - ssRes / ssTot : 0;
+  }
+
+  // Prop firm compliance (FTMO rules: max 5% daily, max 10% total)
+  // Check max daily loss from trade data
+  let maxDailyLossPct = 0;
+  const dailyPnls = new Map<string, number>();
+  for (const t of trades) {
+    dailyPnls.set(t.trade_date, (dailyPnls.get(t.trade_date) ?? 0) + t.profit);
+  }
+  for (const [, dayPnl] of dailyPnls) {
+    if (dayPnl < 0 && startBalance > 0) {
+      const lossPct = (Math.abs(dayPnl) / startBalance) * 100;
+      if (lossPct > maxDailyLossPct) maxDailyLossPct = lossPct;
+    }
+  }
+
+  const ftmoDailyOk = maxDailyLossPct < 5;
+  const ftmoTotalOk = maxDdPct < 10;
+  const propScore = Math.max(0, Math.round(100 - maxDdPct * 5));
+
+  return c.json<ApiResponse>({
+    data: {
+      r_squared: Math.round(rSquared * 100) / 100,
+      recovery_factor: Math.round(recoveryFactor * 100) / 100,
+      max_drawdown_pct: Math.round(maxDdPct * 100) / 100,
+      max_drawdown_amount: Math.round(maxDdAmount * 100) / 100,
+      max_underwater_days: maxUnderwaterDays,
+      profit_factor: Math.round(profitFactor * 100) / 100,
+      sharpe_ratio: Math.round(sharpeRatio * 100) / 100,
+      total_return_pct: Math.round(totalReturnPct * 100) / 100,
+      avg_win: Math.round(avgWin * 100) / 100,
+      avg_loss: Math.round(avgLoss * 100) / 100,
+      expectancy: Math.round(expectancy * 100) / 100,
+      win_rate: Math.round(winRate * 10) / 10,
+      total_trades: trades.length,
+      prop_compliance: {
+        ftmo_daily_ok: ftmoDailyOk,
+        ftmo_total_ok: ftmoTotalOk,
+        max_daily_loss_pct: Math.round(maxDailyLossPct * 100) / 100,
+        max_total_dd_pct: Math.round(maxDdPct * 100) / 100,
+        score: propScore,
+      },
+      equity_curve: dailyBalances,
+    },
+    error: null,
+  });
+});

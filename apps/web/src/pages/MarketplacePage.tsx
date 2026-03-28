@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   TrendingUp,
@@ -13,8 +13,17 @@ import {
   Clock,
   BarChart3,
   ArrowRight,
+  Copy,
+  Check,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
+import { api } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
 
 const API_BASE = import.meta.env.PROD
   ? 'https://edgerelay-api.ghwmelite.workers.dev/v1'
@@ -256,12 +265,233 @@ function StatCell({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ── Subscription Types ──────────────────────────────────────────────
+interface SubscribeResult {
+  subscription: { provider_id: string; provider_name: string; status: string };
+  follower: { id: string; api_key: string; api_secret: string; alias: string };
+  needs_setup?: boolean;
+}
+
+// ── Copy Credentials Modal ──────────────────────────────────────────
+function CopyCredentialsModal({
+  open,
+  onClose,
+  data,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data: SubscribeResult | null;
+}) {
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  if (!data) return null;
+
+  const handleCopy = async (text: string, setter: (v: boolean) => void) => {
+    await navigator.clipboard.writeText(text);
+    setter(true);
+    setTimeout(() => setter(false), 2000);
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Subscription Active">
+      <div className="space-y-5">
+        <div className="flex items-center gap-2 text-neon-green text-sm font-medium">
+          <Check size={16} />
+          Now copying {data.subscription.provider_name}
+        </div>
+
+        <div className="rounded-xl border border-terminal-border/50 bg-terminal-surface/50 p-4 space-y-3">
+          <p className="text-[10px] uppercase tracking-[2px] font-semibold text-terminal-muted">
+            Follower EA Credentials
+          </p>
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Key</span>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+                {data.follower.api_key}
+              </code>
+              <button
+                onClick={() => handleCopy(data.follower.api_key, setCopiedKey)}
+                className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all duration-200"
+              >
+                {copiedKey ? <Check size={14} className="text-neon-green" /> : <Copy size={14} />}
+                {copiedKey ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Secret</span>
+            <div className="flex items-center gap-2 mt-1">
+              <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+                {data.follower.api_secret}
+              </code>
+              <button
+                onClick={() => handleCopy(data.follower.api_secret, setCopiedSecret)}
+                className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all duration-200"
+              >
+                {copiedSecret ? <Check size={14} className="text-neon-green" /> : <Copy size={14} />}
+                {copiedSecret ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-3">
+          <AlertTriangle size={14} className="text-neon-amber mt-0.5 shrink-0" />
+          <p className="text-sm text-neon-amber">
+            Save the API secret now — it won't be shown again. Use it in the Follower EA settings in MT5.
+          </p>
+        </div>
+
+        <Button variant="secondary" className="w-full" onClick={onClose}>
+          Done
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Setup Modal (broker/MT5 fallback) ───────────────────────────────
+function SetupBrokerModal({
+  open,
+  onClose,
+  providerId,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  providerId: string;
+  onSuccess: (data: SubscribeResult) => void;
+}) {
+  const [brokerName, setBrokerName] = useState('');
+  const [mt5Login, setMt5Login] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    if (!mt5Login.trim()) {
+      setFormError('MT5 login is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const res = await api.post<SubscribeResult>(`/marketplace/subscribe/${providerId}`, {
+      broker_name: brokerName.trim() || undefined,
+      mt5_login: mt5Login.trim(),
+    });
+    setIsSubmitting(false);
+
+    if (res.error) {
+      setFormError(res.error.message);
+      return;
+    }
+
+    if (res.data) {
+      onSuccess(res.data);
+      onClose();
+    }
+  };
+
+  const handleClose = () => {
+    setBrokerName('');
+    setMt5Login('');
+    setFormError(null);
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={handleClose} title="Account Setup Required">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <p className="text-sm text-slate-400">
+          Enter your MT5 account details to start copying trades.
+        </p>
+
+        <Input
+          label="Broker Name"
+          placeholder="e.g. ICMarkets"
+          value={brokerName}
+          onChange={(e) => setBrokerName(e.target.value)}
+        />
+        <Input
+          label="MT5 Login"
+          placeholder="e.g. 5012345"
+          value={mt5Login}
+          onChange={(e) => setMt5Login(e.target.value)}
+        />
+
+        {formError && (
+          <div className="flex items-start gap-2 rounded-xl border border-neon-red/30 bg-neon-red/5 p-3">
+            <AlertTriangle size={14} className="text-neon-red mt-0.5 shrink-0" />
+            <p className="text-sm text-neon-red">{formError}</p>
+          </div>
+        )}
+
+        <Button type="submit" isLoading={isSubmitting} className="w-full">
+          Start Copying <ArrowRight size={14} />
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+// ── Copy Provider Button ────────────────────────────────────────────
+function CopyProviderButton({
+  providerId,
+  isSubscribed,
+  onCopy,
+  copyingId,
+}: {
+  providerId: string;
+  isSubscribed: boolean;
+  onCopy: (providerId: string) => void;
+  copyingId: string | null;
+}) {
+  const isCopying = copyingId === providerId;
+
+  if (isSubscribed) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-lg bg-neon-green/10 border border-neon-green/20 px-3 py-1.5 text-xs font-medium text-neon-green">
+        <Check size={12} />
+        Copying
+      </span>
+    );
+  }
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onCopy(providerId);
+      }}
+      disabled={isCopying}
+      className="inline-flex items-center gap-1.5 rounded-lg bg-neon-cyan/10 border border-neon-cyan/20 px-3 py-1.5 text-xs font-semibold text-neon-cyan hover:bg-neon-cyan/20 hover:shadow-[0_0_12px_rgba(0,229,255,0.2)] transition-all duration-200 disabled:opacity-50"
+    >
+      {isCopying ? (
+        <>
+          <Loader2 size={12} className="animate-spin" />
+          Copying...
+        </>
+      ) : (
+        <>
+          Copy <ArrowRight size={12} />
+        </>
+      )}
+    </button>
+  );
+}
+
 // ── Provider Row (desktop table) ───────────────────────────────────
-function ProviderRow({ provider, rank, expanded, onToggle }: {
+function ProviderRow({ provider, rank, expanded, onToggle, isSubscribed, onCopy, copyingId }: {
   provider: Provider;
   rank: number;
   expanded: boolean;
   onToggle: () => void;
+  isSubscribed: boolean;
+  onCopy: (id: string) => void;
+  copyingId: string | null;
 }) {
   const badgeVariant = STRATEGY_BADGE_VARIANT[provider.strategy_style] ?? 'muted';
 
@@ -302,12 +532,15 @@ function ProviderRow({ provider, rank, expanded, onToggle }: {
           </span>
         </td>
         <td className="py-3 pr-4 text-right">
+          <CopyProviderButton providerId={provider.id} isSubscribed={isSubscribed} onCopy={onCopy} copyingId={copyingId} />
+        </td>
+        <td className="py-3 pr-4 text-right">
           {expanded ? <ChevronUp size={16} className="text-terminal-muted" /> : <ChevronDown size={16} className="text-terminal-muted" />}
         </td>
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={9} className="bg-white/[0.01]">
+          <td colSpan={10} className="bg-white/[0.01]">
             <ExpandedProviderDetail provider={provider} />
           </td>
         </tr>
@@ -317,11 +550,14 @@ function ProviderRow({ provider, rank, expanded, onToggle }: {
 }
 
 // ── Provider Card (mobile) ─────────────────────────────────────────
-function ProviderCard({ provider, rank, expanded, onToggle }: {
+function ProviderCard({ provider, rank, expanded, onToggle, isSubscribed, onCopy, copyingId }: {
   provider: Provider;
   rank: number;
   expanded: boolean;
   onToggle: () => void;
+  isSubscribed: boolean;
+  onCopy: (id: string) => void;
+  copyingId: string | null;
 }) {
   const badgeVariant = STRATEGY_BADGE_VARIANT[provider.strategy_style] ?? 'muted';
 
@@ -368,6 +604,12 @@ function ProviderCard({ provider, rank, expanded, onToggle }: {
         </div>
       </div>
 
+        {/* Copy button */}
+        <div className="mt-3 flex justify-end">
+          <CopyProviderButton providerId={provider.id} isSubscribed={isSubscribed} onCopy={onCopy} copyingId={copyingId} />
+        </div>
+      </div>
+
       {/* Expanded detail */}
       {expanded && <ExpandedProviderDetail provider={provider} />}
     </div>
@@ -378,6 +620,7 @@ function ProviderCard({ provider, rank, expanded, onToggle }: {
 export function MarketplacePage() {
   const location = useLocation();
   const isInApp = location.pathname.startsWith('/app');
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -392,11 +635,35 @@ export function MarketplacePage() {
   // Expand state
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Subscription state
+  const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
+  const [copyingId, setCopyingId] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+
+  // Modal state
+  const [credentialsData, setCredentialsData] = useState<SubscribeResult | null>(null);
+  const [setupProviderId, setSetupProviderId] = useState<string | null>(null);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  // Fetch subscriptions if authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    async function fetchSubscriptions() {
+      const res = await api.get<Array<{ provider_id: string; status: string }>>('/marketplace/subscriptions');
+      if (res.data && Array.isArray(res.data)) {
+        const activeIds = new Set(
+          res.data.filter((s) => s.status === 'active').map((s) => s.provider_id),
+        );
+        setSubscribedIds(activeIds);
+      }
+    }
+    fetchSubscriptions();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     async function fetchProviders() {
@@ -408,7 +675,7 @@ export function MarketplacePage() {
 
         const res = await fetch(`${API_BASE}/marketplace/providers?${params.toString()}`);
         const json = await res.json();
-        setProviders(json.data?.providers ?? []);
+        setProviders(json.data ?? json.data?.providers ?? []);
       } catch {
         setError('Failed to load providers. Please try again.');
       } finally {
@@ -421,6 +688,44 @@ export function MarketplacePage() {
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleCopy = useCallback(async (providerId: string) => {
+    if (!isAuthenticated) {
+      // Redirect to login
+      window.location.href = '/login';
+      return;
+    }
+
+    setCopyingId(providerId);
+    setCopyError(null);
+
+    const res = await api.post<SubscribeResult>(`/marketplace/subscribe/${providerId}`);
+
+    setCopyingId(null);
+
+    if (res.error) {
+      setCopyError(res.error.message);
+      setTimeout(() => setCopyError(null), 5000);
+      return;
+    }
+
+    if (res.data) {
+      // Check if needs setup (no MT5 details)
+      if ('needs_setup' in res.data && (res.data as Record<string, unknown>).needs_setup) {
+        setSetupProviderId(providerId);
+        return;
+      }
+
+      // Successful subscription
+      setSubscribedIds((prev) => new Set([...prev, providerId]));
+      setCredentialsData(res.data);
+    }
+  }, [isAuthenticated]);
+
+  const handleSetupSuccess = useCallback((data: SubscribeResult) => {
+    setSubscribedIds((prev) => new Set([...prev, data.subscription.provider_id]));
+    setCredentialsData(data);
   }, []);
 
   return (
@@ -595,6 +900,7 @@ export function MarketplacePage() {
                     <th className="py-3 pr-4 text-right text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
                       <span className="inline-flex items-center gap-1"><Users size={10} />Subs</span>
                     </th>
+                    <th className="py-3 pr-4 text-right text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">Copy</th>
                     <th className="py-3 pr-4 w-8" />
                   </tr>
                 </thead>
@@ -606,6 +912,9 @@ export function MarketplacePage() {
                       rank={i + 1}
                       expanded={expandedId === p.id}
                       onToggle={() => toggleExpand(p.id)}
+                      isSubscribed={subscribedIds.has(p.id)}
+                      onCopy={handleCopy}
+                      copyingId={copyingId}
                     />
                   ))}
                 </tbody>
@@ -624,6 +933,9 @@ export function MarketplacePage() {
                 rank={i + 1}
                 expanded={expandedId === p.id}
                 onToggle={() => toggleExpand(p.id)}
+                isSubscribed={subscribedIds.has(p.id)}
+                onCopy={handleCopy}
+                copyingId={copyingId}
               />
             ))}
           </div>
@@ -664,6 +976,34 @@ export function MarketplacePage() {
           </div>
         </footer>
       )}
+
+      {/* Copy error toast */}
+      {copyError && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in-up">
+          <div className="flex items-center gap-2 rounded-xl border border-neon-red/30 bg-terminal-bg/95 backdrop-blur-xl px-4 py-3 shadow-lg">
+            <AlertTriangle size={14} className="text-neon-red shrink-0" />
+            <p className="text-sm text-neon-red">{copyError}</p>
+            <button onClick={() => setCopyError(null)} className="text-terminal-muted hover:text-white ml-2">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Credentials Modal */}
+      <CopyCredentialsModal
+        open={credentialsData !== null}
+        onClose={() => setCredentialsData(null)}
+        data={credentialsData}
+      />
+
+      {/* Setup Modal */}
+      <SetupBrokerModal
+        open={setupProviderId !== null}
+        onClose={() => setSetupProviderId(null)}
+        providerId={setupProviderId ?? ''}
+        onSuccess={handleSetupSuccess}
+      />
     </div>
   );
 }

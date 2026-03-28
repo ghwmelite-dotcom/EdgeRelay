@@ -41,10 +41,10 @@ interface EquityHealthData {
   win_rate: number;
   total_trades: number;
   prop_compliance: {
-    daily_loss_ok: boolean;
-    total_dd_ok: boolean;
-    daily_loss_pct: number;
-    total_dd_pct: number;
+    ftmo_daily_ok: boolean;
+    ftmo_total_ok: boolean;
+    max_daily_loss_pct: number;
+    max_total_dd_pct: number;
     score: number;
   };
   equity_curve: { date: string; balance: number }[];
@@ -92,11 +92,13 @@ function fmtCurrency(n: number): string {
   return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function fmtPct(n: number, decimals = 1): string {
+function fmtPct(n: number | undefined | null, decimals = 1): string {
+  if (n == null || isNaN(n)) return '—';
   return `${n >= 0 ? '+' : ''}${n.toFixed(decimals)}%`;
 }
 
-function fmtNum(n: number, decimals = 2): string {
+function fmtNum(n: number | undefined | null, decimals = 2): string {
+  if (n == null || isNaN(n)) return '—';
   return n.toFixed(decimals);
 }
 
@@ -636,26 +638,26 @@ function EquityHealthTab() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {/* Daily Loss */}
           <div className="flex items-center gap-3">
-            {compliance.daily_loss_ok
+            {compliance.ftmo_daily_ok
               ? <CheckCircle size={20} className="text-neon-green shrink-0" />
               : <AlertTriangle size={20} className="text-neon-red shrink-0" />}
             <div>
               <p className="text-xs text-terminal-muted uppercase tracking-wider">Daily Loss</p>
-              <p className={`font-mono-nums text-sm font-bold ${compliance.daily_loss_ok ? 'text-neon-green' : 'text-neon-red'}`}>
-                {fmtPct(compliance.daily_loss_pct)} / -5%
+              <p className={`font-mono-nums text-sm font-bold ${compliance.ftmo_daily_ok ? 'text-neon-green' : 'text-neon-red'}`}>
+                {fmtPct(compliance.max_daily_loss_pct)} / -5%
               </p>
             </div>
           </div>
 
           {/* Total DD */}
           <div className="flex items-center gap-3">
-            {compliance.total_dd_ok
+            {compliance.ftmo_total_ok
               ? <CheckCircle size={20} className="text-neon-green shrink-0" />
               : <AlertTriangle size={20} className="text-neon-red shrink-0" />}
             <div>
               <p className="text-xs text-terminal-muted uppercase tracking-wider">Total DD</p>
-              <p className={`font-mono-nums text-sm font-bold ${compliance.total_dd_ok ? 'text-neon-green' : 'text-neon-red'}`}>
-                {fmtPct(compliance.total_dd_pct)} / -10%
+              <p className={`font-mono-nums text-sm font-bold ${compliance.ftmo_total_ok ? 'text-neon-green' : 'text-neon-red'}`}>
+                {fmtPct(compliance.max_total_dd_pct)} / -10%
               </p>
             </div>
           </div>

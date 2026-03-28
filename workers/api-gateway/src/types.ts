@@ -28,6 +28,9 @@ export interface Env {
 
   /** JWT expiry in hours */
   JWT_EXPIRY_HOURS: string;
+
+  /** Workers AI binding */
+  AI: Ai;
 }
 
 export interface JwtPayload {

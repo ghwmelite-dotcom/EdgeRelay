@@ -29,3 +29,6 @@ bucket_name = "edgerelay-storage"
 bindings = [
   { name = "ACCOUNT_RELAY", class_name = "AccountRelay", script_name = "edgerelay-account-relay" }
 ]
+
+[ai]
+binding = "AI"

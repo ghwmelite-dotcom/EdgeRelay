@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '../types.js';
 
-const API_RATE_LIMIT = 120; // requests per minute
+const API_RATE_LIMIT = 600; // requests per minute
 
 export const rateLimitMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
   const userId = c.get('userId');

@@ -16,6 +16,8 @@ import {
   X,
   TrendingUp,
   Target,
+  RefreshCw,
+  Key,
 } from 'lucide-react';
 import { useAccountsStore, type Account, type FollowerConfig } from '@/stores/accounts';
 import { api } from '@/lib/api';
@@ -599,9 +601,11 @@ function DeleteConfirmModal({
 function MasterCard({
   account,
   onDelete,
+  onRegenerate,
 }: {
   account: Account;
   onDelete: (a: Account) => void;
+  onRegenerate: (a: Account) => void;
 }) {
   return (
     <Card hover className="group border-l-2 border-l-neon-cyan">
@@ -620,29 +624,47 @@ function MasterCard({
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
             <div>
               <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">MT5 Login</span>
-              <p className="font-mono-nums text-slate-300">{account.mt5_login ?? '\u2014'}</p>
+              <p className="font-mono-nums text-terminal-text">{account.mt5_login ?? '\u2014'}</p>
             </div>
             <div>
               <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">Signals Today</span>
-              <p className="font-mono-nums text-slate-300">{account.signals_today}</p>
+              <p className="font-mono-nums text-terminal-text">{account.signals_today}</p>
             </div>
           </div>
 
-          {/* API Key */}
-          <div className="flex items-center gap-2">
-            <code className="font-mono-nums text-xs text-terminal-muted bg-terminal-bg/50 rounded-lg px-3 py-2 border border-terminal-border/50">
-              {maskApiKey(account.api_key)}
-            </code>
-            <CopyButton text={account.api_key} />
+          {/* EA Credentials — Account ID + API Key */}
+          <div className="space-y-2 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Key size={12} className="text-neon-cyan/60" />
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">EA Credentials</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-terminal-muted uppercase tracking-wider shrink-0">Account ID</span>
+              <div className="flex items-center gap-1">
+                <code className="font-mono-nums text-xs text-neon-cyan truncate max-w-[180px]">{account.id}</code>
+                <CopyButton text={account.id} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-terminal-muted uppercase tracking-wider shrink-0">API Key</span>
+              <div className="flex items-center gap-1">
+                <code className="font-mono-nums text-xs text-terminal-text truncate max-w-[180px]">{account.api_key}</code>
+                <CopyButton text={account.api_key} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-terminal-muted uppercase tracking-wider shrink-0">API Secret</span>
+              <span className="text-[10px] text-terminal-muted italic">shown once at creation</span>
+            </div>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="sm" className="focus-ring">
-            <Eye size={14} />
+          <Button variant="ghost" size="sm" onClick={() => onRegenerate(account)} className="focus-ring" title="Regenerate keys">
+            <RefreshCw size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDelete(account)} className="focus-ring">
+          <Button variant="ghost" size="sm" onClick={() => onDelete(account)} className="focus-ring" title="Delete">
             <Trash2 size={14} className="text-neon-red" />
           </Button>
         </div>
@@ -660,11 +682,13 @@ function FollowerCard({
   masterAlias,
   onConfigure,
   onDelete,
+  onRegenerate,
 }: {
   account: Account;
   masterAlias: string;
   onConfigure: (a: Account) => void;
   onDelete: (a: Account) => void;
+  onRegenerate: (a: Account) => void;
 }) {
   const config = account.follower_config;
   const lotLabel = LOT_MODE_OPTIONS.find((o) => o.value === config?.lot_mode)?.label ?? 'Mirror';
@@ -698,14 +722,43 @@ function FollowerCard({
               <Badge variant="muted">Suffix: {config.symbol_suffix}</Badge>
             )}
           </div>
+
+          {/* EA Credentials */}
+          <div className="space-y-2 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-3">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Key size={12} className="text-neon-purple/60" />
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">EA Credentials</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-terminal-muted uppercase tracking-wider shrink-0">Account ID</span>
+              <div className="flex items-center gap-1">
+                <code className="font-mono-nums text-xs text-neon-purple truncate max-w-[180px]">{account.id}</code>
+                <CopyButton text={account.id} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-terminal-muted uppercase tracking-wider shrink-0">API Key</span>
+              <div className="flex items-center gap-1">
+                <code className="font-mono-nums text-xs text-terminal-text truncate max-w-[180px]">{account.api_key}</code>
+                <CopyButton text={account.api_key} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-terminal-muted uppercase tracking-wider shrink-0">API Secret</span>
+              <span className="text-[10px] text-terminal-muted italic">shown once at creation</span>
+            </div>
+          </div>
         </div>
 
         {/* Actions */}
         <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="sm" onClick={() => onConfigure(account)} className="focus-ring">
+          <Button variant="ghost" size="sm" onClick={() => onConfigure(account)} className="focus-ring" title="Configure">
             <Settings size={14} />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onDelete(account)} className="focus-ring">
+          <Button variant="ghost" size="sm" onClick={() => onRegenerate(account)} className="focus-ring" title="Regenerate keys">
+            <RefreshCw size={14} />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => onDelete(account)} className="focus-ring" title="Delete">
             <Trash2 size={14} className="text-neon-red" />
           </Button>
         </div>
@@ -838,6 +891,16 @@ export function AccountsPage() {
   const [addFollowerOpen, setAddFollowerOpen] = useState(false);
   const [configAccount, setConfigAccount] = useState<Account | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null);
+  const [regenResult, setRegenResult] = useState<{ id: string; api_key: string; api_secret: string } | null>(null);
+
+  const handleRegenerate = async (account: Account) => {
+    if (!confirm(`Regenerate API keys for "${account.alias}"? The old keys will stop working immediately.`)) return;
+    const res = await api.post<{ id: string; api_key: string; api_secret: string }>(`/accounts/${account.id}/regenerate-keys`);
+    if (res.data) {
+      setRegenResult(res.data);
+      fetchAccounts();
+    }
+  };
 
   // Marketplace subscriptions
   const [subscriptions, setSubscriptions] = useState<MarketplaceSubscription[]>([]);
@@ -941,7 +1004,7 @@ export function AccountsPage() {
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {masters.map((m) => (
-                <MasterCard key={m.id} account={m} onDelete={setDeleteTarget} />
+                <MasterCard key={m.id} account={m} onDelete={setDeleteTarget} onRegenerate={handleRegenerate} />
               ))}
             </div>
           </section>
@@ -973,6 +1036,7 @@ export function AccountsPage() {
                     masterAlias={masterMap.get(f.master_account_id ?? '') ?? 'Unknown'}
                     onConfigure={setConfigAccount}
                     onDelete={setDeleteTarget}
+                    onRegenerate={handleRegenerate}
                   />
                 ))}
               </div>
@@ -1031,6 +1095,53 @@ export function AccountsPage() {
         onClose={() => setDeleteTarget(null)}
         account={deleteTarget}
       />
+
+      {/* Regenerated Keys Modal */}
+      <Modal open={regenResult !== null} onClose={() => setRegenResult(null)} title="New EA Credentials">
+        {regenResult && (
+          <div className="space-y-5">
+            <div className="rounded-xl border border-neon-green/30 bg-neon-green/5 p-3 flex items-center gap-2">
+              <Check size={16} className="text-neon-green" />
+              <span className="text-sm text-neon-green font-medium">Keys regenerated successfully</span>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-4">
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">Account ID</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="font-mono-nums text-xs text-neon-cyan bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">{regenResult.id}</code>
+                  <CopyButton text={regenResult.id} />
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Key</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">{regenResult.api_key}</code>
+                  <CopyButton text={regenResult.api_key} />
+                </div>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Secret</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">{regenResult.api_secret}</code>
+                  <CopyButton text={regenResult.api_secret} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-3">
+              <AlertTriangle size={14} className="text-neon-amber mt-0.5 shrink-0" />
+              <p className="text-sm text-neon-amber">
+                Save these credentials now — the API Secret won't be shown again. Update your EA inputs with these new values.
+              </p>
+            </div>
+
+            <Button variant="secondary" className="w-full" onClick={() => setRegenResult(null)}>
+              Done
+            </Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -11,8 +11,8 @@
   --color-terminal-card: #0d1219;
   --color-terminal-border: #151d28;
   --color-terminal-border-hover: #1f2d3d;
-  --color-terminal-muted: #5a6f85;
-  --color-terminal-text: #dce6f0;
+  --color-terminal-muted: #6b7f95;
+  --color-terminal-text: #e8eff6;
 
   --color-neon-cyan: #00e5ff;
   --color-neon-cyan-dim: #00e5ff25;
@@ -66,14 +66,22 @@ html {
 }
 
 /* ── Typography Readability ────────────────────────────────────── */
-/* Bump all micro-text (10px labels) to 11px minimum for readability */
-.text-\[10px\] { font-size: 11px !important; }
-.text-\[9px\] { font-size: 11px !important; }
+/* Bump all micro-text to readable minimums */
+.text-\[10px\] { font-size: 12px !important; }
+.text-\[9px\] { font-size: 12px !important; }
+.text-\[11px\] { font-size: 12px !important; }
+.text-xs { font-size: 13px !important; }
 
-/* Ensure body text and form elements are comfortably sized */
-p, span, td, th, li, label, input, select, textarea, button {
-  letter-spacing: 0.01em;
+/* Bump body text classes */
+.text-sm { font-size: 15px !important; line-height: 1.5 !important; }
+
+/* Ensure form elements are comfortably sized */
+input, select, textarea {
+  font-size: 15px !important;
 }
+
+/* Sidebar nav items — slightly larger for touch and readability */
+nav .text-sm { font-size: 14px !important; }
 
 ::selection {
   background: #00e5ff30;

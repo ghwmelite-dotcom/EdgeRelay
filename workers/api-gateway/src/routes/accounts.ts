@@ -81,11 +81,11 @@ accounts.post('/', async (c) => {
   }
 
   const planLimits: Record<string, { masters: number; followers: number }> = {
-    free: { masters: 1, followers: 1 },
-    starter: { masters: 1, followers: 3 },
-    pro: { masters: 1, followers: 10 },
-    unlimited: { masters: 5, followers: 999 },
-    provider: { masters: 10, followers: 999 },
+    free: { masters: 999, followers: 999 },
+    starter: { masters: 999, followers: 999 },
+    pro: { masters: 999, followers: 999 },
+    unlimited: { masters: 999, followers: 999 },
+    provider: { masters: 999, followers: 999 },
   };
 
   const limits = planLimits[user.plan] ?? planLimits['free']!;

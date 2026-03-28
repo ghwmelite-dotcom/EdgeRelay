@@ -296,9 +296,9 @@ marketplace.post('/subscribe/:providerId', async (c) => {
     .first<{ plan: string }>();
 
   const planLimits: Record<string, number> = {
-    free: 1, starter: 3, pro: 10, unlimited: 999, provider: 999,
+    free: 999, starter: 999, pro: 999, unlimited: 999, provider: 999,
   };
-  const maxFollowers = planLimits[user?.plan ?? 'free'] ?? 1;
+  const maxFollowers = planLimits[user?.plan ?? 'free'] ?? 999;
 
   const followerCount = await c.env.DB.prepare(
     "SELECT COUNT(*) as cnt FROM accounts WHERE user_id = ? AND role = 'follower' AND is_active = true",

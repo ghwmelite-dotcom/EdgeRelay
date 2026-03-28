@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, useCallback, type FormEvent } from 'react';
 import {
   Plus,
   Copy,
@@ -12,6 +12,10 @@ import {
   Radio,
   Wifi,
   Download,
+  Users,
+  X,
+  TrendingUp,
+  Target,
 } from 'lucide-react';
 import { useAccountsStore, type Account, type FollowerConfig } from '@/stores/accounts';
 import { api } from '@/lib/api';
@@ -711,6 +715,119 @@ function FollowerCard({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Marketplace Subscription Types & Card                             */
+/* ------------------------------------------------------------------ */
+
+interface MarketplaceSubscription {
+  id: string;
+  provider_id: string;
+  status: string;
+  subscribed_at: string;
+  cancelled_at: string | null;
+  provider_name: string;
+  strategy_style: string;
+  instruments: string | null;
+  win_rate: number | null;
+  total_pnl: number | null;
+  subscriber_count: number | null;
+}
+
+const STRATEGY_BADGE_VARIANT: Record<string, 'cyan' | 'green' | 'purple' | 'amber' | 'muted'> = {
+  scalper: 'purple',
+  swing: 'cyan',
+  position: 'green',
+  mixed: 'amber',
+};
+
+function SubscriptionCard({
+  sub,
+  onUnsubscribe,
+  isUnsubscribing,
+}: {
+  sub: MarketplaceSubscription;
+  onUnsubscribe: (providerId: string) => void;
+  isUnsubscribing: boolean;
+}) {
+  const isActive = sub.status === 'active';
+  const badgeVariant = STRATEGY_BADGE_VARIANT[sub.strategy_style] ?? 'muted';
+
+  return (
+    <Card hover className={`group border-l-2 ${isActive ? 'border-l-neon-amber' : 'border-l-terminal-border'}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1 space-y-3">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-amber/10 text-neon-amber font-bold text-xs shrink-0">
+              {sub.provider_name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-white truncate">{sub.provider_name}</h3>
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <Badge variant={badgeVariant} className="text-[10px]">{sub.strategy_style}</Badge>
+                {sub.instruments && (
+                  <span className="text-[10px] text-terminal-muted">{sub.instruments}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 text-xs">
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1">
+                <Target size={10} />Win Rate
+              </span>
+              <p className="font-mono-nums text-neon-cyan mt-0.5">
+                {sub.win_rate != null ? `${sub.win_rate.toFixed(1)}%` : '\u2014'}
+              </p>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1">
+                <TrendingUp size={10} />P&L
+              </span>
+              <p className={`font-mono-nums mt-0.5 ${(sub.total_pnl ?? 0) >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+                {sub.total_pnl != null ? `${sub.total_pnl >= 0 ? '+' : ''}$${Math.abs(sub.total_pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '\u2014'}
+              </p>
+            </div>
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1">
+                <Users size={10} />Subs
+              </span>
+              <p className="font-mono-nums text-slate-300 mt-0.5">{sub.subscriber_count ?? 0}</p>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex items-center gap-2">
+            <Badge variant={isActive ? 'green' : 'muted'}>
+              {isActive ? 'Active' : 'Cancelled'}
+            </Badge>
+            <span className="text-[10px] text-terminal-muted">
+              since {new Date(sub.subscribed_at).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        {isActive && (
+          <div className="flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onUnsubscribe(sub.provider_id)}
+              disabled={isUnsubscribing}
+              className="focus-ring"
+            >
+              <X size={14} className="text-neon-red" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  AccountsPage                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -722,8 +839,39 @@ export function AccountsPage() {
   const [configAccount, setConfigAccount] = useState<Account | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null);
 
+  // Marketplace subscriptions
+  const [subscriptions, setSubscriptions] = useState<MarketplaceSubscription[]>([]);
+  const [subsLoading, setSubsLoading] = useState(true);
+  const [unsubscribingId, setUnsubscribingId] = useState<string | null>(null);
+
   useEffect(() => {
     fetchAccounts();
+  }, [fetchAccounts]);
+
+  useEffect(() => {
+    async function fetchSubscriptions() {
+      const res = await api.get<MarketplaceSubscription[]>('/marketplace/subscriptions');
+      if (res.data && Array.isArray(res.data)) {
+        setSubscriptions(res.data);
+      }
+      setSubsLoading(false);
+    }
+    fetchSubscriptions();
+  }, []);
+
+  const handleUnsubscribe = useCallback(async (providerId: string) => {
+    setUnsubscribingId(providerId);
+    const res = await api.del(`/marketplace/subscribe/${providerId}`);
+    setUnsubscribingId(null);
+    if (!res.error) {
+      setSubscriptions((prev) =>
+        prev.map((s) =>
+          s.provider_id === providerId ? { ...s, status: 'cancelled' } : s,
+        ),
+      );
+      // Refresh accounts since the follower was deactivated
+      fetchAccounts();
+    }
   }, [fetchAccounts]);
 
   const masters = accounts.filter((a) => a.role === 'master');
@@ -825,6 +973,43 @@ export function AccountsPage() {
                     masterAlias={masterMap.get(f.master_account_id ?? '') ?? 'Unknown'}
                     onConfigure={setConfigAccount}
                     onDelete={setDeleteTarget}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Marketplace Subscriptions */}
+          <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '180ms' }}>
+            <div className="flex items-center gap-3">
+              <h2 className="text-[11px] sm:text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-neon-amber" />
+                Marketplace Subscriptions
+              </h2>
+              <Badge variant="amber">{subscriptions.length}</Badge>
+            </div>
+
+            {subsLoading ? (
+              <div className="flex items-center gap-2 py-4 text-terminal-muted text-sm">
+                <span className="h-2 w-2 rounded-full bg-neon-amber animate-pulse shadow-[0_0_6px_var(--color-neon-amber)]" />
+                Loading subscriptions...
+              </div>
+            ) : subscriptions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-terminal-border bg-terminal-surface/30 p-8 text-center text-sm text-terminal-muted">
+                No marketplace subscriptions yet. Browse the{' '}
+                <a href="/app/marketplace" className="text-neon-cyan hover:underline underline-offset-4">
+                  Signal Marketplace
+                </a>{' '}
+                to copy top traders.
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {subscriptions.map((sub) => (
+                  <SubscriptionCard
+                    key={sub.id}
+                    sub={sub}
+                    onUnsubscribe={handleUnsubscribe}
+                    isUnsubscribing={unsubscribingId === sub.provider_id}
                   />
                 ))}
               </div>

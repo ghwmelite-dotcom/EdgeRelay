@@ -55,8 +55,9 @@ interface Generation {
   id: string;
   strategy_id: string;
   strategy_name: string;
-  created_at: string;
-  parameters: Record<string, unknown>;
+  strategy_slug: string;
+  generated_at: string;
+  parameters_json: string;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -601,7 +602,17 @@ function GeneratorModal({
 
 // ── My Generations ─────────────────────────────────────────────────
 
-function MyGenerations() {
+function MyGenerations({
+  strategies,
+  setSelectedStrategy,
+  setParamValues,
+  setGeneratorOpen,
+}: {
+  strategies: Strategy[];
+  setSelectedStrategy: (s: Strategy | null) => void;
+  setParamValues: (v: Record<string, unknown>) => void;
+  setGeneratorOpen: (open: boolean) => void;
+}) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -668,14 +679,34 @@ function MyGenerations() {
                       {gen.strategy_name}
                     </td>
                     <td className="px-5 py-3 text-terminal-muted font-mono-nums">
-                      {new Date(gen.created_at).toLocaleDateString('en-US', {
+                      {new Date(gen.generated_at).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
                       })}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Find the strategy and open generator with saved params
+                          const strategy = strategies.find((s) => s.id === gen.strategy_id);
+                          if (strategy) {
+                            try {
+                              const savedParams = JSON.parse(gen.parameters_json);
+                              setSelectedStrategy(strategy);
+                              setParamValues(savedParams);
+                              setGeneratorOpen(true);
+                            } catch {
+                              setSelectedStrategy(strategy);
+                              setGeneratorOpen(true);
+                            }
+                          }
+                        }}
+                      >
                         <RotateCcw size={12} />
                         Re-generate
                       </Button>
@@ -784,7 +815,12 @@ export function StrategyHubPage() {
       )}
 
       {/* ── My Generations ── */}
-      <MyGenerations />
+      <MyGenerations
+        strategies={strategies}
+        setSelectedStrategy={setSelectedStrategy}
+        setParamValues={() => {}}
+        setGeneratorOpen={setModalOpen}
+      />
 
       {/* ── Generator Modal ── */}
       <GeneratorModal

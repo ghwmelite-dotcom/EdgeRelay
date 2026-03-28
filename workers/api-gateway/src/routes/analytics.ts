@@ -29,6 +29,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 // ── GET /analytics/attribution ──────────────────────────────────
 
 analytics.get('/attribution', async (c) => {
+  try {
   const userId = c.get('userId');
   const accountIds = await getUserAccountIds(c.env.DB, userId);
 
@@ -119,11 +120,18 @@ analytics.get('/attribution', async (c) => {
     },
     error: null,
   });
+  } catch (err) {
+    return c.json<ApiResponse>({
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: err instanceof Error ? err.message : 'Unknown error in attribution' },
+    }, 500);
+  }
 });
 
 // ── GET /analytics/equity-health ────────────────────────────────
 
 analytics.get('/equity-health', async (c) => {
+  try {
   const userId = c.get('userId');
   const accountIds = await getUserAccountIds(c.env.DB, userId);
 
@@ -299,6 +307,12 @@ analytics.get('/equity-health', async (c) => {
     },
     error: null,
   });
+  } catch (err) {
+    return c.json<ApiResponse>({
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: err instanceof Error ? err.message : 'Unknown error in equity-health' },
+    }, 500);
+  }
 });
 
 // ── GET /analytics/edge-validation ──────────────────────────────

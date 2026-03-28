@@ -15,6 +15,8 @@ import {
   Signal,
   Target,
   Gauge,
+  Sparkles,
+  BarChart3,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useAccountsStore, type Account } from '@/stores/accounts';
@@ -123,6 +125,76 @@ function MiniSparkline() {
           }}
         />
       ))}
+    </div>
+  );
+}
+
+// ── Top Insight Card ───────────────────────────────────────────
+
+interface AiInsight {
+  id: string;
+  severity: 'critical' | 'warning' | 'info' | 'positive';
+  title: string;
+  detail: string;
+}
+
+const SEVERITY_ORDER: Record<string, number> = { critical: 0, warning: 1, info: 2, positive: 3 };
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: 'border-l-neon-red',
+  warning: 'border-l-neon-amber',
+  info: 'border-l-neon-cyan',
+  positive: 'border-l-neon-green',
+};
+const SEVERITY_BADGE: Record<string, { bg: string; text: string; label: string }> = {
+  critical: { bg: 'bg-neon-red/10', text: 'text-neon-red', label: 'Critical' },
+  warning: { bg: 'bg-neon-amber/10', text: 'text-neon-amber', label: 'Warning' },
+  info: { bg: 'bg-neon-cyan/10', text: 'text-neon-cyan', label: 'Info' },
+  positive: { bg: 'bg-neon-green/10', text: 'text-neon-green', label: 'Positive' },
+};
+
+function TopInsightCard() {
+  const [insight, setInsight] = useState<AiInsight | null>(null);
+
+  useEffect(() => {
+    api.get<AiInsight[]>('/analytics/ai-insights').then((res) => {
+      if (res.data && res.data.length > 0) {
+        const sorted = [...res.data].sort(
+          (a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9),
+        );
+        setInsight(sorted[0]);
+      }
+    }).catch(() => { /* silently skip */ });
+  }, []);
+
+  if (!insight) return null;
+
+  const badge = SEVERITY_BADGE[insight.severity] ?? SEVERITY_BADGE.info;
+  const borderColor = SEVERITY_COLORS[insight.severity] ?? SEVERITY_COLORS.info;
+  const firstSentence = insight.detail.split(/(?<=\.)\s/)[0] ?? insight.detail;
+
+  return (
+    <div
+      className={`animate-fade-in-up glass-premium rounded-2xl border-l-4 ${borderColor} p-4 sm:p-5 flex items-start gap-4`}
+    >
+      <div className="flex-shrink-0 mt-0.5">
+        <Sparkles size={18} className={badge.text} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] uppercase tracking-[0.15em] font-semibold ${badge.bg} ${badge.text}`}>
+            {badge.label}
+          </span>
+          <span className="font-bold text-slate-100 text-sm truncate">{insight.title}</span>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{firstSentence}</p>
+      </div>
+      <Link
+        to="/analytics"
+        className="flex-shrink-0 text-xs font-medium text-neon-cyan hover:underline underline-offset-4 glow-text-cyan whitespace-nowrap flex items-center gap-1"
+      >
+        View All
+        <ArrowUpRight size={12} />
+      </Link>
     </div>
   );
 }
@@ -343,6 +415,9 @@ export function DashboardPage() {
 
       {/* ── Telegram Banner ──────────────────────────────────────── */}
       <TelegramBanner />
+
+      {/* ── Top AI Insight ─────────────────────────────────────── */}
+      <TopInsightCard />
 
       {/* ── Stats Bar ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -668,6 +743,17 @@ function MasterCard({ account, delay }: { account: Account; delay: number }) {
           </p>
         </div>
       </div>
+
+      <div className="divider mt-4 mb-3" />
+
+      <Link
+        to="/analytics"
+        className="flex items-center gap-1.5 text-xs font-medium text-neon-cyan/70 hover:text-neon-cyan transition-colors group"
+      >
+        <BarChart3 size={12} />
+        <span>View Analytics</span>
+        <ArrowUpRight size={11} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+      </Link>
     </div>
   );
 }

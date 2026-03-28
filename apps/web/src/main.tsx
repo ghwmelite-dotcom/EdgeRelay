@@ -27,6 +27,7 @@ import { FirmDetailPage } from '@/pages/FirmDetailPage';
 import { RiskDashboardPage } from '@/pages/RiskDashboardPage';
 import { SimulatorPage } from '@/pages/SimulatorPage';
 import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
+import { MarketplacePage } from '@/pages/MarketplacePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -60,6 +61,7 @@ function App() {
         {/* Public firms pages — redirect to in-app version if logged in */}
         <Route path="/firms" element={<PublicOrAppRoute><FirmDirectoryPage /></PublicOrAppRoute>} />
         <Route path="/firms/:firmName" element={<PublicOrAppRoute><FirmDetailPage /></PublicOrAppRoute>} />
+        <Route path="/marketplace" element={<PublicOrAppRoute><MarketplacePage /></PublicOrAppRoute>} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -85,6 +87,7 @@ function App() {
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
           <Route path="/simulator" element={<SimulatorPage />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
+          <Route path="/app/marketplace" element={<MarketplacePage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

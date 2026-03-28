@@ -10,6 +10,7 @@ import {
   Zap,
   Shield,
   Target,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -461,23 +462,55 @@ function GeneratorModal({
             </p>
           </div>
 
-          <div className="rounded-xl border border-terminal-border/40 bg-terminal-surface/30 p-4 text-left space-y-3">
-            <div className="flex items-start gap-2">
-              <ChevronRight size={14} className="text-neon-cyan mt-0.5 shrink-0" />
-              <p className="text-sm text-slate-300">
-                Copy the <code className="font-mono-nums text-neon-green">.mq5</code> file to{' '}
-                <code className="font-mono-nums text-neon-amber">MQL5\Experts\</code> and compile in MetaEditor
-              </p>
+          <div className="rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-5 text-left space-y-4">
+            <p className="text-sm font-semibold text-neon-amber flex items-center gap-2">
+              <AlertTriangle size={14} />
+              Before you compile — complete these steps:
+            </p>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-cyan/10 text-[10px] font-bold text-neon-cyan">1</span>
+                <p className="text-sm text-terminal-text">
+                  <strong>Download the Include files</strong> &mdash; go to{' '}
+                  <a href="/downloads" className="text-neon-cyan hover:underline font-medium">
+                    Downloads &amp; Setup
+                  </a>{' '}
+                  and click <strong>"Download Full Package (.zip)"</strong>
+                </p>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-cyan/10 text-[10px] font-bold text-neon-cyan">2</span>
+                <div className="text-sm text-terminal-text">
+                  <p><strong>Extract the ZIP</strong> and copy the <strong>11 .mqh files</strong> from <code className="text-neon-cyan font-mono-nums">MQL5\Include\</code> to your MT5 Include folder:</p>
+                  <code className="block mt-1.5 text-xs font-mono-nums text-terminal-muted bg-terminal-bg/50 rounded-lg px-3 py-2 border border-terminal-border/30">
+                    [MT5 Data Folder]\MQL5\Include\
+                  </code>
+                  <p className="text-xs text-terminal-muted mt-1">
+                    Find your data folder: MT5 &rarr; File &rarr; Open Data Folder
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-cyan/10 text-[10px] font-bold text-neon-cyan">3</span>
+                <p className="text-sm text-terminal-text">
+                  <strong>Copy the generated .mq5 file</strong> to <code className="text-neon-amber font-mono-nums">MQL5\Experts\</code>
+                </p>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-cyan/10 text-[10px] font-bold text-neon-cyan">4</span>
+                <p className="text-sm text-terminal-text">
+                  <strong>Compile</strong> &mdash; right-click the EA in Navigator &rarr; Compile (or press F7 in MetaEditor). Should show <strong className="text-neon-green">0 errors</strong>.
+                </p>
+              </div>
             </div>
-            <div className="flex items-start gap-2">
-              <ChevronRight size={14} className="text-neon-cyan mt-0.5 shrink-0" />
-              <p className="text-sm text-slate-300">
-                Make sure Include files are installed &mdash;{' '}
-                <a href="/downloads" className="text-neon-cyan hover:underline">
-                  Go to Downloads
-                </a>
-              </p>
-            </div>
+
+            <p className="text-xs text-neon-amber/70 italic">
+              Without the Include files, compilation will fail with "file not found" errors.
+            </p>
           </div>
 
           <div className="flex items-center gap-3 justify-center">

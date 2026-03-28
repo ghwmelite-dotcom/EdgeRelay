@@ -31,7 +31,7 @@ accounts.get('/', async (c) => {
             a.is_active, a.last_heartbeat, a.last_signal_at,
             COALESCE((SELECT COUNT(*) FROM signals s WHERE s.master_account_id = a.id AND s.received_at >= datetime('now', 'start of day')), 0) as signals_today,
             a.created_at
-     FROM accounts a WHERE a.user_id = ? ORDER BY a.created_at DESC`,
+     FROM accounts a WHERE a.user_id = ? AND a.is_active = true ORDER BY a.created_at DESC`,
   )
     .bind(userId)
     .all();

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, AlertTriangle, Users, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Shield, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
@@ -23,7 +23,7 @@ const NAV_GROUPS = [
   {
     label: 'Portfolio',
     items: [
-      { label: 'Accounts', icon: Users, to: '/accounts' },
+      { label: 'Copier', icon: ArrowLeftRight, to: '/accounts' },
       { label: 'Journal', icon: BookOpen, to: '/journal' },
       { label: 'Analytics', icon: BarChart3, to: '/analytics' },
     ],

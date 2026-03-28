@@ -739,7 +739,7 @@ export function AccountsPage() {
         className="flex items-center justify-between animate-fade-in-up"
         style={{ animationDelay: '0ms' }}
       >
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">Accounts</h1>
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">Copier</h1>
         <div className="flex items-center gap-2">
           {hasMasters && (
             <Button variant="secondary" onClick={() => setAddFollowerOpen(true)}>

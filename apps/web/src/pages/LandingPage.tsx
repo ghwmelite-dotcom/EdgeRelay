@@ -213,6 +213,336 @@ const SIGNAL_LINES = [
 ];
 
 /* ────────────────────────────────────────────────────────────── */
+/*  Ecosystem Mini-Visualizations                                */
+/* ────────────────────────────────────────────────────────────── */
+
+function CopierViz() {
+  const signals = [
+    { time: '14:32', pair: 'EURUSD', side: 'BUY', lot: '0.50' },
+    { time: '14:31', pair: 'XAUUSD', side: 'SELL', lot: '1.00' },
+    { time: '14:28', pair: 'GBPJPY', side: 'BUY', lot: '0.30' },
+  ];
+  return (
+    <div className="space-y-3" style={{ minHeight: 120 }}>
+      {/* Mini signal rows */}
+      <div className="space-y-1">
+        {signals.map((s, i) => (
+          <div key={i} className="grid grid-cols-4 gap-2 font-mono-nums text-[10px]">
+            <span className="text-terminal-muted">{s.time}</span>
+            <span className="text-slate-300">{s.pair}</span>
+            <span className={s.side === 'BUY' ? 'text-neon-green' : 'text-neon-red'}>{s.side}</span>
+            <span className="text-slate-500">{s.lot}</span>
+          </div>
+        ))}
+      </div>
+      {/* VPS flow diagram */}
+      <div className="flex items-center justify-center gap-1 pt-1">
+        <div className="rounded border border-neon-cyan/20 bg-neon-cyan/10 px-2 py-1">
+          <span className="font-mono-nums text-[9px] text-neon-cyan">VPS 1</span>
+        </div>
+        <div className="relative h-[2px] w-12 bg-terminal-border/50 sm:w-20">
+          <div
+            className="absolute top-[-2px] h-[6px] w-[6px] rounded-full bg-neon-cyan shadow-[0_0_6px_#00e5ff]"
+            style={{ animation: 'travel-right 2s ease-in-out infinite' }}
+          />
+        </div>
+        <div className="rounded border border-neon-purple/20 bg-neon-purple/10 px-2 py-1">
+          <span className="font-mono-nums text-[9px] text-neon-purple">Edge</span>
+        </div>
+        <div className="relative h-[2px] w-12 bg-terminal-border/50 sm:w-20">
+          <div
+            className="absolute top-[-2px] h-[6px] w-[6px] rounded-full bg-neon-green shadow-[0_0_6px_#00ff9d]"
+            style={{ animation: 'travel-right 2s ease-in-out infinite', animationDelay: '0.5s' }}
+          />
+        </div>
+        <div className="rounded border border-neon-green/20 bg-neon-green/10 px-2 py-1">
+          <span className="font-mono-nums text-[9px] text-neon-green">VPS 2</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarketplaceViz() {
+  const leaders = [
+    { rank: 1, name: 'AlphaEdge', wr: '78.4%', pnl: '+$12,847' },
+    { rank: 2, name: 'GoldSniper', wr: '71.2%', pnl: '+$9,231' },
+    { rank: 3, name: 'FxMachine', wr: '68.9%', pnl: '+$7,105' },
+  ];
+  return (
+    <div style={{ minHeight: 120 }}>
+      {/* Header */}
+      <div className="mb-2 grid grid-cols-[20px_1fr_60px_80px] gap-2 font-mono-nums text-[9px] uppercase tracking-wider text-terminal-muted">
+        <span>#</span><span>Provider</span><span>Win %</span><span className="text-right">P&L</span>
+      </div>
+      {leaders.map((l, i) => (
+        <div
+          key={i}
+          className={`grid grid-cols-[20px_1fr_60px_80px] gap-2 rounded px-1 py-1.5 font-mono-nums text-[11px] ${
+            i === 0 ? 'bg-neon-amber/5' : ''
+          }`}
+          style={i === 0 ? { boxShadow: '0 0 12px rgba(255,184,0,0.08)' } : undefined}
+        >
+          <span className={i === 0 ? 'text-neon-amber font-bold' : 'text-terminal-muted'}>{l.rank}</span>
+          <span className="text-slate-300">{l.name}</span>
+          <span className="text-neon-cyan">{l.wr}</span>
+          <span className="text-right text-neon-green">{l.pnl}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StrategyHubViz() {
+  const sliders = [
+    { label: 'MA Period', value: 65 },
+    { label: 'Risk %', value: 40 },
+    { label: 'TP Pips', value: 75 },
+  ];
+  return (
+    <div className="space-y-3" style={{ minHeight: 120 }}>
+      {sliders.map((s, i) => (
+        <div key={i} className="space-y-1">
+          <div className="flex items-center justify-between font-mono-nums text-[9px]">
+            <span className="text-terminal-muted">{s.label}</span>
+          </div>
+          <div className="relative h-1.5 rounded-full bg-terminal-border/40">
+            <div
+              className="h-full rounded-full bg-neon-cyan/60"
+              style={{ width: `${s.value}%` }}
+            />
+            <div
+              className="absolute top-[-2px] h-[10px] w-[10px] rounded-full border border-neon-cyan/40 bg-terminal-bg"
+              style={{ left: `calc(${s.value}% - 5px)` }}
+            />
+          </div>
+        </div>
+      ))}
+      {/* Generate button + code snippet */}
+      <div className="flex items-center gap-3 pt-1">
+        <div
+          className="rounded border border-neon-green/30 bg-neon-green/10 px-2.5 py-1 font-mono-nums text-[9px] text-neon-green"
+          style={{ animation: 'pulse-glow 3s ease-in-out infinite' }}
+        >
+          Generate EA
+        </div>
+        <code
+          className="font-mono-nums text-[9px] text-neon-purple/70"
+          style={{ animation: 'fade-in-up 2s ease-out infinite alternate' }}
+        >
+          {'// MA_Period = 14'}
+        </code>
+      </div>
+    </div>
+  );
+}
+
+function AIInsightsViz() {
+  const insights = [
+    { color: 'border-neon-green', text: 'GBP pairs +23% edge in London session', delay: '0s' },
+    { color: 'border-neon-amber', text: 'Overtrading Fridays — 40% lower win rate', delay: '0.8s' },
+    { color: 'border-neon-red', text: 'XAUUSD stop too tight — avg -1.2R slippage', delay: '1.6s' },
+  ];
+  return (
+    <div className="space-y-2" style={{ minHeight: 120 }}>
+      {insights.map((ins, i) => (
+        <div
+          key={i}
+          className={`rounded border-l-2 ${ins.color} bg-terminal-card/40 px-3 py-2`}
+          style={{
+            animation: 'fade-in-up 0.6s ease-out both',
+            animationDelay: ins.delay,
+          }}
+        >
+          <span className="font-mono-nums text-[10px] text-slate-400">{ins.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PropGuardViz() {
+  const used = 45;
+  return (
+    <div className="space-y-3" style={{ minHeight: 120 }}>
+      {/* Shield + status */}
+      <div className="flex items-center gap-2">
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neon-green/20 bg-neon-green/10"
+          style={{ animation: 'pulse-glow 3s ease-in-out infinite' }}
+        >
+          <ShieldCheck className="h-4 w-4 text-neon-green" />
+        </div>
+        <div>
+          <div className="font-mono-nums text-[10px] text-neon-green">PROTECTED</div>
+          <div className="font-mono-nums text-[9px] text-terminal-muted">All rules passing</div>
+        </div>
+      </div>
+      {/* Drawdown gauge */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between font-mono-nums text-[10px]">
+          <span className="text-terminal-muted">Daily Drawdown</span>
+          <span className="text-slate-300">4.5% / 10%</span>
+        </div>
+        <div className="relative h-3 overflow-hidden rounded-full bg-terminal-border/30">
+          {/* Zones */}
+          <div className="absolute inset-y-0 left-0 w-[60%] rounded-full bg-neon-green/10" />
+          <div className="absolute inset-y-0 left-[60%] w-[25%] bg-neon-amber/10" />
+          <div className="absolute inset-y-0 left-[85%] w-[15%] bg-neon-red/10" />
+          {/* Fill */}
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-neon-green/50"
+            style={{ width: `${used}%`, transition: 'width 1s ease-out' }}
+          />
+        </div>
+      </div>
+      {/* Mini rules */}
+      <div className="flex gap-3 font-mono-nums text-[9px]">
+        <span className="text-neon-green">&#10003; Max lots</span>
+        <span className="text-neon-green">&#10003; Max trades</span>
+        <span className="text-neon-green">&#10003; Equity floor</span>
+      </div>
+    </div>
+  );
+}
+
+function JournalViz() {
+  const trades = [
+    { symbol: 'EURUSD', dir: 'BUY', pnl: '+$142', color: 'text-neon-green' },
+    { symbol: 'XAUUSD', dir: 'SELL', pnl: '+$87', color: 'text-neon-green' },
+    { symbol: 'GBPJPY', dir: 'SELL', pnl: '-$34', color: 'text-neon-red' },
+  ];
+  return (
+    <div style={{ minHeight: 120 }}>
+      <div className="mb-2 grid grid-cols-[1fr_44px_56px_20px] gap-2 font-mono-nums text-[9px] uppercase tracking-wider text-terminal-muted">
+        <span>Symbol</span><span>Side</span><span>P&L</span><span></span>
+      </div>
+      {trades.map((t, i) => (
+        <div key={i} className="grid grid-cols-[1fr_44px_56px_20px] gap-2 py-1.5 font-mono-nums text-[11px]">
+          <span className="text-slate-300">{t.symbol}</span>
+          <span className={t.dir === 'BUY' ? 'text-neon-green' : 'text-neon-red'}>{t.dir}</span>
+          <span className={t.color}>{t.pnl}</span>
+          <span
+            className="text-neon-cyan"
+            style={{
+              animation: 'fade-in-up 0.4s ease-out both',
+              animationDelay: `${i * 0.4}s`,
+            }}
+          >
+            &#10003;
+          </span>
+        </div>
+      ))}
+      <div className="mt-2 font-mono-nums text-[9px] text-terminal-muted" style={{ animation: 'fade-in-up 0.5s ease-out 1.4s both' }}>
+        <span className="text-neon-cyan">&#8635;</span> Synced 3 trades from MT5
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsViz() {
+  // SVG sparkline points going up-right
+  const points = '0,40 15,38 30,35 45,32 55,36 65,28 75,22 85,25 95,18 110,14 125,10 140,8 155,5 170,3';
+  return (
+    <div className="space-y-3" style={{ minHeight: 120 }}>
+      {/* Equity curve sparkline */}
+      <svg viewBox="0 0 180 50" className="h-14 w-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="eq-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00e5ff" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#00e5ff" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon
+          points={`0,50 ${points} 180,50`}
+          fill="url(#eq-grad)"
+        />
+        <polyline
+          points={points}
+          fill="none"
+          stroke="#00e5ff"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {/* Stat pills */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: 'R²', val: '0.87', c: 'text-neon-cyan' },
+          { label: 'Sharpe', val: '1.4', c: 'text-neon-green' },
+          { label: 'PF', val: '1.85', c: 'text-neon-amber' },
+        ].map((s) => (
+          <div key={s.label} className="rounded border border-terminal-border/40 bg-terminal-card/40 px-2 py-1 font-mono-nums text-[10px]">
+            <span className="text-terminal-muted">{s.label}</span>{' '}
+            <span className={s.c}>{s.val}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlatformBridgeViz() {
+  return (
+    <div className="space-y-3" style={{ minHeight: 120 }}>
+      {/* Flow: MT5 → Bridge → cTrader */}
+      <div className="flex items-center justify-center gap-1">
+        <div className="rounded border border-neon-cyan/20 bg-neon-cyan/10 px-2.5 py-1.5">
+          <span className="font-mono-nums text-[10px] font-semibold text-neon-cyan">MT5</span>
+        </div>
+        <div className="relative h-[2px] w-10 bg-terminal-border/50 sm:w-16">
+          <div
+            className="absolute top-[-2px] h-[6px] w-[6px] rounded-full bg-neon-cyan shadow-[0_0_6px_#00e5ff]"
+            style={{ animation: 'travel-right 2.5s ease-in-out infinite' }}
+          />
+        </div>
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neon-purple/30 bg-neon-purple/10"
+          style={{ animation: 'pulse-glow 3s ease-in-out infinite' }}
+        >
+          <ArrowLeftRight className="h-3.5 w-3.5 text-neon-purple" />
+        </div>
+        <div className="relative h-[2px] w-10 bg-terminal-border/50 sm:w-16">
+          <div
+            className="absolute top-[-2px] h-[6px] w-[6px] rounded-full bg-neon-green shadow-[0_0_6px_#00ff9d]"
+            style={{ animation: 'travel-right 2.5s ease-in-out infinite', animationDelay: '0.6s' }}
+          />
+        </div>
+        <div className="rounded border border-neon-green/20 bg-neon-green/10 px-2.5 py-1.5">
+          <span className="font-mono-nums text-[10px] font-semibold text-neon-green">cTrader</span>
+        </div>
+      </div>
+      {/* Symbol mapping */}
+      <div className="space-y-1 rounded border border-terminal-border/20 bg-terminal-card/30 p-2">
+        <div className="font-mono-nums text-[9px] uppercase tracking-wider text-terminal-muted">Symbol Mapping</div>
+        {[
+          { from: 'EURUSD', to: 'EURUSD.m' },
+          { from: 'XAUUSD', to: 'Gold' },
+        ].map((m) => (
+          <div key={m.from} className="flex items-center gap-2 font-mono-nums text-[10px]">
+            <span className="text-neon-cyan">{m.from}</span>
+            <span className="text-terminal-muted">→</span>
+            <span className="text-neon-green">{m.to}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const PRODUCT_VIZ: Record<string, () => JSX.Element> = {
+  'Edge Signal Copier': CopierViz,
+  'Signal Marketplace': MarketplaceViz,
+  'Strategy Hub': StrategyHubViz,
+  'AI Trade Insights': AIInsightsViz,
+  'PropGuard': PropGuardViz,
+  'AI Trade Journal': JournalViz,
+  'Advanced Analytics': AnalyticsViz,
+  'Platform Bridge': PlatformBridgeViz,
+};
+
+/* ────────────────────────────────────────────────────────────── */
 /*  Component                                                    */
 /* ────────────────────────────────────────────────────────────── */
 
@@ -658,44 +988,57 @@ export function LandingPage() {
           </p>
 
           <div className="mt-14 grid gap-6 sm:grid-cols-2">
-            {ECOSYSTEM.map((item, i) => (
-              <div
-                key={item.title}
-                className={`glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6 ${
-                  item.badge === 'LIVE' ? 'glow-cyan' : ''
-                } ${i === 0 ? 'border-gradient sm:col-span-2' : ''}`}
-                style={{ animationDelay: `${i * 80}ms` }}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00e5ff30]">
-                    <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle,#00e5ff15_0%,transparent_70%)]" />
-                    <item.icon className="relative z-10 h-6 w-6 text-neon-cyan" />
-                  </div>
-                  {item.badge === 'LIVE' ? (
-                    <span className="chip border border-neon-green/30 bg-neon-green/20 text-neon-green shadow-[0_0_8px_#00ff9d20]">
-                      <span className="live-dot mr-0.5" style={{ width: 5, height: 5 }} />
-                      LIVE
-                    </span>
-                  ) : (
-                    <span
-                      className="chip border border-neon-amber/20 bg-neon-amber/10 text-neon-amber"
-                      style={{
-                        background:
-                          'linear-gradient(90deg, #ffb80010, #ffb80020, #ffb80010)',
-                        backgroundSize: '200% 100%',
-                        animation: 'shimmer 4s ease-in-out infinite',
-                      }}
-                    >
-                      COMING SOON
-                    </span>
+            {ECOSYSTEM.map((item, i) => {
+              const Viz = PRODUCT_VIZ[item.title];
+              return (
+                <div
+                  key={item.title}
+                  className={`glass-premium card-hover-premium animate-fade-in-up group overflow-hidden rounded-2xl ${
+                    item.badge === 'LIVE' ? 'glow-cyan' : ''
+                  } ${i === 0 ? 'border-gradient sm:col-span-2' : ''}`}
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  {/* Mini-visualization */}
+                  {Viz && (
+                    <div className="border-b border-terminal-border/30 bg-terminal-bg/50 p-4">
+                      <Viz />
+                    </div>
                   )}
+
+                  {/* Card content */}
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00e5ff30]">
+                        <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle,#00e5ff15_0%,transparent_70%)]" />
+                        <item.icon className="relative z-10 h-6 w-6 text-neon-cyan" />
+                      </div>
+                      {item.badge === 'LIVE' ? (
+                        <span className="chip border border-neon-green/30 bg-neon-green/20 text-neon-green shadow-[0_0_8px_#00ff9d20]">
+                          <span className="live-dot mr-0.5" style={{ width: 5, height: 5 }} />
+                          LIVE
+                        </span>
+                      ) : (
+                        <span
+                          className="chip border border-neon-amber/20 bg-neon-amber/10 text-neon-amber"
+                          style={{
+                            background:
+                              'linear-gradient(90deg, #ffb80010, #ffb80020, #ffb80010)',
+                            backgroundSize: '200% 100%',
+                            animation: 'shimmer 4s ease-in-out infinite',
+                          }}
+                        >
+                          COMING SOON
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="mt-4 font-display text-lg font-semibold text-white">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.desc}</p>
+                  </div>
                 </div>
-                <h3 className="mt-4 font-display text-lg font-semibold text-white">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

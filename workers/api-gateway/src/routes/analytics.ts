@@ -300,3 +300,139 @@ analytics.get('/equity-health', async (c) => {
     error: null,
   });
 });
+
+// ── GET /analytics/edge-validation ──────────────────────────────
+
+analytics.get('/edge-validation', async (c) => {
+  const userId = c.get('userId');
+  const accountIds = await getUserAccountIds(c.env.DB, userId);
+
+  if (accountIds.length === 0) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NO_DATA', message: 'No trading data found' } }, 404);
+  }
+
+  const { placeholders, values } = inClause(accountIds);
+
+  const { results: trades } = await c.env.DB.prepare(
+    `SELECT profit FROM journal_trades
+     WHERE account_id IN (${placeholders}) AND deal_entry = 'out'
+     ORDER BY close_time ASC`,
+  ).bind(...values).all<{ profit: number }>();
+
+  if (!trades || trades.length < 10) {
+    return c.json<ApiResponse>({
+      data: {
+        sample_size: trades?.length ?? 0,
+        sample_adequate: false,
+        min_recommended: 200,
+        verdict: 'OVERFITTED',
+        explanation: `Only ${trades?.length ?? 0} trades. Minimum 50 trades needed for any statistical analysis, 200+ recommended.`,
+      },
+      error: null,
+    });
+  }
+
+  const profits = trades.map((t) => t.profit);
+  const n = profits.length;
+
+  // Mean and standard deviation
+  const mean = profits.reduce((a, b) => a + b, 0) / n;
+  const variance = profits.reduce((s, p) => s + (p - mean) ** 2, 0) / (n - 1);
+  const std = Math.sqrt(variance);
+
+  // t-test (H0: mean return = 0)
+  const tStat = std > 0 ? (mean / (std / Math.sqrt(n))) : 0;
+
+  // Approximate p-value from t-distribution using normal approximation (good for n > 30)
+  const absT = Math.abs(tStat);
+  // Standard normal CDF approximation
+  const z = absT;
+  const pValue = 2 * (1 - (0.5 * (1 + Math.sign(z) * Math.sqrt(1 - Math.exp(-2 * z * z / Math.PI)))));
+
+  // Profit factor
+  const grossProfit = profits.filter((p) => p > 0).reduce((a, b) => a + b, 0);
+  const grossLoss = Math.abs(profits.filter((p) => p < 0).reduce((a, b) => a + b, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? 999 : 0;
+
+  // Bootstrap profit factor confidence interval (1000 resamples)
+  const bootstrapPFs: number[] = [];
+  for (let i = 0; i < 1000; i++) {
+    let bGross = 0, bLoss = 0;
+    for (let j = 0; j < n; j++) {
+      const sample = profits[Math.floor(Math.random() * n)];
+      if (sample > 0) bGross += sample;
+      else bLoss += Math.abs(sample);
+    }
+    bootstrapPFs.push(bLoss > 0 ? bGross / bLoss : bGross > 0 ? 999 : 0);
+  }
+  bootstrapPFs.sort((a, b) => a - b);
+  const pfCiLower = bootstrapPFs[Math.floor(bootstrapPFs.length * 0.025)];
+  const pfCiUpper = bootstrapPFs[Math.floor(bootstrapPFs.length * 0.975)];
+
+  // Monte Carlo max drawdown simulation (1000 shuffles)
+  const mcDrawdowns: number[] = [];
+  for (let i = 0; i < 1000; i++) {
+    // Shuffle profits
+    const shuffled = [...profits];
+    for (let j = shuffled.length - 1; j > 0; j--) {
+      const k = Math.floor(Math.random() * (j + 1));
+      [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+    }
+    // Compute max drawdown of shuffled sequence
+    let cumulative = 0;
+    let peak = 0;
+    let maxDd = 0;
+    for (const p of shuffled) {
+      cumulative += p;
+      if (cumulative > peak) peak = cumulative;
+      const dd = peak - cumulative;
+      if (dd > maxDd) maxDd = dd;
+    }
+    mcDrawdowns.push(maxDd);
+  }
+  mcDrawdowns.sort((a, b) => a - b);
+  const mcMedianDd = mcDrawdowns[Math.floor(mcDrawdowns.length * 0.5)];
+  const mcWorst95 = mcDrawdowns[Math.floor(mcDrawdowns.length * 0.95)];
+
+  // Verdict
+  const sampleAdequate = n >= 200;
+  let verdict: string;
+  let explanation: string;
+
+  if (n < 50) {
+    verdict = 'OVERFITTED';
+    explanation = `Only ${n} trades — too few for reliable statistical analysis. Need at least 50, recommended 200+.`;
+  } else if (pValue < 0.05 && pfCiLower > 1.0 && n >= 200) {
+    verdict = 'VALIDATED';
+    explanation = `Edge is statistically significant (p=${pValue.toFixed(3)}). Profit factor stays above 1.0 at 95% confidence [${pfCiLower.toFixed(2)}-${pfCiUpper.toFixed(2)}]. Sample size (${n}) is adequate.`;
+  } else if (pValue < 0.05 && pfCiLower > 1.0 && n >= 100) {
+    verdict = 'LIKELY_VALID';
+    explanation = `Edge appears real (p=${pValue.toFixed(3)}) but sample size (${n}) is below the recommended 200. Continue trading to strengthen confidence.`;
+  } else if (pValue < 0.10 || pfCiLower > 0.9) {
+    verdict = 'INCONCLUSIVE';
+    explanation = `Results are mixed — p-value is ${pValue.toFixed(3)} and profit factor CI lower bound is ${pfCiLower.toFixed(2)}. More trades needed for a definitive answer.`;
+  } else {
+    verdict = 'LIKELY_NOISE';
+    explanation = `No statistical evidence of an edge. P-value ${pValue.toFixed(3)} suggests returns could be random. Profit factor CI includes values below 1.0.`;
+  }
+
+  return c.json<ApiResponse>({
+    data: {
+      sample_size: n,
+      sample_adequate: sampleAdequate,
+      min_recommended: 200,
+      mean_return: Math.round(mean * 100) / 100,
+      std_return: Math.round(std * 100) / 100,
+      t_statistic: Math.round(tStat * 100) / 100,
+      p_value: Math.round(pValue * 1000) / 1000,
+      profit_factor: Math.round(profitFactor * 100) / 100,
+      profit_factor_ci_lower: Math.round(pfCiLower * 100) / 100,
+      profit_factor_ci_upper: Math.round(pfCiUpper * 100) / 100,
+      monte_carlo_median_dd: Math.round(mcMedianDd * 100) / 100,
+      monte_carlo_worst_dd_95: Math.round(mcWorst95 * 100) / 100,
+      verdict,
+      explanation,
+    },
+    error: null,
+  });
+});

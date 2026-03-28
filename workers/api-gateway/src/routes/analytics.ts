@@ -54,7 +54,7 @@ analytics.get('/attribution', async (c) => {
 
   // By day of week
   const { results: byDay } = await c.env.DB.prepare(
-    `SELECT CAST(strftime('%w', close_time) AS INTEGER) as day_num,
+    `SELECT CAST(strftime('%w', datetime(time, 'unixepoch')) AS INTEGER) as day_num,
             COUNT(*) as trades,
             COALESCE(SUM(profit), 0) as pnl,
             ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
@@ -93,8 +93,8 @@ analytics.get('/attribution', async (c) => {
 
   // Hour heatmap
   const { results: heatmap } = await c.env.DB.prepare(
-    `SELECT CAST(strftime('%w', close_time) AS INTEGER) as day_num,
-            CAST(strftime('%H', close_time) AS INTEGER) as hour,
+    `SELECT CAST(strftime('%w', datetime(time, 'unixepoch')) AS INTEGER) as day_num,
+            CAST(strftime('%H', datetime(time, 'unixepoch')) AS INTEGER) as hour,
             COALESCE(SUM(profit), 0) as pnl,
             COUNT(*) as trades
      FROM journal_trades WHERE ${baseWhere}
@@ -136,9 +136,9 @@ analytics.get('/equity-health', async (c) => {
 
   // Get all trades ordered by time for equity curve computation
   const { results: trades } = await c.env.DB.prepare(
-    `SELECT profit, balance_at_trade, close_time, DATE(close_time) as trade_date
+    `SELECT profit, balance_at_trade, datetime(time, 'unixepoch') as close_time, DATE(datetime(time, 'unixepoch')) as trade_date
      FROM journal_trades WHERE ${baseWhere}
-     ORDER BY close_time ASC`,
+     ORDER BY time ASC`,
   ).bind(...values).all<{
     profit: number;
     balance_at_trade: number;
@@ -316,7 +316,7 @@ analytics.get('/edge-validation', async (c) => {
   const { results: trades } = await c.env.DB.prepare(
     `SELECT profit FROM journal_trades
      WHERE account_id IN (${placeholders}) AND deal_entry = 'out'
-     ORDER BY close_time ASC`,
+     ORDER BY time ASC`,
   ).bind(...values).all<{ profit: number }>();
 
   if (!trades || trades.length < 10) {
@@ -452,7 +452,7 @@ analytics.get('/ai-insights', async (c) => {
 
   // Compute stats hash for cache check
   const hashRow = await c.env.DB.prepare(
-    `SELECT COUNT(*) as cnt, COALESCE(SUM(profit), 0) as total, MAX(close_time) as latest
+    `SELECT COUNT(*) as cnt, COALESCE(SUM(profit), 0) as total, MAX(datetime(time, 'unixepoch')) as latest
      FROM journal_trades WHERE ${baseWhere}`,
   ).bind(...values).first<{ cnt: number; total: number; latest: string }>();
 
@@ -487,7 +487,7 @@ analytics.get('/ai-insights', async (c) => {
   ).bind(...values).all();
 
   const { results: dayStats } = await c.env.DB.prepare(
-    `SELECT CAST(strftime('%w', close_time) AS INTEGER) as day_num, COUNT(*) as trades,
+    `SELECT CAST(strftime('%w', datetime(time, 'unixepoch')) AS INTEGER) as day_num, COUNT(*) as trades,
             COALESCE(SUM(profit), 0) as pnl,
             ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
      FROM journal_trades WHERE ${baseWhere} GROUP BY day_num`,

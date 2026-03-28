@@ -43,6 +43,9 @@ jobs:
       - name: Typecheck web
         run: pnpm --filter @edgerelay/web typecheck
 
+      - name: Typecheck provider-stats
+        run: pnpm --filter @edgerelay/provider-stats typecheck
+
   deploy-account-relay:
     name: Deploy Account Relay DO
     needs: typecheck
@@ -107,6 +110,29 @@ jobs:
 
       - name: Deploy API Gateway
         working-directory: workers/api-gateway
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-provider-stats:
+    name: Deploy Provider Stats
+    needs: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy Provider Stats
+        working-directory: workers/provider-stats
         run: pnpm exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -26,6 +26,7 @@ import { FirmDirectoryPage } from '@/pages/FirmDirectoryPage';
 import { FirmDetailPage } from '@/pages/FirmDetailPage';
 import { RiskDashboardPage } from '@/pages/RiskDashboardPage';
 import { SimulatorPage } from '@/pages/SimulatorPage';
+import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -83,6 +84,7 @@ function App() {
           <Route path="/billing/callback" element={<BillingCallbackPage />} />
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
           <Route path="/simulator" element={<SimulatorPage />} />
+          <Route path="/provider/setup" element={<ProviderSetupPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

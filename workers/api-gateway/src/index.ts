@@ -18,6 +18,7 @@ import { tos } from './routes/tos.js';
 import { notifications } from './routes/notifications.js';
 import { marketNews } from './routes/marketNews.js';
 import { marketplace, marketplacePublic } from './routes/marketplace.js';
+import { strategyHub, strategyHubPublic } from './routes/strategyHub.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -85,6 +86,9 @@ app.route('/v1/propguard', propguardEa);
 // Marketplace public — leaderboard + provider detail, no auth required
 app.route('/v1/marketplace', marketplacePublic);
 
+// Strategy Hub public — strategy list + detail, no auth required
+app.route('/v1/strategy-hub', strategyHubPublic);
+
 // ── Protected Routes ────────────────────────────────────────────
 const protectedApp = new Hono<{ Bindings: Env }>();
 protectedApp.use('*', authMiddleware);
@@ -99,6 +103,7 @@ protectedApp.route('/command', command);
 protectedApp.route('/notifications', notifications);
 protectedApp.route('/market-news', marketNews);
 protectedApp.route('/marketplace', marketplace);
+protectedApp.route('/strategy-hub', strategyHub);
 
 app.route('/v1', protectedApp);
 

@@ -19,6 +19,7 @@ import { notifications } from './routes/notifications.js';
 import { marketNews } from './routes/marketNews.js';
 import { marketplace, marketplacePublic } from './routes/marketplace.js';
 import { strategyHub, strategyHubPublic } from './routes/strategyHub.js';
+import { analytics } from './routes/analytics.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -104,6 +105,7 @@ protectedApp.route('/notifications', notifications);
 protectedApp.route('/market-news', marketNews);
 protectedApp.route('/marketplace', marketplace);
 protectedApp.route('/strategy-hub', strategyHub);
+protectedApp.route('/analytics', analytics);
 
 app.route('/v1', protectedApp);
 

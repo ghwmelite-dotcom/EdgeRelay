@@ -4,6 +4,15 @@ import type { Env } from '../types.js';
 
 export const marketplace = new Hono<{ Bindings: Env }>();
 
+// ── Helpers ─────────────────────────────────────────────────────
+
+function generateRandomHex(bytes: number): string {
+  const buf = crypto.getRandomValues(new Uint8Array(bytes));
+  return Array.from(buf)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 const MIN_TRADES = 20;
 const MIN_DAYS = 14;
 
@@ -231,6 +240,214 @@ marketplace.get('/provider/me', async (c) => {
     data: { profile, stats, qualification },
     error: null,
   });
+});
+
+// ── POST /marketplace/subscribe/:providerId — Subscribe to a provider ──
+
+marketplace.post('/subscribe/:providerId', async (c) => {
+  const userId = c.get('userId');
+  const providerId = c.req.param('providerId');
+
+  // Validate provider exists and is listed
+  const provider = await c.env.DB.prepare(
+    'SELECT id, master_account_id, display_name FROM provider_profiles WHERE id = ? AND is_listed = true',
+  )
+    .bind(providerId)
+    .first<{ id: string; master_account_id: string; display_name: string }>();
+
+  if (!provider) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Provider not found or not listed' } },
+      404,
+    );
+  }
+
+  // Check not subscribing to self
+  const ownProfile = await c.env.DB.prepare(
+    'SELECT id FROM provider_profiles WHERE id = ? AND user_id = ?',
+  )
+    .bind(providerId, userId)
+    .first();
+
+  if (ownProfile) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'VALIDATION_ERROR', message: 'You cannot copy your own signals' } },
+      400,
+    );
+  }
+
+  // Check no existing active subscription
+  const existingSub = await c.env.DB.prepare(
+    "SELECT id FROM marketplace_subscriptions WHERE subscriber_user_id = ? AND provider_id = ? AND status = 'active'",
+  )
+    .bind(userId, providerId)
+    .first();
+
+  if (existingSub) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'ALREADY_EXISTS', message: 'Already subscribed to this provider' } },
+      409,
+    );
+  }
+
+  // Check plan limits for follower accounts
+  const user = await c.env.DB.prepare('SELECT plan FROM users WHERE id = ?')
+    .bind(userId)
+    .first<{ plan: string }>();
+
+  const planLimits: Record<string, number> = {
+    free: 1, starter: 3, pro: 10, unlimited: 999, provider: 999,
+  };
+  const maxFollowers = planLimits[user?.plan ?? 'free'] ?? 1;
+
+  const followerCount = await c.env.DB.prepare(
+    "SELECT COUNT(*) as cnt FROM accounts WHERE user_id = ? AND role = 'follower' AND is_active = true",
+  )
+    .bind(userId)
+    .first<{ cnt: number }>();
+
+  if ((followerCount?.cnt ?? 0) >= maxFollowers) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'PLAN_LIMIT', message: `Your plan allows max ${maxFollowers} follower account(s)` } },
+      403,
+    );
+  }
+
+  // Get broker/MT5 details from request body or existing account
+  const body = await c.req.json<{
+    broker_name?: string;
+    mt5_login?: string;
+  }>().catch(() => ({} as { broker_name?: string; mt5_login?: string }));
+
+  let brokerName = body.broker_name?.trim() || null;
+  let mt5Login = body.mt5_login?.trim() || null;
+
+  if (!mt5Login) {
+    // Try to find existing account with MT5 details
+    const existing = await c.env.DB.prepare(
+      'SELECT broker_name, mt5_login FROM accounts WHERE user_id = ? AND mt5_login IS NOT NULL ORDER BY created_at DESC LIMIT 1',
+    )
+      .bind(userId)
+      .first<{ broker_name: string | null; mt5_login: string }>();
+
+    if (existing) {
+      brokerName = brokerName || existing.broker_name;
+      mt5Login = existing.mt5_login;
+    } else {
+      return c.json<ApiResponse>({
+        data: { needs_setup: true },
+        error: null,
+      });
+    }
+  }
+
+  // Generate API credentials
+  const apiKey = `er_${generateRandomHex(24)}`;
+  const apiSecret = generateRandomHex(32);
+
+  // Create follower account linked to provider's master
+  const follower = await c.env.DB.prepare(
+    `INSERT INTO accounts (user_id, role, alias, broker_name, mt5_login, api_key, api_secret, master_account_id)
+     VALUES (?, 'follower', ?, ?, ?, ?, ?, ?)
+     RETURNING id, role, alias, broker_name, mt5_login, api_key, master_account_id, is_active, created_at`,
+  )
+    .bind(
+      userId,
+      `Copy: ${provider.display_name}`,
+      brokerName,
+      mt5Login,
+      apiKey,
+      apiSecret,
+      provider.master_account_id,
+    )
+    .first();
+
+  if (!follower) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'INTERNAL_ERROR', message: 'Failed to create follower account' } },
+      500,
+    );
+  }
+
+  const followerId = (follower as Record<string, unknown>).id as string;
+
+  // Create follower_config defaults
+  await c.env.DB.prepare('INSERT INTO follower_config (account_id) VALUES (?)').bind(followerId).run();
+
+  // Create marketplace subscription
+  await c.env.DB.prepare(
+    "INSERT INTO marketplace_subscriptions (subscriber_user_id, provider_id, follower_account_id, status) VALUES (?, ?, ?, 'active')",
+  )
+    .bind(userId, providerId, followerId)
+    .run();
+
+  return c.json<ApiResponse>(
+    {
+      data: {
+        subscription: { provider_id: providerId, provider_name: provider.display_name, status: 'active' },
+        follower: { ...follower, api_secret: apiSecret },
+      },
+      error: null,
+    },
+    201,
+  );
+});
+
+// ── DELETE /marketplace/subscribe/:providerId — Unsubscribe ─────
+
+marketplace.delete('/subscribe/:providerId', async (c) => {
+  const userId = c.get('userId');
+  const providerId = c.req.param('providerId');
+
+  const sub = await c.env.DB.prepare(
+    "SELECT id, follower_account_id FROM marketplace_subscriptions WHERE subscriber_user_id = ? AND provider_id = ? AND status = 'active'",
+  )
+    .bind(userId, providerId)
+    .first<{ id: string; follower_account_id: string }>();
+
+  if (!sub) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'No active subscription found' } },
+      404,
+    );
+  }
+
+  // Cancel subscription
+  await c.env.DB.prepare(
+    "UPDATE marketplace_subscriptions SET status = 'cancelled', cancelled_at = datetime('now') WHERE id = ?",
+  )
+    .bind(sub.id)
+    .run();
+
+  // Deactivate follower account
+  await c.env.DB.prepare(
+    'UPDATE accounts SET is_active = false WHERE id = ?',
+  )
+    .bind(sub.follower_account_id)
+    .run();
+
+  return c.json<ApiResponse>({ data: { unsubscribed: true }, error: null });
+});
+
+// ── GET /marketplace/subscriptions — List user's subscriptions ──
+
+marketplace.get('/subscriptions', async (c) => {
+  const userId = c.get('userId');
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT ms.id, ms.provider_id, ms.status, ms.subscribed_at, ms.cancelled_at,
+            pp.display_name as provider_name, pp.strategy_style, pp.instruments,
+            ps.win_rate, ps.total_pnl, ps.subscriber_count
+     FROM marketplace_subscriptions ms
+     JOIN provider_profiles pp ON pp.id = ms.provider_id
+     LEFT JOIN provider_stats ps ON ps.provider_id = pp.id
+     WHERE ms.subscriber_user_id = ?
+     ORDER BY ms.subscribed_at DESC`,
+  )
+    .bind(userId)
+    .all();
+
+  return c.json<ApiResponse>({ data: results ?? [], error: null });
 });
 
 // ══════════════════════════════════════════════════════════════════

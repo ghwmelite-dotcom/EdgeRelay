@@ -6,7 +6,7 @@
 #property version   "1.00"
 #property strict
 
-// -- Includes ────────────────────────────────────────────────────
+// ── Includes ────────────────────────────────────────────────────
 #include <EdgeRelay_Common.mqh>
 #include <EdgeRelay_Crypto.mqh>
 #include <EdgeRelay_Http.mqh>
@@ -15,21 +15,35 @@
 #include <EdgeRelay_JournalQueue.mqh>
 #include <Trade\Trade.mqh>
 
-// -- Strategy Parameters ─────────────────────────────────────────
+// ── Strategy Parameters ─────────────────────────────────────────
 input int              BBPeriod         = {{BB_PERIOD}};         // Bollinger Period
 input double           BBDeviation      = {{BB_DEVIATION}};      // Bollinger Deviation
 input double           SqueezeThreshold = {{SQUEEZE_THRESHOLD}}; // Bandwidth Squeeze %
 input int              RSIConfirmPeriod = {{RSI_CONFIRM}};       // RSI Confirmation Period
+input double           KeltnerATRMult   = {{KELTNER_ATR_MULT}};  // Keltner Channel ATR Multiplier
 input ENUM_TIMEFRAMES  Timeframe        = {{TIMEFRAME}};         // Timeframe
 
-// -- Trade Management ────────────────────────────────────────────
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};                 // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};           // Min ADX for Entry (rising ADX confirms expansion)
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};              // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};            // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};                // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};                // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};               // Risk % of Balance (0=use fixed lot)
+
+// ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 
-// -- Risk Management ─────────────────────────────────────────────
+// ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
@@ -38,7 +52,7 @@ input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
 
-// -- TradeMetrics Integration ────────────────────────────────────
+// ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
 input string API_Key          = "{{API_KEY}}";
 input string API_Secret       = "";                           // API Secret (enter manually)
@@ -46,28 +60,84 @@ input string API_Endpoint     = "https://edgerelay-signal-ingestion.ghwmelite.wo
 input string JournalEndpoint  = "https://edgerelay-journal-sync.ghwmelite.workers.dev";
 input bool   EnableJournal    = true;                         // Enable Journal Sync
 
-// -- Shared Integration Block ────────────────────────────────────
+// ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
-// -- Strategy Variables ──────────────────────────────────────────
-int      g_bbHandle  = INVALID_HANDLE;
-int      g_rsiHandle = INVALID_HANDLE;
+// ── Strategy Variables ──────────────────────────────────────────
+int      g_bbHandle     = INVALID_HANDLE;
+int      g_rsiHandle    = INVALID_HANDLE;
+int      g_emaHandle    = INVALID_HANDLE;   // EMA for Keltner Channel center
+int      g_keltATRHandle = INVALID_HANDLE;  // ATR for Keltner Channel width
+int      g_adxHandle    = INVALID_HANDLE;
+int      g_atrHandle    = INVALID_HANDLE;   // ATR for dynamic stops
 bool     g_squeezeActive = false;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   //--- Create indicator handles
+   //--- Create Bollinger Band and RSI handles
    g_bbHandle  = iBands(_Symbol, Timeframe, BBPeriod, 0, BBDeviation, PRICE_CLOSE);
    g_rsiHandle = iRSI(_Symbol, Timeframe, RSIConfirmPeriod, PRICE_CLOSE);
 
    if(g_bbHandle == INVALID_HANDLE || g_rsiHandle == INVALID_HANDLE)
      {
-      PrintFormat("[BollingerSqueeze] Failed to create indicator handles. Error: %d", GetLastError());
+      PrintFormat("[BollingerSqueeze] Failed to create BB/RSI handles. Error: %d", GetLastError());
       return INIT_FAILED;
+     }
+
+   //--- Keltner Channel: EMA center + ATR for width
+   g_emaHandle = iMA(_Symbol, Timeframe, BBPeriod, 0, MODE_EMA, PRICE_CLOSE);
+   g_keltATRHandle = iATR(_Symbol, Timeframe, BBPeriod);
+
+   if(g_emaHandle == INVALID_HANDLE || g_keltATRHandle == INVALID_HANDLE)
+     {
+      PrintFormat("[BollingerSqueeze] Failed to create Keltner handles. Error: %d", GetLastError());
+      return INIT_FAILED;
+     }
+
+   //--- ADX filter handle
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[BollingerSqueeze] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops
+   if(UseATRStops)
+     {
+      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+      if(g_atrHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[BollingerSqueeze] Failed to create ATR stop handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
      }
 
    //--- Configure trade object
@@ -89,6 +159,14 @@ void OnDeinit(const int reason)
       IndicatorRelease(g_bbHandle);
    if(g_rsiHandle != INVALID_HANDLE)
       IndicatorRelease(g_rsiHandle);
+   if(g_emaHandle != INVALID_HANDLE)
+      IndicatorRelease(g_emaHandle);
+   if(g_keltATRHandle != INVALID_HANDLE)
+      IndicatorRelease(g_keltATRHandle);
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
 
    TM_OnDeinit(reason);
   }
@@ -124,14 +202,30 @@ void OnTick()
    if(CopyBuffer(g_bbHandle, 2, 0, 3, bbLower)  < 3) return;
    if(CopyBuffer(g_rsiHandle, 0, 0, 3, rsi)     < 3) return;
 
-   //--- Calculate bandwidth on bar 1 and bar 2
+   //--- Read Keltner Channel components
+   double ema[];
+   double keltATR[];
+   ArraySetAsSeries(ema, true);
+   ArraySetAsSeries(keltATR, true);
+
+   if(CopyBuffer(g_emaHandle, 0, 0, 3, ema)         < 3) return;
+   if(CopyBuffer(g_keltATRHandle, 0, 0, 3, keltATR) < 3) return;
+
+   //--- Calculate Keltner Channel on bar 1
+   double keltUpper1 = ema[1] + keltATR[1] * KeltnerATRMult;
+   double keltLower1 = ema[1] - keltATR[1] * KeltnerATRMult;
+
+   //--- True squeeze: Bollinger Bands inside Keltner Channel
+   bool bbInsideKeltner1 = (bbUpper[1] < keltUpper1 && bbLower[1] > keltLower1);
+
+   //--- Calculate bandwidth on bar 1 and bar 2 (fallback metric)
    double bw1 = 0.0;
    double bw2 = 0.0;
    if(bbMiddle[1] > 0.0) bw1 = (bbUpper[1] - bbLower[1]) / bbMiddle[1] * 100.0;
    if(bbMiddle[2] > 0.0) bw2 = (bbUpper[2] - bbLower[2]) / bbMiddle[2] * 100.0;
 
-   //--- Detect squeeze: bandwidth below threshold
-   if(bw1 < SqueezeThreshold)
+   //--- Detect squeeze: BB inside Keltner OR bandwidth below threshold
+   if(bbInsideKeltner1 || bw1 < SqueezeThreshold)
       g_squeezeActive = true;
 
    //--- Check for expansion after squeeze
@@ -147,6 +241,37 @@ void OnTick()
    bool buySignal  = (close1 > bbUpper[1] && rsi[1] > 50.0);
    bool sellSignal = (close1 < bbLower[1] && rsi[1] < 50.0);
 
+   //--- ADX filter: rising ADX confirms expansion
+   if((buySignal || sellSignal) && ADXPeriod > 0)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 3, adxVal) >= 3)
+        {
+         //--- Require ADX above minimum AND rising (confirming expansion)
+         if(adxVal[1] < ADXMinStrength || adxVal[1] <= adxVal[2])
+           {
+            buySignal  = false;
+            sellSignal = false;
+           }
+        }
+      else
+        {
+         buySignal  = false;
+         sellSignal = false;
+        }
+     }
+
+   //--- Read ATR for dynamic stops if enabled
+   double atrValue = 0.0;
+   if(UseATRStops && g_atrHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
+         atrValue = atrArr[1];
+     }
+
    //--- BUY signal
    if(buySignal)
      {
@@ -154,15 +279,34 @@ void OnTick()
 
       if(!HasPositionByDirection(POSITION_TYPE_BUY))
         {
-         double sl = (StopLossPips > 0)  ? NormalizeDouble(ask - StopLossPips * pip, _Digits)  : 0.0;
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "BBSqueeze"))
+         if(UseATRStops && atrValue > 0)
+           {
+            slDist = atrValue * ATRSLMultiplier;
+            tpDist = atrValue * ATRTPMultiplier;
+           }
+         else
+           {
+            slDist = (StopLossPips > 0) ? StopLossPips * pip : 0.0;
+            tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : 0.0;
+           }
+
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "BB_Squeeze", "BUY_EXPAND");
+
+         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
                g_squeezeActive = false;
               }
            }
@@ -176,15 +320,34 @@ void OnTick()
 
       if(!HasPositionByDirection(POSITION_TYPE_SELL))
         {
-         double sl = (StopLossPips > 0)  ? NormalizeDouble(bid + StopLossPips * pip, _Digits)  : 0.0;
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "BBSqueeze"))
+         if(UseATRStops && atrValue > 0)
+           {
+            slDist = atrValue * ATRSLMultiplier;
+            tpDist = atrValue * ATRTPMultiplier;
+           }
+         else
+           {
+            slDist = (StopLossPips > 0) ? StopLossPips * pip : 0.0;
+            tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : 0.0;
+           }
+
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "BB_Squeeze", "SELL_EXPAND");
+
+         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
                g_squeezeActive = false;
               }
            }

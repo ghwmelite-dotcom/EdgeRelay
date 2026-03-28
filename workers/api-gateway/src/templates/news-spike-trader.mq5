@@ -6,7 +6,7 @@
 #property version   "1.00"
 #property strict
 
-// -- Includes ────────────────────────────────────────────────────
+// ── Includes ────────────────────────────────────────────────────
 #include <EdgeRelay_Common.mqh>
 #include <EdgeRelay_Crypto.mqh>
 #include <EdgeRelay_Http.mqh>
@@ -15,20 +15,35 @@
 #include <EdgeRelay_JournalQueue.mqh>
 #include <Trade\Trade.mqh>
 
-// -- Strategy Parameters ─────────────────────────────────────────
+// ── Strategy Parameters ─────────────────────────────────────────
 input int              ATRPeriod       = {{ATR_PERIOD}};        // ATR Period
 input double           ATRMultiplier   = {{ATR_MULTIPLIER}};    // Spike Threshold (x ATR)
 input int              SpikeTrailPips  = {{SPIKE_TRAIL}};       // Trailing Stop (pips)
+input int              CooldownBars    = {{COOLDOWN_BARS}};     // Cooldown Bars After Entry
+input double           MomentumPct     = {{MOMENTUM_PCT}};      // Min Close Near H/L % (e.g. 70)
 input ENUM_TIMEFRAMES  Timeframe       = {{TIMEFRAME}};         // Timeframe
 
-// -- Trade Management ────────────────────────────────────────────
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};                 // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};           // Min ADX for Entry (confirms trend)
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};              // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};            // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};                // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};                // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};               // Risk % of Balance (0=use fixed lot)
+
+// ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 
-// -- Risk Management ─────────────────────────────────────────────
+// ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
@@ -37,7 +52,7 @@ input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
 
-// -- TradeMetrics Integration ────────────────────────────────────
+// ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
 input string API_Key          = "{{API_KEY}}";
 input string API_Secret       = "";                           // API Secret (enter manually)
@@ -45,26 +60,75 @@ input string API_Endpoint     = "https://edgerelay-signal-ingestion.ghwmelite.wo
 input string JournalEndpoint  = "https://edgerelay-journal-sync.ghwmelite.workers.dev";
 input bool   EnableJournal    = true;                         // Enable Journal Sync
 
-// -- Shared Integration Block ────────────────────────────────────
+// ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
-// -- Strategy Variables ──────────────────────────────────────────
+// ── Strategy Variables ──────────────────────────────────────────
 int      g_atrHandle    = INVALID_HANDLE;
+int      g_atrStopHandle = INVALID_HANDLE;
+int      g_adxHandle    = INVALID_HANDLE;
 int      g_cooldownBars = 0;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   //--- Create ATR handle
+   //--- Create ATR handle for spike detection
    g_atrHandle = iATR(_Symbol, Timeframe, ATRPeriod);
 
    if(g_atrHandle == INVALID_HANDLE)
      {
       PrintFormat("[NewsSpike] Failed to create ATR handle. Error: %d", GetLastError());
       return INIT_FAILED;
+     }
+
+   //--- ADX filter handle
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[NewsSpike] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops (separate from spike ATR if periods differ)
+   if(UseATRStops)
+     {
+      if(ATRStopPeriod == ATRPeriod)
+         g_atrStopHandle = g_atrHandle;  // Reuse same handle
+      else
+        {
+         g_atrStopHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+         if(g_atrStopHandle == INVALID_HANDLE)
+           {
+            PrintFormat("[NewsSpike] Failed to create ATR stop handle. Error: %d", GetLastError());
+            return INIT_FAILED;
+           }
+        }
      }
 
    //--- Configure trade object
@@ -84,6 +148,10 @@ void OnDeinit(const int reason)
    //--- Release indicator handles
    if(g_atrHandle != INVALID_HANDLE)
       IndicatorRelease(g_atrHandle);
+   if(g_atrStopHandle != INVALID_HANDLE && g_atrStopHandle != g_atrHandle)
+      IndicatorRelease(g_atrStopHandle);
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
 
    TM_OnDeinit(reason);
   }
@@ -104,7 +172,7 @@ void OnTick()
    if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
-   //--- Decrement cooldown
+   //--- Cooldown enforcement: decrement and skip
    if(g_cooldownBars > 0)
      {
       g_cooldownBars--;
@@ -112,12 +180,12 @@ void OnTick()
       return;
      }
 
-   //--- Read ATR values
+   //--- Read ATR values for spike detection
    double atr[];
    ArraySetAsSeries(atr, true);
    if(CopyBuffer(g_atrHandle, 0, 0, 3, atr) < 3) return;
 
-   //--- Calculate bar 1 range
+   //--- Calculate bar 1 range and candle data
    double high1  = iHigh(_Symbol, Timeframe, 1);
    double low1   = iLow(_Symbol, Timeframe, 1);
    double open1  = iOpen(_Symbol, Timeframe, 1);
@@ -136,11 +204,59 @@ void OnTick()
    bool bullishSpike = (close1 > open1);
    bool bearishSpike = (close1 < open1);
 
+   //--- Momentum continuation: close must be near high/low of spike candle
+   if(bullishSpike && range1 > 0)
+     {
+      double closeNearHigh = (close1 - low1) / range1 * 100.0;
+      if(closeNearHigh < MomentumPct)
+         bullishSpike = false;  // Close not near candle high — weak momentum
+     }
+   if(bearishSpike && range1 > 0)
+     {
+      double closeNearLow = (high1 - close1) / range1 * 100.0;
+      if(closeNearLow < MomentumPct)
+         bearishSpike = false;  // Close not near candle low — weak momentum
+     }
+
+   if(!bullishSpike && !bearishSpike) { TM_ManageOpenTrades(); return; }
+
+   //--- ADX filter: confirm momentum strength
+   if(ADXPeriod > 0)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+        {
+         if(adxVal[1] < ADXMinStrength)
+           {
+            bullishSpike = false;
+            bearishSpike = false;
+           }
+        }
+      else
+        {
+         bullishSpike = false;
+         bearishSpike = false;
+        }
+     }
+
+   if(!bullishSpike && !bearishSpike) { TM_ManageOpenTrades(); return; }
+
    double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
-   //--- SL = half the spike candle range
+   //--- Read ATR for dynamic stops if enabled
+   double atrStopValue = 0.0;
+   if(UseATRStops && g_atrStopHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrStopHandle, 0, 0, 2, atrArr) >= 2)
+         atrStopValue = atrArr[1];
+     }
+
+   //--- Default SL = half the spike candle range
    double spikeSLDist = range1 / 2.0;
 
    //--- BUY on bullish spike
@@ -150,23 +266,42 @@ void OnTick()
 
       if(!HasPositionByDirection(POSITION_TYPE_BUY))
         {
-         double sl = NormalizeDouble(ask - spikeSLDist, _Digits);
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         //--- Override SL if user-defined is tighter
-         if(StopLossPips > 0)
+         if(UseATRStops && atrStopValue > 0)
            {
-            double userSl = NormalizeDouble(ask - StopLossPips * pip, _Digits);
-            if(userSl > sl) sl = userSl;
+            slDist = atrStopValue * ATRSLMultiplier;
+            tpDist = atrStopValue * ATRTPMultiplier;
+           }
+         else
+           {
+            slDist = spikeSLDist;
+            tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : spikeSLDist * 2.0;
+
+            //--- Override SL if user-defined is tighter
+            if(StopLossPips > 0)
+              {
+               double userSlDist = StopLossPips * pip;
+               if(userSlDist < slDist) slDist = userSlDist;
+              }
            }
 
-         if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "NewsSpike"))
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "NewsSpike", "BUY_SPIKE");
+
+         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
-               g_cooldownBars = 3;
+               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
+               g_cooldownBars = CooldownBars;
               }
            }
         }
@@ -179,23 +314,42 @@ void OnTick()
 
       if(!HasPositionByDirection(POSITION_TYPE_SELL))
         {
-         double sl = NormalizeDouble(bid + spikeSLDist, _Digits);
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         //--- Override SL if user-defined is tighter
-         if(StopLossPips > 0)
+         if(UseATRStops && atrStopValue > 0)
            {
-            double userSl = NormalizeDouble(bid + StopLossPips * pip, _Digits);
-            if(userSl < sl) sl = userSl;
+            slDist = atrStopValue * ATRSLMultiplier;
+            tpDist = atrStopValue * ATRTPMultiplier;
+           }
+         else
+           {
+            slDist = spikeSLDist;
+            tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : spikeSLDist * 2.0;
+
+            //--- Override SL if user-defined is tighter
+            if(StopLossPips > 0)
+              {
+               double userSlDist = StopLossPips * pip;
+               if(userSlDist < slDist) slDist = userSlDist;
+              }
            }
 
-         if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "NewsSpike"))
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "NewsSpike", "SELL_SPIKE");
+
+         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
-               g_cooldownBars = 3;
+               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
+               g_cooldownBars = CooldownBars;
               }
            }
         }

@@ -6,7 +6,7 @@
 #property version   "1.00"
 #property strict
 
-// -- Includes ────────────────────────────────────────────────────
+// ── Includes ────────────────────────────────────────────────────
 #include <EdgeRelay_Common.mqh>
 #include <EdgeRelay_Crypto.mqh>
 #include <EdgeRelay_Http.mqh>
@@ -15,21 +15,35 @@
 #include <EdgeRelay_JournalQueue.mqh>
 #include <Trade\Trade.mqh>
 
-// -- Strategy Parameters ─────────────────────────────────────────
+// ── Strategy Parameters ─────────────────────────────────────────
 input int              GridSpacingPips  = {{GRID_SPACING}};     // Grid Spacing (pips)
 input int              MaxGridLevels    = {{MAX_GRID_LEVELS}};  // Max Grid Levels
 input double           LotMultiplier    = {{LOT_MULTIPLIER}};   // Lot Multiplier per Level
 input double           TakeProfitGrid   = {{TP_GRID}};          // Grid TP (pips from avg)
 input ENUM_TIMEFRAMES  Timeframe        = {{TIMEFRAME}};        // Timeframe
 
-// -- Trade Management ────────────────────────────────────────────
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};                 // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};           // Max ADX for New Grid (skip if trend too strong)
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};              // Use ATR for per-level SL
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};            // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};                // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};                // ATR TP Multiplier (unused — grid manages TP)
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};               // Risk % of Balance (0=use fixed lot)
+input double MaxAccountRisk   = {{MAX_ACCOUNT_RISK}};           // Max Total Grid Risk % (close all if exceeded)
+
+// ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 
-// -- Risk Management ─────────────────────────────────────────────
+// ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
@@ -38,7 +52,7 @@ input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
 
-// -- TradeMetrics Integration ────────────────────────────────────
+// ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
 input string API_Key          = "{{API_KEY}}";
 input string API_Secret       = "";                           // API Secret (enter manually)
@@ -46,14 +60,36 @@ input string API_Endpoint     = "https://edgerelay-signal-ingestion.ghwmelite.wo
 input string JournalEndpoint  = "https://edgerelay-journal-sync.ghwmelite.workers.dev";
 input bool   EnableJournal    = true;                         // Enable Journal Sync
 
-// -- Shared Integration Block ────────────────────────────────────
+// ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
-// -- Strategy Variables ──────────────────────────────────────────
-int      g_emaHandle  = INVALID_HANDLE;
-int      g_gridDir    = 0;    // 1 = BUY grid, -1 = SELL grid, 0 = none
+// ── Strategy Variables ──────────────────────────────────────────
+int      g_emaHandle    = INVALID_HANDLE;
+int      g_adxHandle    = INVALID_HANDLE;
+int      g_atrHandle    = INVALID_HANDLE;
+int      g_gridDir      = 0;    // 1 = BUY grid, -1 = SELL grid, 0 = none
 double   g_lastGridPrice = 0.0;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -67,6 +103,28 @@ int OnInit()
      {
       PrintFormat("[GridRecovery] Failed to create EMA handle. Error: %d", GetLastError());
       return INIT_FAILED;
+     }
+
+   //--- ADX filter handle (high ADX = strong trend = don't start new grid against it)
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[GridRecovery] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic per-level SL
+   if(UseATRStops)
+     {
+      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+      if(g_atrHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[GridRecovery] Failed to create ATR handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
      }
 
    //--- Configure trade object
@@ -86,6 +144,10 @@ void OnDeinit(const int reason)
    //--- Release indicator handles
    if(g_emaHandle != INVALID_HANDLE)
       IndicatorRelease(g_emaHandle);
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
 
    TM_OnDeinit(reason);
   }
@@ -110,10 +172,11 @@ void OnTick()
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
-   //--- Count existing grid positions and calculate average entry
+   //--- Count existing grid positions and calculate average entry + total floating P/L
    int    gridCount = 0;
    double totalVolume = 0.0;
    double weightedPrice = 0.0;
+   double totalFloatingPL = 0.0;
    ENUM_POSITION_TYPE gridType = POSITION_TYPE_BUY;
 
    for(int i = PositionsTotal() - 1; i >= 0; i--)
@@ -129,12 +192,29 @@ void OnTick()
 
       weightedPrice += entry * vol;
       totalVolume   += vol;
+      totalFloatingPL += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
       gridCount++;
      }
 
    double avgEntry = 0.0;
    if(totalVolume > 0.0)
       avgEntry = weightedPrice / totalVolume;
+
+   //--- Max account risk % stop: close all grid if floating loss exceeds threshold
+   if(gridCount > 0 && MaxAccountRisk > 0)
+     {
+      double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+      double riskPct = MathAbs(totalFloatingPL) / balance * 100.0;
+      if(totalFloatingPL < 0 && riskPct >= MaxAccountRisk)
+        {
+         PrintFormat("[GridRecovery] Max account risk %.1f%% reached (%.1f%%). Closing all grid positions.", MaxAccountRisk, riskPct);
+         CloseAllGridPositions();
+         g_gridDir = 0;
+         g_lastGridPrice = 0.0;
+         TM_ManageOpenTrades();
+         return;
+        }
+     }
 
    //--- Check if grid TP is reached: close all positions
    if(gridCount > 0 && avgEntry > 0.0)
@@ -157,6 +237,16 @@ void OnTick()
         }
      }
 
+   //--- Read ATR for dynamic stops if enabled
+   double atrValue = 0.0;
+   if(UseATRStops && g_atrHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
+         atrValue = atrArr[1];
+     }
+
    //--- No positions: determine initial direction from EMA
    if(gridCount == 0)
      {
@@ -166,18 +256,50 @@ void OnTick()
 
       double close1 = iClose(_Symbol, Timeframe, 1);
 
+      //--- ADX filter: don't start a new grid if trend is too strong (likely to continue against grid)
+      if(ADXPeriod > 0)
+        {
+         double adxVal[];
+         ArraySetAsSeries(adxVal, true);
+         if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+           {
+            if(adxVal[1] > ADXMinStrength)
+              {
+               TM_ManageOpenTrades();
+               return;  // Strong trend — skip new grid
+              }
+           }
+         else
+           {
+            TM_ManageOpenTrades();
+            return;
+           }
+        }
+
+      //--- Calculate SL distance
+      double slDist = 0.0;
+      if(UseATRStops && atrValue > 0)
+         slDist = atrValue * ATRSLMultiplier;
+      else if(StopLossPips > 0)
+         slDist = StopLossPips * pip;
+
+      double slPips = (slDist > 0) ? slDist / pip : 0.0;
+      double lot = CalculateLotSize(slPips);
+
       if(close1 > ema[1])
         {
          //--- BUY initial entry
-         double sl = (StopLossPips > 0) ? NormalizeDouble(ask - StopLossPips * pip, _Digits) : 0.0;
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
          double tp = 0.0;  // Grid manages TP
 
-         if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "Grid"))
+         string comment = StringFormat("TM:%s|SIG:%s|LVL:%d", "Grid", "BUY_INIT", 1);
+
+         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
                g_gridDir = 1;
                g_lastGridPrice = ask;
               }
@@ -186,15 +308,17 @@ void OnTick()
       else
         {
          //--- SELL initial entry
-         double sl = (StopLossPips > 0) ? NormalizeDouble(bid + StopLossPips * pip, _Digits) : 0.0;
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
          double tp = 0.0;
 
-         if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "Grid"))
+         string comment = StringFormat("TM:%s|SIG:%s|LVL:%d", "Grid", "SELL_INIT", 1);
+
+         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
                g_gridDir = -1;
                g_lastGridPrice = bid;
               }
@@ -212,24 +336,82 @@ void OnTick()
       return;
      }
 
+   //--- ADX trend filter for grid expansion: don't add levels against a strong trend
+   if(ADXPeriod > 0)
+     {
+      double adxVal[];
+      double plusDI[];
+      double minusDI[];
+      ArraySetAsSeries(adxVal, true);
+      ArraySetAsSeries(plusDI, true);
+      ArraySetAsSeries(minusDI, true);
+
+      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal)  >= 2 &&
+         CopyBuffer(g_adxHandle, 1, 0, 2, plusDI)   >= 2 &&
+         CopyBuffer(g_adxHandle, 2, 0, 2, minusDI)  >= 2)
+        {
+         //--- Strong trend against our grid direction? Stop adding levels
+         bool strongTrendAgainst = false;
+         if(g_gridDir == 1 && adxVal[1] > ADXMinStrength && minusDI[1] > plusDI[1])
+            strongTrendAgainst = true;  // Strong bearish trend, but we have BUY grid
+         if(g_gridDir == -1 && adxVal[1] > ADXMinStrength && plusDI[1] > minusDI[1])
+            strongTrendAgainst = true;  // Strong bullish trend, but we have SELL grid
+
+         if(strongTrendAgainst)
+           {
+            TM_ManageOpenTrades();
+            return;
+           }
+        }
+     }
+
    double gridDist = GridSpacingPips * pip;
    double nextLot  = LotSize;
    for(int lvl = 1; lvl < gridCount; lvl++)
       nextLot *= LotMultiplier;
+
+   //--- Calculate SL for new grid level
+   double slDist = 0.0;
+   if(UseATRStops && atrValue > 0)
+      slDist = atrValue * ATRSLMultiplier;
+   else if(StopLossPips > 0)
+      slDist = StopLossPips * pip;
+
+   double slPips = (slDist > 0) ? slDist / pip : 0.0;
+   double lot = CalculateLotSize(slPips);
+   if(lot <= 0) lot = nextLot;
+
+   //--- Apply multiplier for recovery levels
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double recoveryLot = nextLot;
+   if(RiskPercent > 0 && slPips > 0)
+     {
+      //--- Scale the risk-based lot by the multiplier ratio
+      recoveryLot = lot;
+      for(int lvl = 1; lvl < gridCount; lvl++)
+         recoveryLot *= LotMultiplier;
+      recoveryLot = MathMax(minLot, MathMin(maxLot, MathFloor(recoveryLot / lotStep) * lotStep));
+     }
+   else
+      recoveryLot = MathMax(minLot, MathMin(maxLot, MathFloor(nextLot / lotStep) * lotStep));
 
    //--- BUY grid: add level if price dropped by GridSpacingPips from last grid entry
    if(g_gridDir == 1 && g_lastGridPrice > 0.0)
      {
       if(ask <= g_lastGridPrice - gridDist)
         {
-         double sl = (StopLossPips > 0) ? NormalizeDouble(ask - StopLossPips * pip, _Digits) : 0.0;
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
 
-         if(g_trade.Buy(nextLot, _Symbol, ask, sl, 0.0, "Grid"))
+         string comment = StringFormat("TM:%s|SIG:%s|LVL:%d", "Grid", "BUY_RECOV", gridCount + 1);
+
+         if(g_trade.Buy(recoveryLot, _Symbol, ask, sl, 0.0, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "buy", nextLot, ask, sl, 0.0);
+               TM_OnTradeOpened(ticket, _Symbol, "buy", recoveryLot, ask, sl, 0.0);
                g_lastGridPrice = ask;
               }
            }
@@ -241,14 +423,16 @@ void OnTick()
      {
       if(bid >= g_lastGridPrice + gridDist)
         {
-         double sl = (StopLossPips > 0) ? NormalizeDouble(bid + StopLossPips * pip, _Digits) : 0.0;
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
 
-         if(g_trade.Sell(nextLot, _Symbol, bid, sl, 0.0, "Grid"))
+         string comment = StringFormat("TM:%s|SIG:%s|LVL:%d", "Grid", "SELL_RECOV", gridCount + 1);
+
+         if(g_trade.Sell(recoveryLot, _Symbol, bid, sl, 0.0, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "sell", nextLot, bid, sl, 0.0);
+               TM_OnTradeOpened(ticket, _Symbol, "sell", recoveryLot, bid, sl, 0.0);
                g_lastGridPrice = bid;
               }
            }

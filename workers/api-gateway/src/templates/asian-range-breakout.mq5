@@ -6,7 +6,7 @@
 #property version   "1.00"
 #property strict
 
-// -- Includes ────────────────────────────────────────────────────
+// ── Includes ────────────────────────────────────────────────────
 #include <EdgeRelay_Common.mqh>
 #include <EdgeRelay_Crypto.mqh>
 #include <EdgeRelay_Http.mqh>
@@ -15,20 +15,37 @@
 #include <EdgeRelay_JournalQueue.mqh>
 #include <Trade\Trade.mqh>
 
-// -- Strategy Parameters ─────────────────────────────────────────
+// ── Strategy Parameters ─────────────────────────────────────────
 input int              AsianStartHour  = {{ASIAN_START}};      // Asian Session Start (UTC)
 input int              AsianEndHour    = {{ASIAN_END}};         // Asian Session End (UTC)
 input int              BreakoutBuffer  = {{BREAKOUT_BUFFER}};   // Breakout Buffer (pips)
 input ENUM_TIMEFRAMES  Timeframe       = {{TIMEFRAME}};         // Timeframe
 
-// -- Trade Management ────────────────────────────────────────────
+// ── Range Size Filter ───────────────────────────────────────────
+input int    MinRangePips     = {{MIN_RANGE_PIPS}};             // Min Range Size (pips)
+input int    MaxRangePips     = {{MAX_RANGE_PIPS}};             // Max Range Size (pips)
+
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};                 // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};           // Min ADX for Entry
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};              // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};            // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};                // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};                // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};               // Risk % of Balance (0=use fixed lot)
+
+// ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 
-// -- Risk Management ─────────────────────────────────────────────
+// ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
@@ -37,7 +54,7 @@ input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
 
-// -- TradeMetrics Integration ────────────────────────────────────
+// ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
 input string API_Key          = "{{API_KEY}}";
 input string API_Secret       = "";                           // API Secret (enter manually)
@@ -45,23 +62,67 @@ input string API_Endpoint     = "https://edgerelay-signal-ingestion.ghwmelite.wo
 input string JournalEndpoint  = "https://edgerelay-journal-sync.ghwmelite.workers.dev";
 input bool   EnableJournal    = true;                         // Enable Journal Sync
 
-// -- Shared Integration Block ────────────────────────────────────
+// ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
-// -- Strategy Variables ──────────────────────────────────────────
+// ── Strategy Variables ──────────────────────────────────────────
 double   g_rangeHigh       = 0.0;
 double   g_rangeLow        = DBL_MAX;
 bool     g_rangeReady      = false;
 bool     g_tradedBuyToday  = false;
 bool     g_tradedSellToday = false;
 datetime g_lastRangeDate   = 0;
+int      g_adxHandle       = INVALID_HANDLE;
+int      g_atrHandle       = INVALID_HANDLE;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   //--- ADX filter handle
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[AsianBreakout] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops
+   if(UseATRStops)
+     {
+      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+      if(g_atrHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[AsianBreakout] Failed to create ATR handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
    //--- Configure trade object
    g_trade.SetExpertMagicNumber(MagicNumber);
    g_trade.SetDeviationInPoints(10);
@@ -76,6 +137,12 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
+   //--- Release indicator handles
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
+
    TM_OnDeinit(reason);
   }
 
@@ -141,34 +208,107 @@ void OnTick()
    double ask    = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid    = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
+   //--- Range size filter: skip if range too small or too large
+   double rangeSizePips = (g_rangeHigh - g_rangeLow) / pip;
+   if(MinRangePips > 0 && rangeSizePips < MinRangePips)
+     {
+      TM_ManageOpenTrades();
+      return;
+     }
+   if(MaxRangePips > 0 && rangeSizePips > MaxRangePips)
+     {
+      TM_ManageOpenTrades();
+      return;
+     }
+
    //--- Use bar 1 (last closed) for breakout detection
    double close1 = iClose(_Symbol, Timeframe, 1);
+   double open1  = iOpen(_Symbol, Timeframe, 1);
+   double high1  = iHigh(_Symbol, Timeframe, 1);
+   double low1   = iLow(_Symbol, Timeframe, 1);
+
+   //--- Momentum candle confirmation: body must be > 60% of candle range
+   double body1  = MathAbs(close1 - open1);
+   double range1 = high1 - low1;
+   bool   momentumOK = (range1 > 0 && body1 / range1 > 0.60);
+
+   //--- Read ATR for dynamic stops if enabled
+   double atrValue = 0.0;
+   if(UseATRStops && g_atrHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
+         atrValue = atrArr[1];
+     }
+
+   //--- Detect breakout signals
+   bool buySignal  = (close1 > g_rangeHigh + buffer && momentumOK && !g_tradedBuyToday);
+   bool sellSignal = (close1 < g_rangeLow - buffer && momentumOK && !g_tradedSellToday);
+
+   //--- ADX trend strength filter
+   if((buySignal || sellSignal) && ADXPeriod > 0)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+        {
+         if(adxVal[1] < ADXMinStrength)
+           {
+            buySignal  = false;
+            sellSignal = false;
+           }
+        }
+      else
+        {
+         buySignal  = false;
+         sellSignal = false;
+        }
+     }
 
    //--- BUY breakout: close above range high + buffer
-   if(close1 > g_rangeHigh + buffer && !g_tradedBuyToday)
+   if(buySignal)
      {
       ClosePositionsByDirection(POSITION_TYPE_SELL);
 
       if(!HasPositionByDirection(POSITION_TYPE_BUY))
         {
-         //--- SL at opposite range boundary (range low)
-         double slDist = ask - g_rangeLow;
-         double sl = NormalizeDouble(g_rangeLow, _Digits);
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         //--- Override SL if user-defined SL is tighter
-         if(StopLossPips > 0)
+         if(UseATRStops && atrValue > 0)
            {
-            double userSl = NormalizeDouble(ask - StopLossPips * pip, _Digits);
-            if(userSl > sl) sl = userSl;
+            slDist = atrValue * ATRSLMultiplier;
+            tpDist = atrValue * ATRTPMultiplier;
+           }
+         else
+           {
+            //--- SL at opposite range boundary (range low)
+            slDist = ask - g_rangeLow;
+            tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : slDist * 2.0;
+
+            //--- Override SL if user-defined SL is tighter
+            if(StopLossPips > 0)
+              {
+               double userSlDist = StopLossPips * pip;
+               if(userSlDist < slDist) slDist = userSlDist;
+              }
            }
 
-         if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "AsianBreakout"))
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "AsianBO", "BUY_BREAKOUT");
+
+         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
                g_tradedBuyToday = true;
               }
            }
@@ -176,29 +316,48 @@ void OnTick()
      }
 
    //--- SELL breakout: close below range low - buffer
-   if(close1 < g_rangeLow - buffer && !g_tradedSellToday)
+   if(sellSignal)
      {
       ClosePositionsByDirection(POSITION_TYPE_BUY);
 
       if(!HasPositionByDirection(POSITION_TYPE_SELL))
         {
-         //--- SL at opposite range boundary (range high)
-         double sl = NormalizeDouble(g_rangeHigh, _Digits);
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         //--- Override SL if user-defined SL is tighter
-         if(StopLossPips > 0)
+         if(UseATRStops && atrValue > 0)
            {
-            double userSl = NormalizeDouble(bid + StopLossPips * pip, _Digits);
-            if(userSl < sl) sl = userSl;
+            slDist = atrValue * ATRSLMultiplier;
+            tpDist = atrValue * ATRTPMultiplier;
+           }
+         else
+           {
+            //--- SL at opposite range boundary (range high)
+            slDist = g_rangeHigh - bid;
+            tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : slDist * 2.0;
+
+            //--- Override SL if user-defined SL is tighter
+            if(StopLossPips > 0)
+              {
+               double userSlDist = StopLossPips * pip;
+               if(userSlDist < slDist) slDist = userSlDist;
+              }
            }
 
-         if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "AsianBreakout"))
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "AsianBO", "SELL_BREAKOUT");
+
+         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
               {
-               TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
                g_tradedSellToday = true;
               }
            }

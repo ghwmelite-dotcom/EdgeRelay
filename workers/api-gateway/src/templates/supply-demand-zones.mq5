@@ -6,7 +6,7 @@
 #property version   "1.00"
 #property strict
 
-// -- Includes ────────────────────────────────────────────────────
+// ── Includes ────────────────────────────────────────────────────
 #include <EdgeRelay_Common.mqh>
 #include <EdgeRelay_Crypto.mqh>
 #include <EdgeRelay_Http.mqh>
@@ -15,20 +15,33 @@
 #include <EdgeRelay_JournalQueue.mqh>
 #include <Trade\Trade.mqh>
 
-// -- Strategy Parameters ─────────────────────────────────────────
+// ── Strategy Parameters ─────────────────────────────────────────
 input int              ZoneLookback     = {{ZONE_LOOKBACK}};      // Zone Detection Lookback
 input double           MinZoneStrength  = {{MIN_ZONE_STRENGTH}};  // Min Body-to-Wick Ratio
 input int              RetestTolerance  = {{RETEST_TOLERANCE}};   // Retest Tolerance (pips)
 input ENUM_TIMEFRAMES  Timeframe        = {{TIMEFRAME}};          // Timeframe
 
-// -- Trade Management ────────────────────────────────────────────
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};                 // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};           // Max ADX for Entry (low ADX = ranging = better)
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};              // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};            // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};                // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};                // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};               // Risk % of Balance (0=use fixed lot)
+
+// ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 
-// -- Risk Management ─────────────────────────────────────────────
+// ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
@@ -37,7 +50,7 @@ input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
 
-// -- TradeMetrics Integration ────────────────────────────────────
+// ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
 input string API_Key          = "{{API_KEY}}";
 input string API_Secret       = "";                           // API Secret (enter manually)
@@ -45,23 +58,47 @@ input string API_Endpoint     = "https://edgerelay-signal-ingestion.ghwmelite.wo
 input string JournalEndpoint  = "https://edgerelay-journal-sync.ghwmelite.workers.dev";
 input bool   EnableJournal    = true;                         // Enable Journal Sync
 
-// -- Shared Integration Block ────────────────────────────────────
+// ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
-// -- Strategy Variables ──────────────────────────────────────────
+// ── Strategy Variables ──────────────────────────────────────────
 #define MAX_ZONES 3
 
 struct SZone
   {
    double price;
+   double strength;   // impulse body size relative to ATR
    bool   active;
+   bool   tested;     // true after first retest (zone freshness)
   };
 
 SZone    g_demandZones[MAX_ZONES];
 SZone    g_supplyZones[MAX_ZONES];
 int      g_demandCount = 0;
 int      g_supplyCount = 0;
+int      g_adxHandle   = INVALID_HANDLE;
+int      g_atrHandle   = INVALID_HANDLE;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -71,13 +108,36 @@ int OnInit()
    //--- Reset zones
    for(int i = 0; i < MAX_ZONES; i++)
      {
-      g_demandZones[i].price  = 0.0;
-      g_demandZones[i].active = false;
-      g_supplyZones[i].price  = 0.0;
-      g_supplyZones[i].active = false;
+      g_demandZones[i].price    = 0.0;
+      g_demandZones[i].strength = 0.0;
+      g_demandZones[i].active   = false;
+      g_demandZones[i].tested   = false;
+      g_supplyZones[i].price    = 0.0;
+      g_supplyZones[i].strength = 0.0;
+      g_supplyZones[i].active   = false;
+      g_supplyZones[i].tested   = false;
      }
    g_demandCount = 0;
    g_supplyCount = 0;
+
+   //--- ADX filter handle (low ADX = ranging = better for S/D)
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[SDZones] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops and zone strength scoring
+   g_atrHandle = iATR(_Symbol, Timeframe, (UseATRStops ? ATRStopPeriod : 14));
+   if(g_atrHandle == INVALID_HANDLE)
+     {
+      PrintFormat("[SDZones] Failed to create ATR handle. Error: %d", GetLastError());
+      return INIT_FAILED;
+     }
 
    //--- Configure trade object
    g_trade.SetExpertMagicNumber(MagicNumber);
@@ -93,6 +153,12 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
+   //--- Release indicator handles
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
+
    TM_OnDeinit(reason);
   }
 
@@ -117,8 +183,18 @@ void OnTick()
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double tolerance = RetestTolerance * pip;
 
+   //--- Read ATR for zone strength scoring and dynamic stops
+   double atrValue = 0.0;
+   if(g_atrHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
+         atrValue = atrArr[1];
+     }
+
    //--- Scan for new impulse candles and build zones
-   ScanForZones(pip);
+   ScanForZones(pip, atrValue);
 
    //--- Invalidate broken zones
    double close1 = iClose(_Symbol, Timeframe, 1);
@@ -134,54 +210,113 @@ void OnTick()
          g_supplyZones[i].active = false;
      }
 
-   //--- BUY: price retests a demand zone
+   //--- ADX filter: for S/D, low ADX (ranging) is better — skip if ADX too high
+   bool adxOK = true;
+   if(ADXPeriod > 0)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+        {
+         if(adxVal[1] > ADXMinStrength)
+            adxOK = false;  // Market trending too hard for S/D
+        }
+      else
+         adxOK = false;
+     }
+
+   //--- BUY: price retests a demand zone (first touch only)
    for(int i = 0; i < g_demandCount; i++)
      {
       if(!g_demandZones[i].active) continue;
+      if(g_demandZones[i].tested) continue;  // Zone freshness: skip already-tested zones
+      if(!adxOK) continue;
 
       double low1 = iLow(_Symbol, Timeframe, 1);
       if(low1 <= g_demandZones[i].price + tolerance && close1 > g_demandZones[i].price)
         {
+         //--- Mark zone as tested (first touch used)
+         g_demandZones[i].tested = true;
+
          if(!HasPositionByDirection(POSITION_TYPE_BUY))
            {
+            double slDist = 0.0;
+            double tpDist = 0.0;
             double riskDist = ask - g_demandZones[i].price;
-            double sl = (StopLossPips > 0) ? NormalizeDouble(ask - StopLossPips * pip, _Digits)
-                                           : NormalizeDouble(g_demandZones[i].price - tolerance, _Digits);
-            double tp = (TakeProfitPips > 0) ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits)
-                                             : NormalizeDouble(ask + riskDist * 2.0, _Digits);
 
-            if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "SDZone"))
+            if(UseATRStops && atrValue > 0)
+              {
+               slDist = atrValue * ATRSLMultiplier;
+               tpDist = atrValue * ATRTPMultiplier;
+              }
+            else
+              {
+               slDist = (StopLossPips > 0) ? StopLossPips * pip : riskDist + tolerance;
+               tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : riskDist * 2.0;
+              }
+
+            double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+
+            double slPips = (slDist > 0) ? slDist / pip : 0.0;
+            double lot = CalculateLotSize(slPips);
+
+            string comment = StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "BUY_DEMAND", g_demandZones[i].strength);
+
+            if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
               {
                ulong ticket = g_trade.ResultOrder();
                if(ticket > 0)
-                  TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+                  TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
               }
            }
          break;
         }
      }
 
-   //--- SELL: price retests a supply zone
+   //--- SELL: price retests a supply zone (first touch only)
    for(int i = 0; i < g_supplyCount; i++)
      {
       if(!g_supplyZones[i].active) continue;
+      if(g_supplyZones[i].tested) continue;  // Zone freshness: skip already-tested zones
+      if(!adxOK) continue;
 
       double high1 = iHigh(_Symbol, Timeframe, 1);
       if(high1 >= g_supplyZones[i].price - tolerance && close1 < g_supplyZones[i].price)
         {
+         //--- Mark zone as tested (first touch used)
+         g_supplyZones[i].tested = true;
+
          if(!HasPositionByDirection(POSITION_TYPE_SELL))
            {
+            double slDist = 0.0;
+            double tpDist = 0.0;
             double riskDist = g_supplyZones[i].price - bid;
-            double sl = (StopLossPips > 0) ? NormalizeDouble(bid + StopLossPips * pip, _Digits)
-                                           : NormalizeDouble(g_supplyZones[i].price + tolerance, _Digits);
-            double tp = (TakeProfitPips > 0) ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits)
-                                             : NormalizeDouble(bid - riskDist * 2.0, _Digits);
 
-            if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "SDZone"))
+            if(UseATRStops && atrValue > 0)
+              {
+               slDist = atrValue * ATRSLMultiplier;
+               tpDist = atrValue * ATRTPMultiplier;
+              }
+            else
+              {
+               slDist = (StopLossPips > 0) ? StopLossPips * pip : riskDist + tolerance;
+               tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : riskDist * 2.0;
+              }
+
+            double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+
+            double slPips = (slDist > 0) ? slDist / pip : 0.0;
+            double lot = CalculateLotSize(slPips);
+
+            string comment = StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "SELL_SUPPLY", g_supplyZones[i].strength);
+
+            if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
               {
                ulong ticket = g_trade.ResultOrder();
                if(ticket > 0)
-                  TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+                  TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
               }
            }
          break;
@@ -192,9 +327,9 @@ void OnTick()
   }
 
 //+------------------------------------------------------------------+
-//| Scan for impulse candles and register zones                       |
+//| Scan for impulse candles and register zones with strength scoring |
 //+------------------------------------------------------------------+
-void ScanForZones(double pip)
+void ScanForZones(double pip, double atrValue)
   {
    //--- Reset zones each scan
    g_demandCount = 0;
@@ -218,19 +353,26 @@ void ScanForZones(double pip)
       double ratio = body / totalWk;
       if(ratio < MinZoneStrength) continue;
 
+      //--- Zone strength scoring: impulse body size relative to ATR
+      double strength = (atrValue > 0) ? body / atrValue : ratio;
+
       //--- Bullish impulse → demand zone at candle low
       if(close > open && g_demandCount < MAX_ZONES)
         {
-         g_demandZones[g_demandCount].price  = low;
-         g_demandZones[g_demandCount].active = true;
+         g_demandZones[g_demandCount].price    = low;
+         g_demandZones[g_demandCount].strength = strength;
+         g_demandZones[g_demandCount].active   = true;
+         g_demandZones[g_demandCount].tested   = false;
          g_demandCount++;
         }
 
       //--- Bearish impulse → supply zone at candle high
       if(close < open && g_supplyCount < MAX_ZONES)
         {
-         g_supplyZones[g_supplyCount].price  = high;
-         g_supplyZones[g_supplyCount].active = true;
+         g_supplyZones[g_supplyCount].price    = high;
+         g_supplyZones[g_supplyCount].strength = strength;
+         g_supplyZones[g_supplyCount].active   = true;
+         g_supplyZones[g_supplyCount].tested   = false;
          g_supplyCount++;
         }
      }

@@ -131,18 +131,48 @@ strategyHubPublic.get('/strategies/:slug', async (c) => {
 const FREE_GENERATIONS = 3;
 const PRICE_PER_GENERATION = 1.99;
 
+// Admin/exempt accounts — unlimited generations
+const EXEMPT_EMAILS = ['oh84dev@gmail.com'];
+
+/** Check if user email is in the exempt list. */
+async function isExemptUser(db: D1Database, userId: string): Promise<boolean> {
+  const user = await db.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first<{ email: string }>();
+  return user ? EXEMPT_EMAILS.includes(user.email) : false;
+}
+
+/** Get total generated count and purchased credits for a user. */
+async function getGenerationCounts(db: D1Database, userId: string) {
+  const [genRow, creditRow] = await Promise.all([
+    db.prepare('SELECT COUNT(*) as cnt FROM ea_generations WHERE user_id = ?').bind(userId).first<{ cnt: number }>(),
+    db.prepare('SELECT COUNT(*) as cnt FROM ea_generation_credits WHERE user_id = ?').bind(userId).first<{ cnt: number }>(),
+  ]);
+  const totalGenerated = genRow?.cnt ?? 0;
+  const totalCredits = creditRow?.cnt ?? 0;
+  const allowed = FREE_GENERATIONS + totalCredits;
+  const freeRemaining = Math.max(0, allowed - totalGenerated);
+  return { totalGenerated, totalCredits, allowed, freeRemaining };
+}
+
 // ── GET /strategy-hub/generation-status — Check free/paid status ─
 strategyHub.get('/generation-status', async (c) => {
   const userId = c.get('userId');
 
-  const countRow = await c.env.DB.prepare(
-    'SELECT COUNT(*) as cnt FROM ea_generations WHERE user_id = ?',
-  )
-    .bind(userId)
-    .first<{ cnt: number }>();
+  // Admin exemption — unlimited generations
+  if (await isExemptUser(c.env.DB, userId)) {
+    return c.json<ApiResponse>({
+      data: {
+        total_generated: 0,
+        free_remaining: 999,
+        free_limit: FREE_GENERATIONS,
+        price_per_generation: PRICE_PER_GENERATION,
+        requires_payment: false,
+        exempt: true,
+      },
+      error: null,
+    });
+  }
 
-  const totalGenerated = countRow?.cnt ?? 0;
-  const freeRemaining = Math.max(0, FREE_GENERATIONS - totalGenerated);
+  const { totalGenerated, freeRemaining } = await getGenerationCounts(c.env.DB, userId);
 
   return c.json<ApiResponse>({
     data: {
@@ -160,32 +190,30 @@ strategyHub.get('/generation-status', async (c) => {
 strategyHub.post('/generate', async (c) => {
   const userId = c.get('userId');
 
-  // Check generation limit
-  const countRow = await c.env.DB.prepare(
-    'SELECT COUNT(*) as cnt FROM ea_generations WHERE user_id = ?',
-  )
-    .bind(userId)
-    .first<{ cnt: number }>();
+  // Admin exemption — skip limit check entirely
+  const exempt = await isExemptUser(c.env.DB, userId);
 
-  const totalGenerated = countRow?.cnt ?? 0;
-  const freeRemaining = Math.max(0, FREE_GENERATIONS - totalGenerated);
+  if (!exempt) {
+    // Check generation limit (free + purchased credits)
+    const { totalGenerated, freeRemaining } = await getGenerationCounts(c.env.DB, userId);
 
-  if (freeRemaining <= 0) {
-    return c.json<ApiResponse>(
-      {
-        data: {
-          requires_payment: true,
-          price: PRICE_PER_GENERATION,
-          total_generated: totalGenerated,
-          free_limit: FREE_GENERATIONS,
+    if (freeRemaining <= 0) {
+      return c.json<ApiResponse>(
+        {
+          data: {
+            requires_payment: true,
+            price: PRICE_PER_GENERATION,
+            total_generated: totalGenerated,
+            free_limit: FREE_GENERATIONS,
+          },
+          error: {
+            code: 'GENERATION_LIMIT',
+            message: `You've used all ${FREE_GENERATIONS} free EA generations. Each additional generation costs $${PRICE_PER_GENERATION.toFixed(2)}.`,
+          },
         },
-        error: {
-          code: 'GENERATION_LIMIT',
-          message: `You've used all ${FREE_GENERATIONS} free EA generations. Each additional generation costs $${PRICE_PER_GENERATION.toFixed(2)}.`,
-        },
-      },
-      402,
-    );
+        402,
+      );
+    }
   }
 
   const body = await c.req.json<{
@@ -317,4 +345,61 @@ strategyHub.get('/my-generations', async (c) => {
     .all();
 
   return c.json<ApiResponse>({ data: results ?? [], error: null });
+});
+
+// ── POST /strategy-hub/purchase — Initialize a $1.99 Paystack payment for one EA generation ─
+strategyHub.post('/purchase', async (c) => {
+  const userId = c.get('userId');
+
+  const user = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?')
+    .bind(userId)
+    .first<{ email: string }>();
+
+  if (!user) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'User not found' } },
+      404,
+    );
+  }
+
+  // Initialize Paystack one-time transaction for $1.99 (199 cents USD)
+  const res = await fetch('https://api.paystack.co/transaction/initialize', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${c.env.PAYSTACK_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: user.email,
+      amount: 199,
+      currency: 'USD',
+      callback_url: 'https://trademetricspro.com/app/strategy-hub',
+      metadata: {
+        user_id: userId,
+        type: 'ea_generation',
+        credits: '1',
+      },
+    }),
+  });
+
+  const result = await res.json() as {
+    status: boolean;
+    message: string;
+    data?: { authorization_url: string; reference: string };
+  };
+
+  if (!result.status || !result.data) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'PAYMENT_ERROR', message: result.message || 'Failed to initialize payment' } },
+      502,
+    );
+  }
+
+  return c.json<ApiResponse>({
+    data: {
+      authorization_url: result.data.authorization_url,
+      reference: result.data.reference,
+    },
+    error: null,
+  });
 });

@@ -82,6 +82,7 @@ billing.post('/webhook', async (c) => {
       const planTier = metadata?.plan_tier;
       const customerCode = event.data.customer as Record<string, unknown> | undefined;
 
+      // Handle subscription plan upgrade
       if (userId && planTier) {
         await c.env.DB.prepare(
           'UPDATE users SET plan = ?, paystack_customer_code = ?, updated_at = datetime(\'now\') WHERE id = ?',
@@ -89,6 +90,19 @@ billing.post('/webhook', async (c) => {
           .bind(planTier, customerCode?.customer_code ?? null, userId)
           .run();
       }
+
+      // Handle EA generation one-time purchase
+      const purchaseType = metadata?.type;
+      if (purchaseType === 'ea_generation' && userId) {
+        const reference = event.data.reference as string;
+        await c.env.DB.prepare(
+          'INSERT OR IGNORE INTO ea_generation_credits (user_id, reference, amount_cents) VALUES (?, ?, 199)',
+        )
+          .bind(userId, reference)
+          .run();
+        console.log('EA generation credit purchased:', userId, reference);
+      }
+
       console.log('Charge success:', event.data.reference);
       break;
     }

@@ -604,10 +604,9 @@ function ProviderCard({ provider, rank, expanded, onToggle, isSubscribed, onCopy
         </div>
       </div>
 
-        {/* Copy button */}
-        <div className="mt-3 flex justify-end">
-          <CopyProviderButton providerId={provider.id} isSubscribed={isSubscribed} onCopy={onCopy} copyingId={copyingId} />
-        </div>
+      {/* Copy button */}
+      <div className="mt-3 flex justify-end">
+        <CopyProviderButton providerId={provider.id} isSubscribed={isSubscribed} onCopy={onCopy} copyingId={copyingId} />
       </div>
 
       {/* Expanded detail */}
@@ -712,7 +711,7 @@ export function MarketplacePage() {
 
     if (res.data) {
       // Check if needs setup (no MT5 details)
-      if ('needs_setup' in res.data && (res.data as Record<string, unknown>).needs_setup) {
+      if ('needs_setup' in res.data && (res.data as unknown as Record<string, unknown>).needs_setup) {
         setSetupProviderId(providerId);
         return;
       }

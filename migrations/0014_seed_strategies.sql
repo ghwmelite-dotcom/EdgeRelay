@@ -46,7 +46,7 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
-input int    TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
+input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
@@ -106,12 +106,18 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
+//| Timer event handler                                               |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   TM_OnTimer();
+  }
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   TM_OnTick();
-
    if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
@@ -336,10 +342,10 @@ void TM_OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| TM_OnTick — call from your OnTick()                               |
-//| Handles heartbeat, queue flush, and daily reset                   |
+//| TM_OnTimer — call from your OnTimer()                             |
+//| Handles heartbeat, queue flush, journal heartbeat                 |
 //+------------------------------------------------------------------+
-void TM_OnTick()
+void TM_OnTimer()
   {
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
@@ -352,20 +358,6 @@ void TM_OnTick()
       g_tm_consecutiveLosses = 0;
      }
 
-   //--- Flush signal queue if connected
-   if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_queue.Flush(API_Endpoint, API_Key);
-
-   //--- Flush journal queue if enabled and connected
-   if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
-  }
-
-//+------------------------------------------------------------------+
-//| OnTimer — heartbeat (called by MT5 runtime, NOT by strategy)      |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
    //--- Send heartbeat
    uint startTick = GetTickCount();
    int hbResult = SendHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
@@ -384,10 +376,11 @@ void OnTimer()
       PrintFormat("[TradeMetrics] Heartbeat HTTP %d", hbResult);
      }
 
-   //--- Flush queues on timer too (backup path)
+   //--- Flush signal queue if connected
    if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_queue.Flush(API_Endpoint, API_Key);
 
+   //--- Flush journal queue if enabled and connected
    if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
@@ -426,17 +419,13 @@ bool TM_CanTrade()
         {
          //--- Normal range: e.g. 8-17
          if(hour < SessionStartHour || hour >= SessionEndHour)
-           {
             return false;
-           }
         }
       else
         {
          //--- Overnight range: e.g. 22-6
          if(hour < SessionStartHour && hour >= SessionEndHour)
-           {
             return false;
-           }
         }
      }
 
@@ -767,7 +756,7 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
-input int    TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
+input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
@@ -827,12 +816,18 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
+//| Timer event handler                                               |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   TM_OnTimer();
+  }
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   TM_OnTick();
-
    if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
@@ -1045,10 +1040,10 @@ void TM_OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| TM_OnTick — call from your OnTick()                               |
-//| Handles heartbeat, queue flush, and daily reset                   |
+//| TM_OnTimer — call from your OnTimer()                             |
+//| Handles heartbeat, queue flush, journal heartbeat                 |
 //+------------------------------------------------------------------+
-void TM_OnTick()
+void TM_OnTimer()
   {
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
@@ -1061,20 +1056,6 @@ void TM_OnTick()
       g_tm_consecutiveLosses = 0;
      }
 
-   //--- Flush signal queue if connected
-   if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_queue.Flush(API_Endpoint, API_Key);
-
-   //--- Flush journal queue if enabled and connected
-   if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
-  }
-
-//+------------------------------------------------------------------+
-//| OnTimer — heartbeat (called by MT5 runtime, NOT by strategy)      |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
    //--- Send heartbeat
    uint startTick = GetTickCount();
    int hbResult = SendHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
@@ -1093,10 +1074,11 @@ void OnTimer()
       PrintFormat("[TradeMetrics] Heartbeat HTTP %d", hbResult);
      }
 
-   //--- Flush queues on timer too (backup path)
+   //--- Flush signal queue if connected
    if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_queue.Flush(API_Endpoint, API_Key);
 
+   //--- Flush journal queue if enabled and connected
    if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
@@ -1135,17 +1117,13 @@ bool TM_CanTrade()
         {
          //--- Normal range: e.g. 8-17
          if(hour < SessionStartHour || hour >= SessionEndHour)
-           {
             return false;
-           }
         }
       else
         {
          //--- Overnight range: e.g. 22-6
          if(hour < SessionStartHour && hour >= SessionEndHour)
-           {
             return false;
-           }
         }
      }
 
@@ -1476,7 +1454,7 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
-input int    TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
+input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
@@ -1522,12 +1500,18 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
+//| Timer event handler                                               |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   TM_OnTimer();
+  }
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   TM_OnTick();
-
    if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
@@ -1798,10 +1782,10 @@ void TM_OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| TM_OnTick — call from your OnTick()                               |
-//| Handles heartbeat, queue flush, and daily reset                   |
+//| TM_OnTimer — call from your OnTimer()                             |
+//| Handles heartbeat, queue flush, journal heartbeat                 |
 //+------------------------------------------------------------------+
-void TM_OnTick()
+void TM_OnTimer()
   {
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
@@ -1814,20 +1798,6 @@ void TM_OnTick()
       g_tm_consecutiveLosses = 0;
      }
 
-   //--- Flush signal queue if connected
-   if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_queue.Flush(API_Endpoint, API_Key);
-
-   //--- Flush journal queue if enabled and connected
-   if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
-  }
-
-//+------------------------------------------------------------------+
-//| OnTimer — heartbeat (called by MT5 runtime, NOT by strategy)      |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
    //--- Send heartbeat
    uint startTick = GetTickCount();
    int hbResult = SendHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
@@ -1846,10 +1816,11 @@ void OnTimer()
       PrintFormat("[TradeMetrics] Heartbeat HTTP %d", hbResult);
      }
 
-   //--- Flush queues on timer too (backup path)
+   //--- Flush signal queue if connected
    if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_queue.Flush(API_Endpoint, API_Key);
 
+   //--- Flush journal queue if enabled and connected
    if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
@@ -1888,17 +1859,13 @@ bool TM_CanTrade()
         {
          //--- Normal range: e.g. 8-17
          if(hour < SessionStartHour || hour >= SessionEndHour)
-           {
             return false;
-           }
         }
       else
         {
          //--- Overnight range: e.g. 22-6
          if(hour < SessionStartHour && hour >= SessionEndHour)
-           {
             return false;
-           }
         }
      }
 
@@ -2230,7 +2197,7 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
-input int    TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
+input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
@@ -2290,17 +2257,23 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
+//| Timer event handler                                               |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   TM_OnTimer();
+  }
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   TM_OnTick();
-
    if(!TM_IsNewBar()) return;
 
    //--- Get current GMT hour
    MqlDateTime dt;
-   TimeGMT(dt);
+   TimeToStruct(TimeGMT(), dt);
    int gmtHour = dt.hour;
 
    //--- At session end: close ALL open positions with our MagicNumber
@@ -2561,10 +2534,10 @@ void TM_OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| TM_OnTick — call from your OnTick()                               |
-//| Handles heartbeat, queue flush, and daily reset                   |
+//| TM_OnTimer — call from your OnTimer()                             |
+//| Handles heartbeat, queue flush, journal heartbeat                 |
 //+------------------------------------------------------------------+
-void TM_OnTick()
+void TM_OnTimer()
   {
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
@@ -2577,20 +2550,6 @@ void TM_OnTick()
       g_tm_consecutiveLosses = 0;
      }
 
-   //--- Flush signal queue if connected
-   if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_queue.Flush(API_Endpoint, API_Key);
-
-   //--- Flush journal queue if enabled and connected
-   if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
-  }
-
-//+------------------------------------------------------------------+
-//| OnTimer — heartbeat (called by MT5 runtime, NOT by strategy)      |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
    //--- Send heartbeat
    uint startTick = GetTickCount();
    int hbResult = SendHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
@@ -2609,10 +2568,11 @@ void OnTimer()
       PrintFormat("[TradeMetrics] Heartbeat HTTP %d", hbResult);
      }
 
-   //--- Flush queues on timer too (backup path)
+   //--- Flush signal queue if connected
    if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_queue.Flush(API_Endpoint, API_Key);
 
+   //--- Flush journal queue if enabled and connected
    if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
@@ -2651,17 +2611,13 @@ bool TM_CanTrade()
         {
          //--- Normal range: e.g. 8-17
          if(hour < SessionStartHour || hour >= SessionEndHour)
-           {
             return false;
-           }
         }
       else
         {
          //--- Overnight range: e.g. 22-6
          if(hour < SessionStartHour && hour >= SessionEndHour)
-           {
             return false;
-           }
         }
      }
 
@@ -2994,7 +2950,7 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
-input int    TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
+input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
@@ -3055,12 +3011,18 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
+//| Timer event handler                                               |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   TM_OnTimer();
+  }
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   TM_OnTick();
-
    //--- Detect new bar on the LOWER timeframe (entry timeframe)
    datetime currentLowerBar = iTime(_Symbol, LowerTF, 0);
    if(currentLowerBar == g_lastLowerBarTime) return;
@@ -3300,10 +3262,10 @@ void TM_OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| TM_OnTick — call from your OnTick()                               |
-//| Handles heartbeat, queue flush, and daily reset                   |
+//| TM_OnTimer — call from your OnTimer()                             |
+//| Handles heartbeat, queue flush, journal heartbeat                 |
 //+------------------------------------------------------------------+
-void TM_OnTick()
+void TM_OnTimer()
   {
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
@@ -3316,20 +3278,6 @@ void TM_OnTick()
       g_tm_consecutiveLosses = 0;
      }
 
-   //--- Flush signal queue if connected
-   if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_queue.Flush(API_Endpoint, API_Key);
-
-   //--- Flush journal queue if enabled and connected
-   if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
-  }
-
-//+------------------------------------------------------------------+
-//| OnTimer — heartbeat (called by MT5 runtime, NOT by strategy)      |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
    //--- Send heartbeat
    uint startTick = GetTickCount();
    int hbResult = SendHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
@@ -3348,10 +3296,11 @@ void OnTimer()
       PrintFormat("[TradeMetrics] Heartbeat HTTP %d", hbResult);
      }
 
-   //--- Flush queues on timer too (backup path)
+   //--- Flush signal queue if connected
    if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_queue.Flush(API_Endpoint, API_Key);
 
+   //--- Flush journal queue if enabled and connected
    if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
@@ -3390,17 +3339,13 @@ bool TM_CanTrade()
         {
          //--- Normal range: e.g. 8-17
          if(hour < SessionStartHour || hour >= SessionEndHour)
-           {
             return false;
-           }
         }
       else
         {
          //--- Overnight range: e.g. 22-6
          if(hour < SessionStartHour && hour >= SessionEndHour)
-           {
             return false;
-           }
         }
      }
 

@@ -33,7 +33,7 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit
 input double BreakevenTriggerRR    = {{BE_TRIGGER_RR}};       // Breakeven at R:R
-input int    TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
+input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (pips)
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
@@ -93,17 +93,23 @@ void OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
+//| Timer event handler                                               |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   TM_OnTimer();
+  }
+
+//+------------------------------------------------------------------+
 //| Expert tick function                                              |
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   TM_OnTick();
-
    if(!TM_IsNewBar()) return;
 
    //--- Get current GMT hour
    MqlDateTime dt;
-   TimeGMT(dt);
+   TimeToStruct(TimeGMT(), dt);
    int gmtHour = dt.hour;
 
    //--- At session end: close ALL open positions with our MagicNumber

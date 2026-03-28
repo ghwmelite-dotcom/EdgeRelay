@@ -112,10 +112,10 @@ void TM_OnDeinit(const int reason)
   }
 
 //+------------------------------------------------------------------+
-//| TM_OnTick — call from your OnTick()                               |
-//| Handles heartbeat, queue flush, and daily reset                   |
+//| TM_OnTimer — call from your OnTimer()                             |
+//| Handles heartbeat, queue flush, journal heartbeat                 |
 //+------------------------------------------------------------------+
-void TM_OnTick()
+void TM_OnTimer()
   {
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
@@ -128,20 +128,6 @@ void TM_OnTick()
       g_tm_consecutiveLosses = 0;
      }
 
-   //--- Flush signal queue if connected
-   if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_queue.Flush(API_Endpoint, API_Key);
-
-   //--- Flush journal queue if enabled and connected
-   if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
-      g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
-  }
-
-//+------------------------------------------------------------------+
-//| OnTimer — heartbeat (called by MT5 runtime, NOT by strategy)      |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
    //--- Send heartbeat
    uint startTick = GetTickCount();
    int hbResult = SendHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
@@ -160,10 +146,11 @@ void OnTimer()
       PrintFormat("[TradeMetrics] Heartbeat HTTP %d", hbResult);
      }
 
-   //--- Flush queues on timer too (backup path)
+   //--- Flush signal queue if connected
    if(!g_tm_queue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_queue.Flush(API_Endpoint, API_Key);
 
+   //--- Flush journal queue if enabled and connected
    if(EnableJournal && !g_tm_journalQueue.IsEmpty() && g_tm_connStatus == STATUS_CONNECTED)
       g_tm_journalQueue.Flush(JournalEndpoint, API_Key, API_Secret, AccountID);
 
@@ -202,17 +189,13 @@ bool TM_CanTrade()
         {
          //--- Normal range: e.g. 8-17
          if(hour < SessionStartHour || hour >= SessionEndHour)
-           {
             return false;
-           }
         }
       else
         {
          //--- Overnight range: e.g. 22-6
          if(hour < SessionStartHour && hour >= SessionEndHour)
-           {
             return false;
-           }
         }
      }
 

@@ -21,6 +21,24 @@ input int              BreakoutBufferPips   = {{BREAKOUT_BUFFER_PIPS}};  // Brea
 input int              ConfirmationCandles  = {{CONFIRMATION_CANDLES}};  // Confirmation Candles
 input ENUM_TIMEFRAMES  Timeframe            = {{TIMEFRAME}};             // Timeframe
 
+// ── ATR Range Validation ──────────────────────────────────────
+input int              ATRRangePeriod      = {{ATR_RANGE_PERIOD}};      // ATR Period for Range Validation
+input double           MinRangeATRMult     = {{MIN_RANGE_ATR_MULT}};    // Min Range as ATR Multiple (e.g. 0.5)
+input double           MaxRangeATRMult     = {{MAX_RANGE_ATR_MULT}};    // Max Range as ATR Multiple (e.g. 3.0)
+
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};              // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};        // Min ADX for Entry
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};           // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};         // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};             // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};             // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};            // Risk % of Balance (0=use fixed lot)
+
 // ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
@@ -49,6 +67,9 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 {{TRADEMETRICS_BLOCK}}
 
 // ── Strategy Variables ──────────────────────────────────────────
+int      g_adxHandle    = INVALID_HANDLE;
+int      g_atrRangeHandle = INVALID_HANDLE;
+int      g_atrStopHandle  = INVALID_HANDLE;
 CTrade   g_trade;
 double   g_rangeHigh = 0.0;
 double   g_rangeLow  = 0.0;
@@ -56,10 +77,70 @@ int      g_confirmBuyCount  = 0;
 int      g_confirmSellCount = 0;
 
 //+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
+
+//+------------------------------------------------------------------+
 //| Expert initialization function                                    |
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   //--- ADX filter handle
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[BreakoutRetest] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for range validation
+   if(ATRRangePeriod > 0)
+     {
+      g_atrRangeHandle = iATR(_Symbol, Timeframe, ATRRangePeriod);
+      if(g_atrRangeHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[BreakoutRetest] Failed to create ATR range handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops (separate period allowed)
+   if(UseATRStops)
+     {
+      if(ATRStopPeriod == ATRRangePeriod && g_atrRangeHandle != INVALID_HANDLE)
+        {
+         g_atrStopHandle = g_atrRangeHandle;  // Reuse same handle
+        }
+      else
+        {
+         g_atrStopHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+         if(g_atrStopHandle == INVALID_HANDLE)
+           {
+            PrintFormat("[BreakoutRetest] Failed to create ATR stop handle. Error: %d", GetLastError());
+            return INIT_FAILED;
+           }
+        }
+     }
+
    //--- Configure trade object
    g_trade.SetExpertMagicNumber(MagicNumber);
    g_trade.SetDeviationInPoints(10);
@@ -74,6 +155,14 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
+   //--- Release indicator handles
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrRangeHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrRangeHandle);
+   if(g_atrStopHandle != INVALID_HANDLE && g_atrStopHandle != g_atrRangeHandle)
+      IndicatorRelease(g_atrStopHandle);
+
    TM_OnDeinit(reason);
   }
 
@@ -110,6 +199,26 @@ void OnTick()
       if(lowArr[i]  < g_rangeLow)  g_rangeLow  = lowArr[i];
      }
 
+   double rangeSize = g_rangeHigh - g_rangeLow;
+
+   //--- ATR range validation: skip if range is too tight or overextended
+   if(g_atrRangeHandle != INVALID_HANDLE)
+     {
+      double atrRangeArr[];
+      ArraySetAsSeries(atrRangeArr, true);
+      if(CopyBuffer(g_atrRangeHandle, 0, 0, 2, atrRangeArr) >= 2)
+        {
+         double atrVal = atrRangeArr[1];
+         if(atrVal > 0)
+           {
+            if(rangeSize < MinRangeATRMult * atrVal)
+               return;  // Range too tight — likely noise
+            if(rangeSize > MaxRangeATRMult * atrVal)
+               return;  // Range too wide — overextended
+           }
+        }
+     }
+
    //--- Get last closed bar close price
    double closeArr[];
    ArraySetAsSeries(closeArr, true);
@@ -144,6 +253,44 @@ void OnTick()
    bool buySignal  = (g_confirmBuyCount >= ConfirmationCandles);
    bool sellSignal = (g_confirmSellCount >= ConfirmationCandles);
 
+   //--- ADX confirmation: breakout more reliable when ADX > threshold and rising
+   if((buySignal || sellSignal) && ADXPeriod > 0 && g_adxHandle != INVALID_HANDLE)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 3, adxVal) >= 3)
+        {
+         //--- Require ADX above minimum strength
+         if(adxVal[1] < ADXMinStrength)
+           {
+            buySignal  = false;
+            sellSignal = false;
+           }
+         //--- Bonus: ADX should be rising (current > previous) for stronger confirmation
+         //--- If ADX is falling, skip — breakout likely to fail
+         else if(adxVal[1] < adxVal[2])
+           {
+            buySignal  = false;
+            sellSignal = false;
+           }
+        }
+      else
+        {
+         buySignal  = false;
+         sellSignal = false;
+        }
+     }
+
+   //--- Read ATR for dynamic stops
+   double atrStopValue = 0.0;
+   if(UseATRStops && g_atrStopHandle != INVALID_HANDLE)
+     {
+      double atrStopArr[];
+      ArraySetAsSeries(atrStopArr, true);
+      if(CopyBuffer(g_atrStopHandle, 0, 0, 2, atrStopArr) >= 2)
+         atrStopValue = atrStopArr[1];
+     }
+
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
@@ -156,22 +303,39 @@ void OnTick()
       //--- Only open if no existing BUY position
       if(!HasPositionByDirection(POSITION_TYPE_BUY))
         {
-         //--- SL below range low, or use fixed SL if smaller
-         double rangeSL = NormalizeDouble(ask - (ask - g_rangeLow), _Digits);
-         double fixedSL = (StopLossPips > 0) ? NormalizeDouble(ask - StopLossPips * pip, _Digits) : 0.0;
-         double sl = 0.0;
-         if(StopLossPips > 0 && fixedSL > rangeSL)
-            sl = fixedSL;
+         double slDist = 0.0;
+         double tpDist = 0.0;
+
+         if(UseATRStops && atrStopValue > 0)
+           {
+            slDist = atrStopValue * ATRSLMultiplier;
+            tpDist = atrStopValue * ATRTPMultiplier;
+           }
          else
-            sl = rangeSL;
+           {
+            //--- SL below range low, or use fixed SL if smaller
+            double rangeSLDist = ask - g_rangeLow;
+            double fixedSLDist = StopLossPips * pip;
+            if(StopLossPips > 0 && fixedSLDist < rangeSLDist)
+               slDist = fixedSLDist;
+            else
+               slDist = rangeSLDist;
+            tpDist = TakeProfitPips * pip;
+           }
 
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits) : 0.0;
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
 
-         if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "BreakoutRetest"))
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "Breakout", "BUY_BREAK");
+
+         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
            }
         }
      }
@@ -185,22 +349,39 @@ void OnTick()
       //--- Only open if no existing SELL position
       if(!HasPositionByDirection(POSITION_TYPE_SELL))
         {
-         //--- SL above range high, or use fixed SL if smaller
-         double rangeSL = NormalizeDouble(bid + (g_rangeHigh - bid), _Digits);
-         double fixedSL = (StopLossPips > 0) ? NormalizeDouble(bid + StopLossPips * pip, _Digits) : 0.0;
-         double sl = 0.0;
-         if(StopLossPips > 0 && fixedSL < rangeSL)
-            sl = fixedSL;
+         double slDist = 0.0;
+         double tpDist = 0.0;
+
+         if(UseATRStops && atrStopValue > 0)
+           {
+            slDist = atrStopValue * ATRSLMultiplier;
+            tpDist = atrStopValue * ATRTPMultiplier;
+           }
          else
-            sl = rangeSL;
+           {
+            //--- SL above range high, or use fixed SL if smaller
+            double rangeSLDist = g_rangeHigh - bid;
+            double fixedSLDist = StopLossPips * pip;
+            if(StopLossPips > 0 && fixedSLDist < rangeSLDist)
+               slDist = fixedSLDist;
+            else
+               slDist = rangeSLDist;
+            tpDist = TakeProfitPips * pip;
+           }
 
-         double tp = (TakeProfitPips > 0) ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits) : 0.0;
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
 
-         if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "BreakoutRetest"))
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "Breakout", "SELL_BREAK");
+
+         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
            }
         }
      }

@@ -21,6 +21,20 @@ input int              SlowMAPeriod = {{SLOW_MA_PERIOD}};    // Slow MA Period
 input ENUM_MA_METHOD   MAMethod     = {{MA_METHOD}};         // MA Method
 input ENUM_TIMEFRAMES  Timeframe    = {{TIMEFRAME}};         // Timeframe
 
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};              // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};        // Min ADX for Entry
+input int    SlopeBarCount    = {{SLOPE_BAR_COUNT}};         // Slope Lookback Bars (e.g. 3)
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};           // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};         // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};             // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};             // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};            // Risk % of Balance (0=use fixed lot)
+
 // ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
@@ -51,7 +65,29 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 // ── Strategy Variables ──────────────────────────────────────────
 int      g_fastMAHandle = INVALID_HANDLE;
 int      g_slowMAHandle = INVALID_HANDLE;
+int      g_adxHandle    = INVALID_HANDLE;
+int      g_atrHandle    = INVALID_HANDLE;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -66,6 +102,28 @@ int OnInit()
      {
       PrintFormat("[MACrossover] Failed to create MA handles. Error: %d", GetLastError());
       return INIT_FAILED;
+     }
+
+   //--- ADX filter handle
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[MACrossover] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops
+   if(UseATRStops)
+     {
+      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+      if(g_atrHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[MACrossover] Failed to create ATR handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
      }
 
    //--- Configure trade object
@@ -87,6 +145,10 @@ void OnDeinit(const int reason)
       IndicatorRelease(g_fastMAHandle);
    if(g_slowMAHandle != INVALID_HANDLE)
       IndicatorRelease(g_slowMAHandle);
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
 
    TM_OnDeinit(reason);
   }
@@ -107,14 +169,17 @@ void OnTick()
    if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
-   //--- Read MA values: [0] = bar 0 (current forming), [1] = bar 1 (last closed)
+   //--- Read MA values: need enough bars for slope confirmation
+   int barsNeeded = SlopeBarCount + 2;  // +2 for crossover detection at bar 1 and 2
+   if(barsNeeded < 3) barsNeeded = 3;
+
    double fastMA[];
    double slowMA[];
    ArraySetAsSeries(fastMA, true);
    ArraySetAsSeries(slowMA, true);
 
-   if(CopyBuffer(g_fastMAHandle, 0, 0, 3, fastMA) < 3) return;
-   if(CopyBuffer(g_slowMAHandle, 0, 0, 3, slowMA) < 3) return;
+   if(CopyBuffer(g_fastMAHandle, 0, 0, barsNeeded, fastMA) < barsNeeded) return;
+   if(CopyBuffer(g_slowMAHandle, 0, 0, barsNeeded, slowMA) < barsNeeded) return;
 
    //--- Use bar 1 (last closed) and bar 2 (previous closed) for crossover detection
    double fast_curr = fastMA[1];
@@ -126,10 +191,63 @@ void OnTick()
    bool buySignal  = (fast_prev <= slow_prev && fast_curr > slow_curr);
    bool sellSignal = (fast_prev >= slow_prev && fast_curr < slow_curr);
 
+   //--- ADX trend strength filter
+   if((buySignal || sellSignal) && ADXPeriod > 0)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+        {
+         if(adxVal[1] < ADXMinStrength)
+           {
+            buySignal  = false;
+            sellSignal = false;
+           }
+        }
+      else
+        {
+         buySignal  = false;
+         sellSignal = false;
+        }
+     }
+
+   //--- Slope confirmation: fast MA must be moving in trade direction
+   if(buySignal && SlopeBarCount > 0)
+     {
+      //--- Fast MA at bar 1 must be higher than fast MA at bar (1 + SlopeBarCount)
+      int slopeRef = 1 + SlopeBarCount;
+      if(slopeRef < barsNeeded)
+        {
+         if(fastMA[1] <= fastMA[slopeRef])
+            buySignal = false;  // Fast MA not rising — skip buy
+        }
+     }
+
+   if(sellSignal && SlopeBarCount > 0)
+     {
+      //--- Fast MA at bar 1 must be lower than fast MA at bar (1 + SlopeBarCount)
+      int slopeRef = 1 + SlopeBarCount;
+      if(slopeRef < barsNeeded)
+        {
+         if(fastMA[1] >= fastMA[slopeRef])
+            sellSignal = false;  // Fast MA not falling — skip sell
+        }
+     }
+
    //--- Calculate pip value for SL/TP
    double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+
+   //--- Read ATR for dynamic stops if enabled
+   double atrValue = 0.0;
+   if(UseATRStops && g_atrHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
+         atrValue = atrArr[1];
+     }
 
    //--- BUY signal: fast MA crossed above slow MA
    if(buySignal)
@@ -140,14 +258,33 @@ void OnTick()
       //--- Only open if no existing BUY position
       if(!HasPositionByDirection(POSITION_TYPE_BUY))
         {
-         double sl = (StopLossPips > 0)   ? NormalizeDouble(ask - StopLossPips * pip, _Digits)   : 0.0;
-         double tp = (TakeProfitPips > 0)  ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "MACrossover"))
+         if(UseATRStops && atrValue > 0)
+           {
+            slDist = atrValue * ATRSLMultiplier;
+            tpDist = atrValue * ATRTPMultiplier;
+           }
+         else
+           {
+            slDist = StopLossPips * pip;
+            tpDist = TakeProfitPips * pip;
+           }
+
+         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "MA_Cross", "BUY_CROSS");
+
+         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
            }
         }
      }
@@ -161,14 +298,33 @@ void OnTick()
       //--- Only open if no existing SELL position
       if(!HasPositionByDirection(POSITION_TYPE_SELL))
         {
-         double sl = (StopLossPips > 0)   ? NormalizeDouble(bid + StopLossPips * pip, _Digits)   : 0.0;
-         double tp = (TakeProfitPips > 0)  ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits) : 0.0;
+         double slDist = 0.0;
+         double tpDist = 0.0;
 
-         if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "MACrossover"))
+         if(UseATRStops && atrValue > 0)
+           {
+            slDist = atrValue * ATRSLMultiplier;
+            tpDist = atrValue * ATRTPMultiplier;
+           }
+         else
+           {
+            slDist = StopLossPips * pip;
+            tpDist = TakeProfitPips * pip;
+           }
+
+         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+
+         double slPips = (slDist > 0) ? slDist / pip : 0.0;
+         double lot = CalculateLotSize(slPips);
+
+         string comment = StringFormat("TM:%s|SIG:%s", "MA_Cross", "SELL_CROSS");
+
+         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
            {
             ulong ticket = g_trade.ResultOrder();
             if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
            }
         }
      }

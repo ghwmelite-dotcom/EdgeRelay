@@ -21,6 +21,28 @@ input int              RSIOverbought  = {{RSI_OVERBOUGHT}};    // Overbought Lev
 input int              RSIOversold    = {{RSI_OVERSOLD}};      // Oversold Level
 input ENUM_TIMEFRAMES  Timeframe      = {{TIMEFRAME}};         // Timeframe
 
+// ── Bollinger Band Confluence ─────────────────────────────────
+input int              BBPeriod       = {{BB_PERIOD}};         // Bollinger Band Period
+input double           BBDeviation    = {{BB_DEVIATION}};      // Bollinger Band Deviation
+input bool             RequireBBConfluence = {{REQUIRE_BB_CONFLUENCE}}; // Require BB Confluence
+
+// ── Trend Filter ──────────────────────────────────────────────
+input int              TrendMAPeriod  = {{TREND_MA_PERIOD}};   // Trend MA Period (0=disabled, e.g. 200)
+input double           TrendMABuffer  = {{TREND_MA_BUFFER}};   // Trend MA Buffer in ATR units (e.g. 1.0)
+
+// ── Strategy Filters ──────────────────────────────────────────
+input int    ADXPeriod        = {{ADX_PERIOD}};              // ADX Period (0=disabled)
+input double ADXMinStrength   = {{ADX_MIN_STRENGTH}};        // Min ADX for Entry
+
+// ── ATR Dynamic Stops ─────────────────────────────────────────
+input bool   UseATRStops      = {{USE_ATR_STOPS}};           // Use ATR for SL/TP
+input int    ATRStopPeriod    = {{ATR_STOP_PERIOD}};         // ATR Period for Stops
+input double ATRSLMultiplier  = {{ATR_SL_MULT}};             // ATR SL Multiplier
+input double ATRTPMultiplier  = {{ATR_TP_MULT}};             // ATR TP Multiplier
+
+// ── Risk-Based Sizing ─────────────────────────────────────────
+input double RiskPercent      = {{RISK_PERCENT}};            // Risk % of Balance (0=use fixed lot)
+
 // ── Trade Management ────────────────────────────────────────────
 input double LotSize            = {{LOT_SIZE}};              // Lot Size
 input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips)
@@ -49,9 +71,33 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 {{TRADEMETRICS_BLOCK}}
 
 // ── Strategy Variables ──────────────────────────────────────────
-int      g_rsiHandle  = INVALID_HANDLE;
-double   g_rsiPrev    = 0.0;
+int      g_rsiHandle    = INVALID_HANDLE;
+int      g_bbHandle     = INVALID_HANDLE;
+int      g_trendMAHandle = INVALID_HANDLE;
+int      g_adxHandle    = INVALID_HANDLE;
+int      g_atrHandle    = INVALID_HANDLE;
+double   g_rsiPrev      = 0.0;
 CTrade   g_trade;
+
+//+------------------------------------------------------------------+
+//| Calculate lot size based on risk percentage                       |
+//+------------------------------------------------------------------+
+double CalculateLotSize(double slPips)
+  {
+   if(RiskPercent <= 0 || slPips <= 0) return LotSize;
+   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double riskAmount = balance * RiskPercent / 100.0;
+   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   if(tickValue <= 0 || tickSize <= 0) return LotSize;
+   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
+   return lotSize;
+  }
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                    |
@@ -65,6 +111,50 @@ int OnInit()
      {
       PrintFormat("[RSIMeanReversion] Failed to create RSI handle. Error: %d", GetLastError());
       return INIT_FAILED;
+     }
+
+   //--- Bollinger Bands handle
+   if(RequireBBConfluence)
+     {
+      g_bbHandle = iBands(_Symbol, Timeframe, BBPeriod, 0, BBDeviation, PRICE_CLOSE);
+      if(g_bbHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[RSIMeanReversion] Failed to create BB handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- Trend MA filter handle
+   if(TrendMAPeriod > 0)
+     {
+      g_trendMAHandle = iMA(_Symbol, Timeframe, TrendMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
+      if(g_trendMAHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[RSIMeanReversion] Failed to create Trend MA handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ADX filter handle
+   if(ADXPeriod > 0)
+     {
+      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
+      if(g_adxHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[RSIMeanReversion] Failed to create ADX handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
+     }
+
+   //--- ATR handle for dynamic stops
+   if(UseATRStops)
+     {
+      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
+      if(g_atrHandle == INVALID_HANDLE)
+        {
+         PrintFormat("[RSIMeanReversion] Failed to create ATR handle. Error: %d", GetLastError());
+         return INIT_FAILED;
+        }
      }
 
    //--- Configure trade object
@@ -84,9 +174,17 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   //--- Release indicator handle
+   //--- Release indicator handles
    if(g_rsiHandle != INVALID_HANDLE)
       IndicatorRelease(g_rsiHandle);
+   if(g_bbHandle != INVALID_HANDLE)
+      IndicatorRelease(g_bbHandle);
+   if(g_trendMAHandle != INVALID_HANDLE)
+      IndicatorRelease(g_trendMAHandle);
+   if(g_adxHandle != INVALID_HANDLE)
+      IndicatorRelease(g_adxHandle);
+   if(g_atrHandle != INVALID_HANDLE)
+      IndicatorRelease(g_atrHandle);
 
    TM_OnDeinit(reason);
   }
@@ -125,6 +223,22 @@ void OnTick()
    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
+   //--- Read ATR for dynamic stops and trend filter buffer
+   double atrValue = 0.0;
+   if((UseATRStops || TrendMAPeriod > 0) && g_atrHandle != INVALID_HANDLE)
+     {
+      double atrArr[];
+      ArraySetAsSeries(atrArr, true);
+      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
+         atrValue = atrArr[1];
+     }
+   //--- If ATR handle not created for trend filter but we need it, create a temp read
+   if(TrendMAPeriod > 0 && atrValue == 0.0 && g_atrHandle == INVALID_HANDLE)
+     {
+      //--- Use a simple fallback: no buffer applied
+      atrValue = 0.0;
+     }
+
    //--- Exit logic: close BUY positions when RSI crosses above 50 (mean reversion complete)
    if(rsiPrev <= 50.0 && rsiCurr > 50.0)
       ClosePositionsByDirection(POSITION_TYPE_BUY);
@@ -133,31 +247,162 @@ void OnTick()
    if(rsiPrev >= 50.0 && rsiCurr < 50.0)
       ClosePositionsByDirection(POSITION_TYPE_SELL);
 
+   //--- Read Bollinger Band values if confluence required
+   double bbUpper = 0.0;
+   double bbLower = 0.0;
+   if(RequireBBConfluence && g_bbHandle != INVALID_HANDLE)
+     {
+      double bbUpperArr[];
+      double bbLowerArr[];
+      ArraySetAsSeries(bbUpperArr, true);
+      ArraySetAsSeries(bbLowerArr, true);
+      if(CopyBuffer(g_bbHandle, 1, 0, 2, bbUpperArr) < 2) return;  // Buffer 1 = upper
+      if(CopyBuffer(g_bbHandle, 2, 0, 2, bbLowerArr) < 2) return;  // Buffer 2 = lower
+      bbUpper = bbUpperArr[1];
+      bbLower = bbLowerArr[1];
+     }
+
+   //--- Read close price for BB and trend filter checks
+   double closeArr[];
+   ArraySetAsSeries(closeArr, true);
+   if(CopyClose(_Symbol, Timeframe, 1, 1, closeArr) < 1) return;
+   double lastClose = closeArr[0];
+
+   //--- Read trend MA if enabled
+   double trendMAValue = 0.0;
+   if(TrendMAPeriod > 0 && g_trendMAHandle != INVALID_HANDLE)
+     {
+      double trendMA[];
+      ArraySetAsSeries(trendMA, true);
+      if(CopyBuffer(g_trendMAHandle, 0, 0, 2, trendMA) >= 2)
+         trendMAValue = trendMA[1];
+     }
+
+   //--- ADX filter: if enabled, read ADX to skip when trend is too strong for mean reversion
+   bool adxBlocked = false;
+   if(ADXPeriod > 0 && g_adxHandle != INVALID_HANDLE)
+     {
+      double adxVal[];
+      ArraySetAsSeries(adxVal, true);
+      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+        {
+         //--- For mean reversion: skip if ADX is ABOVE threshold (too trendy)
+         if(adxVal[1] > ADXMinStrength)
+            adxBlocked = true;
+        }
+     }
+
    //--- Entry: BUY when RSI is oversold (and no existing BUY position)
    if(rsiCurr < RSIOversold && !HasPositionByDirection(POSITION_TYPE_BUY))
      {
-      double sl = (StopLossPips > 0)   ? NormalizeDouble(ask - StopLossPips * pip, _Digits)   : 0.0;
-      double tp = (TakeProfitPips > 0)  ? NormalizeDouble(ask + TakeProfitPips * pip, _Digits) : 0.0;
-
-      if(g_trade.Buy(LotSize, _Symbol, ask, sl, tp, "RSIMeanReversion"))
+      //--- ADX filter: skip if market is trending too hard
+      if(!adxBlocked)
         {
-         ulong ticket = g_trade.ResultOrder();
-         if(ticket > 0)
-            TM_OnTradeOpened(ticket, _Symbol, "buy", LotSize, ask, sl, tp);
+         //--- BB confluence: price must be at or below lower band
+         bool bbOk = true;
+         if(RequireBBConfluence && bbLower > 0)
+           {
+            if(lastClose > bbLower)
+               bbOk = false;
+           }
+
+         //--- Trend filter: don't buy if price is far below 200 EMA (strong downtrend)
+         bool trendOk = true;
+         if(TrendMAPeriod > 0 && trendMAValue > 0)
+           {
+            double trendBuffer = TrendMABuffer * atrValue;
+            if(lastClose < trendMAValue - trendBuffer)
+               trendOk = false;  // Price too far below EMA — strong downtrend, don't fade
+           }
+
+         if(bbOk && trendOk)
+           {
+            double slDist = 0.0;
+            double tpDist = 0.0;
+
+            if(UseATRStops && atrValue > 0)
+              {
+               slDist = atrValue * ATRSLMultiplier;
+               tpDist = atrValue * ATRTPMultiplier;
+              }
+            else
+              {
+               slDist = StopLossPips * pip;
+               tpDist = TakeProfitPips * pip;
+              }
+
+            double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+
+            double slPips = (slDist > 0) ? slDist / pip : 0.0;
+            double lot = CalculateLotSize(slPips);
+
+            string comment = StringFormat("TM:%s|SIG:%s", "RSI_MR", "BUY_OVERSOLD");
+
+            if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
+              {
+               ulong ticket = g_trade.ResultOrder();
+               if(ticket > 0)
+                  TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
+              }
+           }
         }
      }
 
    //--- Entry: SELL when RSI is overbought (and no existing SELL position)
    if(rsiCurr > RSIOverbought && !HasPositionByDirection(POSITION_TYPE_SELL))
      {
-      double sl = (StopLossPips > 0)   ? NormalizeDouble(bid + StopLossPips * pip, _Digits)   : 0.0;
-      double tp = (TakeProfitPips > 0)  ? NormalizeDouble(bid - TakeProfitPips * pip, _Digits) : 0.0;
-
-      if(g_trade.Sell(LotSize, _Symbol, bid, sl, tp, "RSIMeanReversion"))
+      //--- ADX filter: skip if market is trending too hard
+      if(!adxBlocked)
         {
-         ulong ticket = g_trade.ResultOrder();
-         if(ticket > 0)
-            TM_OnTradeOpened(ticket, _Symbol, "sell", LotSize, bid, sl, tp);
+         //--- BB confluence: price must be at or above upper band
+         bool bbOk = true;
+         if(RequireBBConfluence && bbUpper > 0)
+           {
+            if(lastClose < bbUpper)
+               bbOk = false;
+           }
+
+         //--- Trend filter: don't sell if price is far above 200 EMA (strong uptrend)
+         bool trendOk = true;
+         if(TrendMAPeriod > 0 && trendMAValue > 0)
+           {
+            double trendBuffer = TrendMABuffer * atrValue;
+            if(lastClose > trendMAValue + trendBuffer)
+               trendOk = false;  // Price too far above EMA — strong uptrend, don't fade
+           }
+
+         if(bbOk && trendOk)
+           {
+            double slDist = 0.0;
+            double tpDist = 0.0;
+
+            if(UseATRStops && atrValue > 0)
+              {
+               slDist = atrValue * ATRSLMultiplier;
+               tpDist = atrValue * ATRTPMultiplier;
+              }
+            else
+              {
+               slDist = StopLossPips * pip;
+               tpDist = TakeProfitPips * pip;
+              }
+
+            double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+
+            double slPips = (slDist > 0) ? slDist / pip : 0.0;
+            double lot = CalculateLotSize(slPips);
+
+            string comment = StringFormat("TM:%s|SIG:%s", "RSI_MR", "SELL_OVERBOUGHT");
+
+            if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
+              {
+               ulong ticket = g_trade.ResultOrder();
+               if(ticket > 0)
+                  TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
+              }
+           }
         }
      }
 

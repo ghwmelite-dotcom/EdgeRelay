@@ -59,22 +59,57 @@ const setupSteps: SetupStep[] = [
     ),
   },
   {
-    title: 'Step 3: Install Master EA',
+    title: 'Step 3: Install EA Files',
     content: (
       <div className="space-y-3">
-        <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
-          <li>Copy the downloaded <span className="font-mono-nums text-neon-cyan">.ex5</span> file to:</li>
-        </ol>
-        <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50">
-          <code className="text-sm text-neon-green">[MT5 Data Folder]\MQL5\Experts\</code>
-        </div>
-        <p className="text-sm text-slate-400">
-          Tip: In MT5, go to <span className="font-mono-nums text-neon-cyan">File \u2192 Open Data Folder</span> to find
-          the path.
+        <p className="text-sm text-slate-300">
+          In MT5, go to <span className="font-mono-nums text-neon-cyan">File &rarr; Open Data Folder</span> to find your MQL5 folder. Copy the files as follows:
         </p>
-        <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside" start={3}>
-          <li>Restart MT5 or right-click in Navigator \u2192 Refresh</li>
-          <li>Drag "TradeMetrics_Master" onto any chart</li>
+
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider">Expert Advisors &rarr; MQL5\Experts\</p>
+          <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50 space-y-1">
+            <code className="block text-sm text-neon-green">EdgeRelay_Master.mq5</code>
+            <code className="block text-sm text-neon-green">EdgeRelay_Follower.mq5</code>
+            <code className="block text-sm text-neon-green">TradeJournal_Sync.mq5</code>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider">Include Files &rarr; MQL5\Include\</p>
+          <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50 space-y-1">
+            <code className="block text-sm text-neon-cyan">EdgeRelay_Common.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_Crypto.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_Display.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_Equity.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_Http.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_JournalQueue.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_JournalSync.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_JsonParser.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_PropGuard.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_PropGuardDisplay.mqh</code>
+            <code className="block text-sm text-neon-cyan">EdgeRelay_Queue.mqh</code>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider">Setup Script &rarr; MQL5\Scripts\</p>
+          <div className="font-mono-nums bg-terminal-bg/80 rounded-lg px-4 py-2 border border-terminal-border/50">
+            <code className="block text-sm text-neon-amber">EdgeRelay_Setup.mq5</code>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2 mt-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-neon-amber" />
+          <p className="text-xs text-neon-amber">
+            The Include files are <strong>required</strong>. Without them in MQL5\Include\, the EAs will not compile.
+          </p>
+        </div>
+
+        <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside mt-2">
+          <li>After copying all files, restart MT5 or right-click in Navigator &rarr; Refresh</li>
+          <li>Right-click each EA in Navigator &rarr; Compile (or press F7 in MetaEditor)</li>
+          <li>Drag the EA onto a chart to attach it</li>
         </ol>
       </div>
     ),
@@ -414,6 +449,30 @@ export function DownloadsPage() {
         <EADownloadCard type="master" accounts={accounts} />
         <EADownloadCard type="follower" accounts={accounts} />
         <EADownloadCard type="journal" accounts={accounts} />
+      </div>
+
+      {/* Source Files Notice */}
+      <div
+        className="glass-premium rounded-2xl p-5 animate-fade-in-up"
+        style={{ animationDelay: '90ms' }}
+      >
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full glass shadow-[0_0_15px_#ffb80025]">
+            <BookOpen className="h-5 w-5 text-neon-amber" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-display text-base font-semibold text-white">Source Files &amp; Include Libraries</h3>
+            <p className="text-sm text-terminal-muted mt-1">
+              The EAs require <strong className="text-terminal-text">11 include files</strong> (.mqh) in your MT5 <code className="text-neon-cyan">MQL5\Include\</code> folder.
+              Without them, the EAs won&apos;t compile. See Step 3 below for the complete file list and folder structure.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Badge variant="cyan">3 Expert Advisors (.mq5)</Badge>
+              <Badge variant="purple">11 Include Files (.mqh)</Badge>
+              <Badge variant="amber">1 Setup Script (.mq5)</Badge>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Setup Guide */}

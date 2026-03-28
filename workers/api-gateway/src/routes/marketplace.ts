@@ -232,3 +232,119 @@ marketplace.get('/provider/me', async (c) => {
     error: null,
   });
 });
+
+// ══════════════════════════════════════════════════════════════════
+// PUBLIC MARKETPLACE ROUTES (no auth required)
+// ══════════════════════════════════════════════════════════════════
+
+export const marketplacePublic = new Hono<{ Bindings: Env }>();
+
+// ── GET /marketplace/providers — Leaderboard ────────────────────
+
+marketplacePublic.get('/providers', async (c) => {
+  const sort = c.req.query('sort') ?? 'total_pnl';
+  const instrument = c.req.query('instrument');
+  const strategy = c.req.query('strategy');
+  const minDays = parseInt(c.req.query('min_days') ?? '0', 10);
+  const limit = Math.min(parseInt(c.req.query('limit') ?? '20', 10), 100);
+  const offset = parseInt(c.req.query('offset') ?? '0', 10);
+
+  const validSorts: Record<string, string> = {
+    total_pnl: 'ps.total_pnl DESC',
+    win_rate: 'ps.win_rate DESC',
+    subscribers: 'ps.subscriber_count DESC',
+    newest: 'pp.listed_at DESC',
+    drawdown: 'ps.max_drawdown_pct ASC',
+    trades: 'ps.total_trades DESC',
+  };
+  const orderBy = validSorts[sort] ?? validSorts['total_pnl'];
+
+  let whereClause = 'WHERE pp.is_listed = true';
+  const binds: unknown[] = [];
+
+  if (instrument) {
+    whereClause += ' AND pp.instruments LIKE ?';
+    binds.push(`%${instrument}%`);
+  }
+  if (strategy && ['scalper', 'swing', 'position', 'mixed'].includes(strategy)) {
+    whereClause += ' AND pp.strategy_style = ?';
+    binds.push(strategy);
+  }
+  if (minDays > 0) {
+    whereClause += ' AND ps.active_days >= ?';
+    binds.push(minDays);
+  }
+
+  binds.push(limit, offset);
+
+  const { results } = await c.env.DB.prepare(
+    `SELECT
+      pp.id, pp.display_name, pp.bio, pp.instruments, pp.strategy_style, pp.listed_at,
+      ps.total_trades, ps.win_rate, ps.total_pnl, ps.avg_pips, ps.max_drawdown_pct,
+      ps.sharpe_ratio, ps.avg_trade_duration_sec, ps.profit_factor, ps.active_days,
+      ps.subscriber_count, ps.equity_curve_json, ps.computed_at
+    FROM provider_profiles pp
+    LEFT JOIN provider_stats ps ON ps.provider_id = pp.id
+    ${whereClause}
+    ORDER BY ${orderBy}
+    LIMIT ? OFFSET ?`,
+  )
+    .bind(...binds)
+    .all();
+
+  // Get total count for pagination
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) as total FROM provider_profiles pp
+    LEFT JOIN provider_stats ps ON ps.provider_id = pp.id
+    ${whereClause.replace(/ LIMIT.*/, '')}`,
+  )
+    .bind(...binds.slice(0, -2))
+    .first<{ total: number }>();
+
+  return c.json<ApiResponse>({
+    data: results ?? [],
+    error: null,
+    meta: { total: countRow?.total ?? 0, limit, offset },
+  });
+});
+
+// ── GET /marketplace/providers/:id — Provider detail ────────────
+
+marketplacePublic.get('/providers/:id', async (c) => {
+  const providerId = c.req.param('id');
+
+  const profile = await c.env.DB.prepare(
+    'SELECT * FROM provider_profiles WHERE id = ? AND is_listed = true',
+  )
+    .bind(providerId)
+    .first();
+
+  if (!profile) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Provider not found' } },
+      404,
+    );
+  }
+
+  const stats = await c.env.DB.prepare(
+    'SELECT * FROM provider_stats WHERE provider_id = ?',
+  )
+    .bind(providerId)
+    .first();
+
+  // Recent 5 closed trades
+  const { results: recentTrades } = await c.env.DB.prepare(
+    `SELECT symbol, direction, volume, profit, pips, duration_seconds, close_time
+    FROM journal_trades
+    WHERE account_id = ? AND deal_entry = 'out'
+    ORDER BY close_time DESC
+    LIMIT 5`,
+  )
+    .bind((profile as Record<string, unknown>).master_account_id as string)
+    .all();
+
+  return c.json<ApiResponse>({
+    data: { profile, stats, recent_trades: recentTrades ?? [] },
+    error: null,
+  });
+});

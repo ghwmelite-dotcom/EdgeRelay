@@ -157,7 +157,9 @@ function StrategyCard({
 }) {
   const pairs: string[] = Array.isArray(strategy.recommended_pairs)
     ? strategy.recommended_pairs
-    : [];
+    : typeof strategy.recommended_pairs === 'string'
+      ? (strategy.recommended_pairs as string).split(',').map((s: string) => s.trim()).filter(Boolean)
+      : [];
 
   return (
     <div className="glass-premium rounded-2xl p-5 animate-fade-in-up flex flex-col">

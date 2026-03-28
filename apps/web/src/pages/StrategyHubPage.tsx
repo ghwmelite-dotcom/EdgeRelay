@@ -361,7 +361,8 @@ function GeneratorModal({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [genStatus, setGenStatus] = useState<{ free_remaining: number; total_generated: number; price_per_generation: number; requires_payment: boolean } | null>(null);
+  const [genStatus, setGenStatus] = useState<{ free_remaining: number; total_generated: number; price_per_generation: number; requires_payment: boolean; exempt?: boolean } | null>(null);
+  const [purchasing, setPurchasing] = useState(false);
 
   const params = strategy ? parseParams(strategy.parameters_json) : [];
   const grouped = groupParameters(params);
@@ -451,6 +452,23 @@ function GeneratorModal({
         defaults[p.key] = p.default;
       }
       setValues(defaults);
+    }
+  };
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    setError(null);
+    try {
+      const res = await api.post<{ authorization_url: string }>('/strategy-hub/purchase');
+      if (res.data?.authorization_url) {
+        window.location.href = res.data.authorization_url;
+      } else {
+        setError(res.error?.message ?? 'Payment initialization failed');
+      }
+    } catch {
+      setError('Payment failed. Please try again.');
+    } finally {
+      setPurchasing(false);
     }
   };
 
@@ -620,7 +638,7 @@ function GeneratorModal({
           )}
 
           {/* Generation Status + Button */}
-          {isAuthenticated && genStatus && (
+          {isAuthenticated && genStatus && !genStatus.exempt && (
             <div className="flex items-center justify-between rounded-xl border border-terminal-border/30 bg-terminal-surface/20 px-4 py-2.5">
               {genStatus.requires_payment ? (
                 <>
@@ -657,17 +675,22 @@ function GeneratorModal({
           )}
 
           {isAuthenticated ? (
-            genStatus?.requires_payment ? (
+            genStatus?.requires_payment && !genStatus?.exempt ? (
               <div className="rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-5 text-center space-y-3">
                 <p className="text-sm text-neon-amber font-medium">
                   You've used all 3 free EA generations
                 </p>
                 <p className="text-xs text-terminal-muted">
-                  Each additional EA costs <span className="font-mono-nums text-terminal-text font-bold">$1.99</span> — cheaper than a coffee, more valuable than a VPS.
+                  Each additional EA costs <span className="font-mono-nums text-terminal-text font-bold">$1.99</span>
                 </p>
-                <p className="text-xs text-terminal-muted italic">
-                  Payment integration coming soon. Contact support for early access.
-                </p>
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  isLoading={purchasing}
+                  onClick={handlePurchase}
+                >
+                  Pay $1.99 &amp; Generate
+                </Button>
               </div>
             ) : (
               <Button

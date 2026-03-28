@@ -28,6 +28,7 @@ import { RiskDashboardPage } from '@/pages/RiskDashboardPage';
 import { SimulatorPage } from '@/pages/SimulatorPage';
 import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
 import { MarketplacePage } from '@/pages/MarketplacePage';
+import { StrategyHubPage } from '@/pages/StrategyHubPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -62,6 +63,7 @@ function App() {
         <Route path="/firms" element={<PublicOrAppRoute><FirmDirectoryPage /></PublicOrAppRoute>} />
         <Route path="/firms/:firmName" element={<PublicOrAppRoute><FirmDetailPage /></PublicOrAppRoute>} />
         <Route path="/marketplace" element={<PublicOrAppRoute><MarketplacePage /></PublicOrAppRoute>} />
+        <Route path="/strategy-hub" element={<PublicOrAppRoute><StrategyHubPage /></PublicOrAppRoute>} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -88,6 +90,7 @@ function App() {
           <Route path="/simulator" element={<SimulatorPage />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />
+          <Route path="/app/strategy-hub" element={<StrategyHubPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

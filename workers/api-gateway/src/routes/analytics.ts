@@ -163,7 +163,7 @@ analytics.get('/equity-health', async (c) => {
     // Always update — last trade of the day wins
     const idx = dailyBalances.findIndex((d) => d.date === t.trade_date);
     if (idx >= 0) {
-      dailyBalances[idx].balance = t.balance_at_trade;
+      dailyBalances[idx]!.balance = t.balance_at_trade;
     } else {
       dailyBalances.push({ date: t.trade_date, balance: t.balance_at_trade });
     }
@@ -190,7 +190,7 @@ analytics.get('/equity-health', async (c) => {
   let currentUnderwaterDays = 0;
 
   for (let i = 0; i < dailyBalances.length; i++) {
-    const bal = dailyBalances[i].balance;
+    const bal = dailyBalances[i]!.balance;
     if (bal > peak) {
       peak = bal;
       if (currentUnderwaterDays > maxUnderwaterDays) {
@@ -221,8 +221,8 @@ analytics.get('/equity-health', async (c) => {
   if (dailyBalances.length > 2) {
     const dailyReturns: number[] = [];
     for (let i = 1; i < dailyBalances.length; i++) {
-      const prev = dailyBalances[i - 1].balance;
-      if (prev > 0) dailyReturns.push((dailyBalances[i].balance - prev) / prev);
+      const prev = dailyBalances[i - 1]!.balance;
+      if (prev > 0) dailyReturns.push((dailyBalances[i]!.balance - prev) / prev);
     }
     if (dailyReturns.length > 1) {
       const mean = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
@@ -242,15 +242,15 @@ analytics.get('/equity-health', async (c) => {
     const yMean = ys.reduce((a, b) => a + b, 0) / n;
     let ssRes = 0, ssTot = 0, ssXY = 0, ssXX = 0;
     for (let i = 0; i < n; i++) {
-      ssXY += (xs[i] - xMean) * (ys[i] - yMean);
-      ssXX += (xs[i] - xMean) ** 2;
-      ssTot += (ys[i] - yMean) ** 2;
+      ssXY += (xs[i]! - xMean) * (ys[i]! - yMean);
+      ssXX += (xs[i]! - xMean) ** 2;
+      ssTot += (ys[i]! - yMean) ** 2;
     }
     const slope = ssXX > 0 ? ssXY / ssXX : 0;
     const intercept = yMean - slope * xMean;
     for (let i = 0; i < n; i++) {
-      const predicted = slope * xs[i] + intercept;
-      ssRes += (ys[i] - predicted) ** 2;
+      const predicted = slope * xs[i]! + intercept;
+      ssRes += (ys[i]! - predicted) ** 2;
     }
     rSquared = ssTot > 0 ? 1 - ssRes / ssTot : 0;
   }
@@ -359,15 +359,15 @@ analytics.get('/edge-validation', async (c) => {
   for (let i = 0; i < 1000; i++) {
     let bGross = 0, bLoss = 0;
     for (let j = 0; j < n; j++) {
-      const sample = profits[Math.floor(Math.random() * n)];
+      const sample = profits[Math.floor(Math.random() * n)]!;
       if (sample > 0) bGross += sample;
       else bLoss += Math.abs(sample);
     }
     bootstrapPFs.push(bLoss > 0 ? bGross / bLoss : bGross > 0 ? 999 : 0);
   }
   bootstrapPFs.sort((a, b) => a - b);
-  const pfCiLower = bootstrapPFs[Math.floor(bootstrapPFs.length * 0.025)];
-  const pfCiUpper = bootstrapPFs[Math.floor(bootstrapPFs.length * 0.975)];
+  const pfCiLower = bootstrapPFs[Math.floor(bootstrapPFs.length * 0.025)] ?? 0;
+  const pfCiUpper = bootstrapPFs[Math.floor(bootstrapPFs.length * 0.975)] ?? 0;
 
   // Monte Carlo max drawdown simulation (1000 shuffles)
   const mcDrawdowns: number[] = [];
@@ -376,7 +376,7 @@ analytics.get('/edge-validation', async (c) => {
     const shuffled = [...profits];
     for (let j = shuffled.length - 1; j > 0; j--) {
       const k = Math.floor(Math.random() * (j + 1));
-      [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+      [shuffled[j], shuffled[k]] = [shuffled[k]!, shuffled[j]!];
     }
     // Compute max drawdown of shuffled sequence
     let cumulative = 0;
@@ -391,8 +391,8 @@ analytics.get('/edge-validation', async (c) => {
     mcDrawdowns.push(maxDd);
   }
   mcDrawdowns.sort((a, b) => a - b);
-  const mcMedianDd = mcDrawdowns[Math.floor(mcDrawdowns.length * 0.5)];
-  const mcWorst95 = mcDrawdowns[Math.floor(mcDrawdowns.length * 0.95)];
+  const mcMedianDd = mcDrawdowns[Math.floor(mcDrawdowns.length * 0.5)] ?? 0;
+  const mcWorst95 = mcDrawdowns[Math.floor(mcDrawdowns.length * 0.95)] ?? 0;
 
   // Verdict
   const sampleAdequate = n >= 200;
@@ -436,3 +436,219 @@ analytics.get('/edge-validation', async (c) => {
     error: null,
   });
 });
+
+// ── GET /analytics/ai-insights ──────────────────────────────────
+
+analytics.get('/ai-insights', async (c) => {
+  const userId = c.get('userId');
+  const accountIds = await getUserAccountIds(c.env.DB, userId);
+
+  if (accountIds.length === 0) {
+    return c.json<ApiResponse>({ data: { insights: [], generated_at: null, cached: false, model: null }, error: null });
+  }
+
+  const { placeholders, values } = inClause(accountIds);
+  const baseWhere = `account_id IN (${placeholders}) AND deal_entry = 'out'`;
+
+  // Compute stats hash for cache check
+  const hashRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) as cnt, COALESCE(SUM(profit), 0) as total, MAX(close_time) as latest
+     FROM journal_trades WHERE ${baseWhere}`,
+  ).bind(...values).first<{ cnt: number; total: number; latest: string }>();
+
+  const statsHash = `${hashRow?.cnt ?? 0}:${Math.round((hashRow?.total ?? 0) * 100)}:${hashRow?.latest ?? ''}`;
+
+  // Check cache
+  const cached = await c.env.DB.prepare(
+    "SELECT insights_json, stats_hash, computed_at FROM ai_insights_cache WHERE user_id = ?",
+  ).bind(userId).first<{ insights_json: string; stats_hash: string; computed_at: string }>();
+
+  if (cached && cached.stats_hash === statsHash) {
+    const cacheAge = Date.now() - new Date(cached.computed_at).getTime();
+    if (cacheAge < 24 * 60 * 60 * 1000) {
+      return c.json<ApiResponse>({
+        data: {
+          insights: JSON.parse(cached.insights_json),
+          generated_at: cached.computed_at,
+          cached: true,
+          model: 'cached',
+        },
+        error: null,
+      });
+    }
+  }
+
+  // Compute quick stats for AI prompt
+  const { results: sessionStats } = await c.env.DB.prepare(
+    `SELECT session_tag as session, COUNT(*) as trades,
+            COALESCE(SUM(profit), 0) as pnl,
+            ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+     FROM journal_trades WHERE ${baseWhere} GROUP BY session_tag`,
+  ).bind(...values).all();
+
+  const { results: dayStats } = await c.env.DB.prepare(
+    `SELECT CAST(strftime('%w', close_time) AS INTEGER) as day_num, COUNT(*) as trades,
+            COALESCE(SUM(profit), 0) as pnl,
+            ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+     FROM journal_trades WHERE ${baseWhere} GROUP BY day_num`,
+  ).bind(...values).all();
+
+  const { results: symbolStats } = await c.env.DB.prepare(
+    `SELECT symbol, COUNT(*) as trades, COALESCE(SUM(profit), 0) as pnl,
+            ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+     FROM journal_trades WHERE ${baseWhere} GROUP BY symbol ORDER BY pnl DESC LIMIT 10`,
+  ).bind(...values).all();
+
+  const overallStats = await c.env.DB.prepare(
+    `SELECT COUNT(*) as total_trades, COALESCE(SUM(profit), 0) as total_pnl,
+            ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) * 100.0 / COUNT(*), 1) as win_rate,
+            ROUND(AVG(CASE WHEN profit > 0 THEN profit END), 2) as avg_win,
+            ROUND(AVG(CASE WHEN profit < 0 THEN profit END), 2) as avg_loss
+     FROM journal_trades WHERE ${baseWhere}`,
+  ).bind(...values).first();
+
+  const statsPayload = {
+    overall: overallStats,
+    by_session: sessionStats,
+    by_day: (dayStats ?? []).map((d: Record<string, unknown>) => ({
+      day: DAY_NAMES[(d.day_num as number) ?? 0],
+      ...d,
+    })),
+    by_symbol: symbolStats,
+  };
+
+  const systemPrompt = `You are an elite forex trading analyst reviewing a trader's performance data. Analyze the data and return ONLY a valid JSON array of 3-5 actionable insights. No markdown, no explanation outside the JSON. Each insight object must have exactly these fields:
+- "severity": one of "critical", "warning", "info", "positive"
+- "title": short headline (max 60 chars)
+- "detail": 2-3 sentences with specific numbers from the data
+- "recommendation": one actionable sentence
+
+Focus on: sessions/days/symbols losing money, edge strength, risk issues, patterns suggesting improvements, and what's working well. Be specific with numbers. Every insight must reference actual data provided.`;
+
+  const userPrompt = `Analyze this trader's performance data:\n\n${JSON.stringify(statsPayload, null, 2)}`;
+
+  let insights: unknown[] = [];
+  let modelUsed = '';
+
+  // Try 70B first, fall back to 8B
+  for (const model of [
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    '@cf/meta/llama-3.1-8b-instruct-fast',
+  ]) {
+    try {
+      const aiResponse = await c.env.AI.run(model as Parameters<typeof c.env.AI.run>[0], {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 1500,
+      });
+
+      const text = typeof aiResponse === 'string' ? aiResponse : (aiResponse as { response?: string }).response ?? '';
+
+      // Extract JSON from response (may be wrapped in markdown code blocks)
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        insights = JSON.parse(jsonMatch[0]);
+        modelUsed = model;
+        break;
+      }
+    } catch {
+      // Try next model
+      continue;
+    }
+  }
+
+  // Fallback: template insights if AI failed
+  if (insights.length === 0) {
+    modelUsed = 'template-fallback';
+    insights = generateFallbackInsights(statsPayload);
+  }
+
+  // Cache result
+  const insightsJson = JSON.stringify(insights);
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO ai_insights_cache (user_id, insights_json, stats_hash, computed_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET insights_json = excluded.insights_json, stats_hash = excluded.stats_hash, computed_at = excluded.computed_at`,
+  ).bind(userId, insightsJson, statsHash, now).run();
+
+  return c.json<ApiResponse>({
+    data: {
+      insights,
+      generated_at: now,
+      cached: false,
+      model: modelUsed,
+    },
+    error: null,
+  });
+});
+
+// ── Fallback insights when AI is unavailable ────────────────────
+
+function generateFallbackInsights(stats: {
+  overall: Record<string, unknown> | null;
+  by_session: Record<string, unknown>[] | null;
+  by_day: Record<string, unknown>[] | null;
+  by_symbol: Record<string, unknown>[] | null;
+}): unknown[] {
+  const insights: unknown[] = [];
+
+  // Check for losing sessions
+  for (const s of stats.by_session ?? []) {
+    if ((s.pnl as number) < 0 && (s.trades as number) >= 5) {
+      insights.push({
+        severity: 'warning',
+        title: `${String(s.session).charAt(0).toUpperCase() + String(s.session).slice(1)} session is losing money`,
+        detail: `Your ${s.session} session trades show ${s.pnl} P&L with ${s.win_rate}% win rate across ${s.trades} trades.`,
+        recommendation: `Review your ${s.session} session strategy or consider reducing position size during these hours.`,
+      });
+    }
+  }
+
+  // Check for losing days
+  for (const d of stats.by_day ?? []) {
+    if ((d.pnl as number) < 0 && (d.trades as number) >= 3) {
+      insights.push({
+        severity: 'info',
+        title: `${d.day} trades tend to lose money`,
+        detail: `Your ${d.day} trades show ${d.pnl} P&L with ${d.win_rate}% win rate across ${d.trades} trades.`,
+        recommendation: `Consider reducing activity on ${d.day}s or tightening entry criteria.`,
+      });
+    }
+  }
+
+  // Best performing symbol
+  const bestSymbol = (stats.by_symbol ?? []).sort((a, b) => (b.pnl as number) - (a.pnl as number))[0];
+  if (bestSymbol && (bestSymbol.pnl as number) > 0) {
+    insights.push({
+      severity: 'positive',
+      title: `${bestSymbol.symbol} is your strongest instrument`,
+      detail: `${bestSymbol.symbol} shows +${bestSymbol.pnl} P&L with ${bestSymbol.win_rate}% win rate across ${bestSymbol.trades} trades.`,
+      recommendation: `Consider focusing more of your trading activity on ${bestSymbol.symbol}.`,
+    });
+  }
+
+  // Overall win rate
+  const overall = stats.overall;
+  if (overall && (overall.win_rate as number) > 55) {
+    insights.push({
+      severity: 'positive',
+      title: 'Solid overall win rate',
+      detail: `Your overall win rate is ${overall.win_rate}% across ${overall.total_trades} trades with total P&L of ${overall.total_pnl}.`,
+      recommendation: 'Focus on maintaining consistency and managing risk to protect your edge.',
+    });
+  }
+
+  if (insights.length === 0) {
+    insights.push({
+      severity: 'info',
+      title: 'Keep trading to unlock insights',
+      detail: 'More trading data is needed to generate meaningful insights. The AI analyzes patterns across sessions, days, and instruments.',
+      recommendation: 'Continue trading and check back when you have 20+ closed trades.',
+    });
+  }
+
+  return insights.slice(0, 5);
+}

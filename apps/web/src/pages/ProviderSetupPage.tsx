@@ -49,7 +49,7 @@ function QualificationProgress({
       </div>
       <div className="space-y-2">
         <div>
-          <div className="flex justify-between text-[10px] uppercase tracking-wider text-terminal-muted mb-1">
+          <div className="flex justify-between text-[11px] uppercase tracking-wider text-terminal-muted mb-1">
             <span>Closed Trades</span>
             <span>{qualification.trade_count}/{qualification.required_trades}</span>
           </div>
@@ -58,7 +58,7 @@ function QualificationProgress({
           </div>
         </div>
         <div>
-          <div className="flex justify-between text-[10px] uppercase tracking-wider text-terminal-muted mb-1">
+          <div className="flex justify-between text-[11px] uppercase tracking-wider text-terminal-muted mb-1">
             <span>Active Days</span>
             <span>{qualification.active_days}/{qualification.required_days}</span>
           </div>
@@ -77,7 +77,7 @@ function StatBlock({ label, value, icon }: { label: string; value: string; icon:
     <div className="glass-premium rounded-xl p-4">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-terminal-muted">{icon}</span>
-        <span className="text-[10px] uppercase tracking-[2px] text-terminal-muted font-semibold">{label}</span>
+        <span className="text-[11px] uppercase tracking-[2px] text-terminal-muted font-semibold">{label}</span>
       </div>
       <p className="text-xl font-bold font-mono-nums text-white">{value}</p>
     </div>
@@ -198,7 +198,7 @@ export function ProviderSetupPage() {
     return (
       <div className="space-y-8">
         <div className="animate-fade-in-up">
-          <p className="text-[10px] uppercase tracking-[2px] text-terminal-muted font-semibold mb-1">Signal Provider</p>
+          <p className="text-[11px] uppercase tracking-[2px] text-terminal-muted font-semibold mb-1">Signal Provider</p>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">Provider Dashboard</h1>
         </div>
         <ProviderDashboard />
@@ -209,7 +209,7 @@ export function ProviderSetupPage() {
   return (
     <div className="space-y-8">
       <div className="animate-fade-in-up">
-        <p className="text-[10px] uppercase tracking-[2px] text-terminal-muted font-semibold mb-1">Signal Marketplace</p>
+        <p className="text-[11px] uppercase tracking-[2px] text-terminal-muted font-semibold mb-1">Signal Marketplace</p>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">Become a Provider</h1>
         <p className="text-sm text-terminal-muted mt-2 max-w-lg">
           Share your trading signals with the community. Your performance is verified through your trade journal — no fake screenshots, no BS.
@@ -234,7 +234,7 @@ export function ProviderSetupPage() {
             />
 
             <div className="space-y-1.5">
-              <label className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+              <label className="text-[11px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-neon-cyan" />
                 Bio
               </label>

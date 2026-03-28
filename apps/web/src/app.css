@@ -11,8 +11,8 @@
   --color-terminal-card: #0d1219;
   --color-terminal-border: #151d28;
   --color-terminal-border-hover: #1f2d3d;
-  --color-terminal-muted: #3d4f63;
-  --color-terminal-text: #c8d6e5;
+  --color-terminal-muted: #5a6f85;
+  --color-terminal-text: #dce6f0;
 
   --color-neon-cyan: #00e5ff;
   --color-neon-cyan-dim: #00e5ff25;
@@ -55,10 +55,24 @@ html.light {
 /* ── Base ───────────────────────────────────────────────────── */
 html {
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
   background-color: var(--color-terminal-bg);
   color: var(--color-terminal-text);
   font-feature-settings: 'ss01' on, 'cv01' on;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography Readability ────────────────────────────────────── */
+/* Bump all micro-text (10px labels) to 11px minimum for readability */
+.text-\[10px\] { font-size: 11px !important; }
+.text-\[9px\] { font-size: 11px !important; }
+
+/* Ensure body text and form elements are comfortably sized */
+p, span, td, th, li, label, input, select, textarea, button {
+  letter-spacing: 0.01em;
 }
 
 ::selection {

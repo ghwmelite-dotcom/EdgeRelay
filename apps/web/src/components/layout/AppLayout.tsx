@@ -178,7 +178,7 @@ export function AppLayout() {
             <div key={gi}>
               {group.label && (
                 <div className="flex items-center gap-2 px-3 mb-2">
-                  <span className="text-[9px] uppercase tracking-[2.5px] font-semibold text-terminal-muted/50">
+                  <span className="text-[11px] uppercase tracking-[2px] font-semibold text-terminal-muted/70">
                     {group.label}
                   </span>
                   <div className="flex-1 h-px bg-terminal-border/30" />

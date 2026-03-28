@@ -215,7 +215,9 @@ async function formatMorningBrief(db: D1Database, now: Date): Promise<string | n
 
 async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<void> {
   const utcHour = now.getUTCHours();
-  const isFriday = now.getUTCDay() === 5;
+  // Send weekly on Friday OR Saturday (catches missed Friday digests)
+  const dayOfWeek = now.getUTCDay();
+  const isFridayOrSaturday = dayOfWeek === 5 || dayOfWeek === 6;
 
   // Get all users with any digest/alert pref enabled
   const { results } = await env.DB.prepare(
@@ -257,8 +259,8 @@ async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<
       }
     }
 
-    // Weekly digest (Friday only)
-    if (pref.weekly_digest && isFriday) {
+    // Weekly digest (Friday or Saturday — catches missed Friday window)
+    if (pref.weekly_digest && isFridayOrSaturday) {
       const weekKey = getWeekKey(now);
       const dedupKey = `digest-sent:${pref.user_id}:weekly:${weekKey}`;
       const alreadySent = await env.BOT_STATE.get(dedupKey);
@@ -326,7 +328,12 @@ async function getDailyStats(db: D1Database, userId: string): Promise<JournalSta
     .bind(userId, today)
     .first<{ total_pnl: number; trade_count: number; win_count: number }>();
 
-  if (!row || row.trade_count === 0) return null;
+  if (!row || row.trade_count === 0) {
+    return {
+      total_pnl: 0, trade_count: 0, win_count: 0,
+      best_symbol: null, best_pnl: 0, worst_symbol: null, worst_pnl: 0,
+    };
+  }
 
   // Best and worst trades
   const best = await db
@@ -380,7 +387,12 @@ async function getWeeklyStats(db: D1Database, userId: string): Promise<JournalSt
     .bind(userId, startDate, endDate)
     .first<{ total_pnl: number; trade_count: number; win_count: number }>();
 
-  if (!row || row.trade_count === 0) return null;
+  if (!row || row.trade_count === 0) {
+    return {
+      total_pnl: 0, trade_count: 0, win_count: 0,
+      best_symbol: null, best_pnl: 0, worst_symbol: null, worst_pnl: 0,
+    };
+  }
 
   const best = await db
     .prepare(
@@ -428,17 +440,25 @@ async function getActiveAccountCount(
 
 function formatDailySummary(stats: JournalStats, now: Date): string {
   const date = now.toISOString().slice(0, 10);
-  const winRate = stats.trade_count > 0 ? Math.round((stats.win_count / stats.trade_count) * 100) : 0;
-  const pnlSign = stats.total_pnl >= 0 ? '+' : '';
   const lines = [
     `📊 <b>Daily Summary — ${date}</b>`,
     '',
-    `P&L: <b>${pnlSign}$${stats.total_pnl.toFixed(2)}</b>`,
-    `Trades: ${stats.trade_count}`,
-    `Win Rate: ${winRate}%`,
   ];
-  if (stats.best_symbol) lines.push(`Best: ${stats.best_symbol} +$${stats.best_pnl.toFixed(2)}`);
-  if (stats.worst_symbol) lines.push(`Worst: ${stats.worst_symbol} $${stats.worst_pnl.toFixed(2)}`);
+
+  if (stats.trade_count === 0) {
+    lines.push('No trades closed today. Rest up — the market will be there tomorrow.');
+  } else {
+    const winRate = Math.round((stats.win_count / stats.trade_count) * 100);
+    const pnlSign = stats.total_pnl >= 0 ? '+' : '';
+    lines.push(
+      `P&L: <b>${pnlSign}$${stats.total_pnl.toFixed(2)}</b>`,
+      `Trades: ${stats.trade_count}`,
+      `Win Rate: ${winRate}%`,
+    );
+    if (stats.best_symbol) lines.push(`Best: ${stats.best_symbol} +$${stats.best_pnl.toFixed(2)}`);
+    if (stats.worst_symbol) lines.push(`Worst: ${stats.worst_symbol} $${stats.worst_pnl.toFixed(2)}`);
+  }
+
   return lines.join('\n');
 }
 
@@ -450,16 +470,24 @@ function formatWeeklyDigest(
   const endDate = now.toISOString().slice(0, 10);
   const startDate = new Date(now);
   startDate.setUTCDate(startDate.getUTCDate() - 7);
-  const winRate = stats.trade_count > 0 ? Math.round((stats.win_count / stats.trade_count) * 100) : 0;
-  const pnlSign = stats.total_pnl >= 0 ? '+' : '';
   const lines = [
     `📈 <b>Weekly Recap — ${startDate.toISOString().slice(0, 10)} to ${endDate}</b>`,
     '',
-    `Total P&L: <b>${pnlSign}$${stats.total_pnl.toFixed(2)}</b>`,
-    `Trades: ${stats.trade_count}`,
-    `Win Rate: ${winRate}%`,
   ];
-  if (stats.best_symbol) lines.push(`Top Symbol: ${stats.best_symbol}`);
+
+  if (stats.trade_count === 0) {
+    lines.push('No trades this week. Review your strategy and come back strong.');
+  } else {
+    const winRate = Math.round((stats.win_count / stats.trade_count) * 100);
+    const pnlSign = stats.total_pnl >= 0 ? '+' : '';
+    lines.push(
+      `Total P&L: <b>${pnlSign}$${stats.total_pnl.toFixed(2)}</b>`,
+      `Trades: ${stats.trade_count}`,
+      `Win Rate: ${winRate}%`,
+    );
+    if (stats.best_symbol) lines.push(`Top Symbol: ${stats.best_symbol}`);
+  }
+
   lines.push(`Active Accounts: ${accounts.active}/${accounts.total} online`);
   return lines.join('\n');
 }

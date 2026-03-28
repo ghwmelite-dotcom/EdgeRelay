@@ -68,6 +68,17 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+const MASTER_ENDPOINT = 'https://edgerelay-signal-ingestion.ghwmelite.workers.dev';
+const FOLLOWER_ENDPOINT = 'https://edgerelay-signal-ingestion.ghwmelite.workers.dev';
+const JOURNAL_ENDPOINT = 'https://edgerelay-journal-sync.ghwmelite.workers.dev';
+const API_ENDPOINT = 'https://edgerelay-api.ghwmelite.workers.dev';
+
+const WEBREQUEST_URLS = [
+  MASTER_ENDPOINT,
+  JOURNAL_ENDPOINT,
+  API_ENDPOINT,
+];
+
 const LOT_MODE_OPTIONS = [
   { value: 'mirror', label: 'Mirror' },
   { value: 'fixed', label: 'Fixed' },
@@ -79,14 +90,24 @@ const LOT_MODE_OPTIONS = [
 /*  Setup Copier Wizard — creates master + follower in one flow        */
 /* ------------------------------------------------------------------ */
 
-function CredentialBlock({ label, account }: { label: string; account: Account }) {
+function CredentialBlock({ label, account, isMaster }: { label: string; account: Account; isMaster?: boolean }) {
+  const endpoint = isMaster ? MASTER_ENDPOINT : FOLLOWER_ENDPOINT;
   return (
     <div className="rounded-xl border border-terminal-border/50 bg-terminal-surface/50 p-4 space-y-3">
       <p className="text-[10px] uppercase tracking-[2px] font-semibold text-terminal-muted">{label}</p>
       <div>
+        <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">Account ID</span>
+        <div className="flex items-center gap-2 mt-1">
+          <code className="font-mono-nums text-xs text-neon-cyan bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+            {account.id}
+          </code>
+          <CopyButton text={account.id} />
+        </div>
+      </div>
+      <div>
         <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Key</span>
         <div className="flex items-center gap-2 mt-1">
-          <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+          <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
             {account.api_key}
           </code>
           <CopyButton text={account.api_key} />
@@ -95,12 +116,32 @@ function CredentialBlock({ label, account }: { label: string; account: Account }
       <div>
         <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Secret</span>
         <div className="flex items-center gap-2 mt-1">
-          <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+          <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
             {account.api_secret}
           </code>
           <CopyButton text={account.api_secret} />
         </div>
       </div>
+      <div>
+        <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Endpoint</span>
+        <div className="flex items-center gap-2 mt-1">
+          <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+            {endpoint}
+          </code>
+          <CopyButton text={endpoint} />
+        </div>
+      </div>
+      {isMaster && (
+        <div>
+          <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">Journal Endpoint</span>
+          <div className="flex items-center gap-2 mt-1">
+            <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+              {JOURNAL_ENDPOINT}
+            </code>
+            <CopyButton text={JOURNAL_ENDPOINT} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -273,11 +314,25 @@ function SetupCopierWizard({ open, onClose }: { open: boolean; onClose: () => vo
           </div>
 
           {createdMaster && (
-            <CredentialBlock label="Signal Source — Master EA" account={createdMaster} />
+            <CredentialBlock label="Signal Source — Master EA" account={createdMaster} isMaster />
           )}
           {createdFollower && (
             <CredentialBlock label="Copy Destination — Follower EA" account={createdFollower} />
           )}
+
+          {/* WebRequest URLs */}
+          <div className="rounded-xl border border-terminal-border/50 bg-terminal-surface/50 p-4 space-y-2">
+            <p className="text-[10px] uppercase tracking-[2px] font-semibold text-terminal-muted">MT5 WebRequest URLs</p>
+            <p className="text-xs text-terminal-muted">Add these to <span className="text-terminal-text">Tools &gt; Options &gt; Expert Advisors &gt; Allow WebRequest</span>:</p>
+            {WEBREQUEST_URLS.map((url) => (
+              <div key={url} className="flex items-center gap-2">
+                <code className="font-mono-nums text-xs text-terminal-text bg-terminal-bg/50 rounded-lg px-3 py-1.5 flex-1 truncate border border-terminal-border/50">
+                  {url}
+                </code>
+                <CopyButton text={url} />
+              </div>
+            ))}
+          </div>
 
           <div className="flex items-start gap-2 rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-3">
             <AlertTriangle size={14} className="text-neon-amber mt-0.5 shrink-0" />

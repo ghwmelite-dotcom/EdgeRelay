@@ -7,6 +7,11 @@ import {
   Settings,
   Eye,
   AlertTriangle,
+  ArrowRight,
+  ArrowLeft,
+  Radio,
+  Wifi,
+  Download,
 } from 'lucide-react';
 import { useAccountsStore, type Account, type FollowerConfig } from '@/stores/accounts';
 import { api } from '@/lib/api';
@@ -65,10 +70,230 @@ const LOT_MODE_OPTIONS = [
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Add Account Modal                                                 */
+/*  Setup Copier Wizard — creates master + follower in one flow        */
 /* ------------------------------------------------------------------ */
 
-function AddAccountModal({
+function CredentialBlock({ label, account }: { label: string; account: Account }) {
+  return (
+    <div className="rounded-xl border border-terminal-border/50 bg-terminal-surface/50 p-4 space-y-3">
+      <p className="text-[10px] uppercase tracking-[2px] font-semibold text-terminal-muted">{label}</p>
+      <div>
+        <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Key</span>
+        <div className="flex items-center gap-2 mt-1">
+          <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+            {account.api_key}
+          </code>
+          <CopyButton text={account.api_key} />
+        </div>
+      </div>
+      <div>
+        <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium">API Secret</span>
+        <div className="flex items-center gap-2 mt-1">
+          <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
+            {account.api_secret}
+          </code>
+          <CopyButton text={account.api_secret} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SetupCopierWizard({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const createAccount = useAccountsStore((s) => s.createAccount);
+  const [step, setStep] = useState(1);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Step 1: Source
+  const [srcAlias, setSrcAlias] = useState('');
+  const [srcBroker, setSrcBroker] = useState('');
+  const [srcLogin, setSrcLogin] = useState('');
+
+  // Step 2: Destination
+  const [dstAlias, setDstAlias] = useState('');
+  const [dstBroker, setDstBroker] = useState('');
+  const [dstLogin, setDstLogin] = useState('');
+
+  // Step 3: Results
+  const [createdMaster, setCreatedMaster] = useState<Account | null>(null);
+  const [createdFollower, setCreatedFollower] = useState<Account | null>(null);
+
+  const reset = () => {
+    setStep(1);
+    setFormError(null);
+    setIsSubmitting(false);
+    setSrcAlias(''); setSrcBroker(''); setSrcLogin('');
+    setDstAlias(''); setDstBroker(''); setDstLogin('');
+    setCreatedMaster(null); setCreatedFollower(null);
+  };
+
+  const handleClose = () => { reset(); onClose(); };
+
+  const handleNext = () => {
+    setFormError(null);
+    if (step === 1) {
+      if (!srcAlias.trim()) { setFormError('Give your signal source a name'); return; }
+      setStep(2);
+    }
+  };
+
+  const handleBack = () => { setFormError(null); setStep(step - 1); };
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    if (!dstAlias.trim()) { setFormError('Give your copy destination a name'); return; }
+
+    setIsSubmitting(true);
+    try {
+      // Create master
+      const master = await createAccount({
+        role: 'master',
+        alias: srcAlias.trim(),
+        broker_name: srcBroker || undefined,
+        mt5_login: srcLogin || undefined,
+      });
+      if (!master) {
+        setFormError(useAccountsStore.getState().error ?? 'Failed to create signal source');
+        setIsSubmitting(false);
+        return;
+      }
+      setCreatedMaster(master);
+
+      // Create follower linked to master
+      const follower = await createAccount({
+        role: 'follower',
+        alias: dstAlias.trim(),
+        broker_name: dstBroker || undefined,
+        mt5_login: dstLogin || undefined,
+        master_account_id: master.id,
+      });
+      if (!follower) {
+        setFormError(useAccountsStore.getState().error ?? 'Signal source created but follower failed');
+        setIsSubmitting(false);
+        setStep(3); // Still show master creds
+        return;
+      }
+      setCreatedFollower(follower);
+      setIsSubmitting(false);
+      setStep(3);
+    } catch {
+      setIsSubmitting(false);
+      setFormError('Network error — please try again');
+    }
+  };
+
+  const stepTitles = ['Signal Source', 'Copy Destination', 'Your Credentials'];
+  const title = step <= 3 ? stepTitles[step - 1] : '';
+
+  return (
+    <Modal open={open} onClose={handleClose} title={title}>
+      {/* Progress bar */}
+      {step < 3 && (
+        <div className="flex items-center gap-2 mb-5">
+          {[1, 2, 3].map((s) => (
+            <div key={s} className="flex-1 flex items-center gap-2">
+              <div className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                s <= step ? 'bg-neon-cyan shadow-[0_0_6px_var(--color-neon-cyan)]' : 'bg-terminal-border/50'
+              }`} />
+            </div>
+          ))}
+          <span className="text-[10px] font-mono text-terminal-muted ml-1">{step}/3</span>
+        </div>
+      )}
+
+      {/* Step 1: Signal Source */}
+      {step === 1 && (
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 p-3">
+            <Radio size={16} className="text-neon-cyan shrink-0" />
+            <p className="text-sm text-terminal-text">Where are your trade signals coming from?</p>
+          </div>
+
+          <Input label="Account Name" placeholder="e.g. Gold Scalper" value={srcAlias} onChange={(e) => setSrcAlias(e.target.value)} />
+          <Input label="Broker" placeholder="e.g. ICMarkets" value={srcBroker} onChange={(e) => setSrcBroker(e.target.value)} />
+          <Input label="MT5 Login" placeholder="e.g. 5012345" value={srcLogin} onChange={(e) => setSrcLogin(e.target.value)} />
+
+          {formError && (
+            <div className="flex items-start gap-2 rounded-xl border border-neon-red/30 bg-neon-red/5 p-3">
+              <AlertTriangle size={14} className="text-neon-red mt-0.5 shrink-0" />
+              <p className="text-sm text-neon-red">{formError}</p>
+            </div>
+          )}
+
+          <Button onClick={handleNext} className="w-full">
+            Next — Copy Destination <ArrowRight size={14} />
+          </Button>
+        </div>
+      )}
+
+      {/* Step 2: Copy Destination */}
+      {step === 2 && (
+        <form onSubmit={handleCreate} className="space-y-5">
+          <div className="flex items-center gap-3 rounded-xl border border-neon-green/20 bg-neon-green/5 p-3">
+            <Wifi size={16} className="text-neon-green shrink-0" />
+            <p className="text-sm text-terminal-text">Where should trades be copied to?</p>
+          </div>
+
+          <Input label="Account Name" placeholder="e.g. FTMO Challenge" value={dstAlias} onChange={(e) => setDstAlias(e.target.value)} />
+          <Input label="Broker" placeholder="e.g. FTMO" value={dstBroker} onChange={(e) => setDstBroker(e.target.value)} />
+          <Input label="MT5 Login" placeholder="e.g. 9087654" value={dstLogin} onChange={(e) => setDstLogin(e.target.value)} />
+
+          {formError && (
+            <div className="flex items-start gap-2 rounded-xl border border-neon-red/30 bg-neon-red/5 p-3">
+              <AlertTriangle size={14} className="text-neon-red mt-0.5 shrink-0" />
+              <p className="text-sm text-neon-red">{formError}</p>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
+              <ArrowLeft size={14} /> Back
+            </Button>
+            <Button type="submit" isLoading={isSubmitting} className="flex-1">
+              Create Copier <ArrowRight size={14} />
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 3: Credentials */}
+      {step === 3 && (
+        <div className="space-y-5">
+          <div className="flex items-center gap-2 text-neon-green text-sm font-medium">
+            <Check size={16} />
+            {createdFollower ? 'Copier setup complete!' : 'Signal source created'}
+          </div>
+
+          {createdMaster && (
+            <CredentialBlock label="Signal Source — Master EA" account={createdMaster} />
+          )}
+          {createdFollower && (
+            <CredentialBlock label="Copy Destination — Follower EA" account={createdFollower} />
+          )}
+
+          <div className="flex items-start gap-2 rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-3">
+            <AlertTriangle size={14} className="text-neon-amber mt-0.5 shrink-0" />
+            <p className="text-sm text-neon-amber">
+              Save both API secrets now — they won't be shown again. Use them in the Master EA and Follower EA settings in MT5.
+            </p>
+          </div>
+
+          <Button variant="secondary" className="w-full" onClick={handleClose}>
+            Done
+          </Button>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Add Follower Modal — for adding extra followers to existing master */
+/* ------------------------------------------------------------------ */
+
+function AddFollowerModal({
   open,
   onClose,
   masters,
@@ -78,58 +303,39 @@ function AddAccountModal({
   masters: Account[];
 }) {
   const createAccount = useAccountsStore((s) => s.createAccount);
-  const [role, setRole] = useState<'master' | 'follower'>('master');
   const [alias, setAlias] = useState('');
   const [brokerName, setBrokerName] = useState('');
   const [mt5Login, setMt5Login] = useState('');
-  const [masterAccountId, setMasterAccountId] = useState('');
+  const [masterAccountId, setMasterAccountId] = useState(masters[0]?.id ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<Account | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const resetForm = () => {
-    setRole('master');
-    setAlias('');
-    setBrokerName('');
-    setMt5Login('');
-    setMasterAccountId('');
-    setCreatedAccount(null);
-    setFormError(null);
+  const reset = () => {
+    setAlias(''); setBrokerName(''); setMt5Login('');
+    setMasterAccountId(masters[0]?.id ?? '');
+    setCreatedAccount(null); setFormError(null);
   };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
+  const handleClose = () => { reset(); onClose(); };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
-
-    if (!alias.trim()) {
-      setFormError('Alias is required');
-      return;
-    }
-    if (role === 'follower' && !masterAccountId) {
-      setFormError('Please select a master account');
-      return;
-    }
+    if (!alias.trim()) { setFormError('Name is required'); return; }
+    if (!masterAccountId) { setFormError('Select a signal source'); return; }
 
     setIsSubmitting(true);
     try {
       const result = await createAccount({
-        role,
+        role: 'follower',
         alias: alias.trim(),
         broker_name: brokerName || undefined,
         mt5_login: mt5Login || undefined,
-        master_account_id: role === 'follower' ? masterAccountId : undefined,
+        master_account_id: masterAccountId,
       });
       setIsSubmitting(false);
-      if (result) {
-        setCreatedAccount(result);
-      } else {
-        setFormError(useAccountsStore.getState().error ?? 'Failed to create account');
-      }
+      if (result) { setCreatedAccount(result); }
+      else { setFormError(useAccountsStore.getState().error ?? 'Failed to create account'); }
     } catch {
       setIsSubmitting(false);
       setFormError('Network error — please try again');
@@ -137,115 +343,27 @@ function AddAccountModal({
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title={createdAccount ? 'Account Created' : 'Add Account'}>
+    <Modal open={open} onClose={handleClose} title={createdAccount ? 'Follower Created' : 'Add Copy Destination'}>
       {createdAccount ? (
         <div className="space-y-5">
-          <div className="glass rounded-2xl glow-cyan p-5 space-y-4">
-            <div className="flex items-center gap-2 text-neon-green text-sm font-medium">
-              <Check size={16} />
-              Account "{createdAccount.alias}" created successfully
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
-                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
-                  API Key
-                </span>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
-                    {createdAccount.api_key}
-                  </code>
-                  <CopyButton text={createdAccount.api_key} />
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
-                  <span className="h-1 w-1 rounded-full bg-neon-cyan" />
-                  API Secret
-                </span>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <code className="font-mono-nums text-xs text-slate-200 bg-terminal-bg/50 rounded-lg px-3 py-2 flex-1 truncate border border-terminal-border/50">
-                    {createdAccount.api_secret}
-                  </code>
-                  <CopyButton text={createdAccount.api_secret} />
-                </div>
-              </div>
-            </div>
+          <CredentialBlock label="Follower EA Credentials" account={createdAccount} />
+          <div className="flex items-start gap-2 rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-3">
+            <AlertTriangle size={14} className="text-neon-amber mt-0.5 shrink-0" />
+            <p className="text-sm text-neon-amber">Save the API secret now — it won't be shown again.</p>
           </div>
-
-          <div className="flex items-start gap-2 rounded-2xl border border-neon-amber/30 bg-neon-amber/5 p-4">
-            <AlertTriangle size={16} className="text-neon-amber mt-0.5 shrink-0" />
-            <p className="text-sm text-neon-amber">
-              Save your API Secret now — it won't be shown again.
-            </p>
-          </div>
-
-          <Button variant="secondary" className="w-full" onClick={handleClose}>
-            Done
-          </Button>
+          <Button variant="secondary" className="w-full" onClick={handleClose}>Done</Button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Role toggle */}
-          <div className="space-y-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
-              <span className="h-1 w-1 rounded-full bg-neon-cyan" />
-              Role
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              {(['master', 'follower'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => { setRole(r); setFormError(null); }}
-                  className={`rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 focus-ring border-2 ${
-                    role === r
-                      ? 'border-neon-cyan bg-neon-cyan/15 text-neon-cyan shadow-[0_0_15px_rgba(0,229,255,0.15)]'
-                      : 'border-terminal-border bg-terminal-surface text-terminal-muted hover:border-terminal-border-hover hover:text-terminal-text'
-                  }`}
-                >
-                  {r === 'master' ? 'Master' : 'Follower'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Input
-            label="Alias"
-            placeholder="e.g. Gold Scalper"
-            value={alias}
-            onChange={(e) => setAlias(e.target.value)}
-            required
+          <Select
+            label="Copy signals from"
+            options={masters.map((m) => ({ value: m.id, label: m.alias }))}
+            value={masterAccountId}
+            onChange={(e) => setMasterAccountId(e.target.value)}
           />
-
-          <Input
-            label="Broker Name"
-            placeholder="e.g. ICMarkets"
-            value={brokerName}
-            onChange={(e) => setBrokerName(e.target.value)}
-          />
-
-          <Input
-            label="MT5 Login"
-            placeholder="e.g. 5012345"
-            value={mt5Login}
-            onChange={(e) => setMt5Login(e.target.value)}
-          />
-
-          {role === 'follower' && (
-            <Select
-              label="Master Account"
-              options={[
-                { value: '', label: 'Select a master...' },
-                ...masters.map((m) => ({ value: m.id, label: m.alias })),
-              ]}
-              value={masterAccountId}
-              onChange={(e) => setMasterAccountId(e.target.value)}
-              required
-            />
-          )}
+          <Input label="Account Name" placeholder="e.g. FTMO Challenge #2" value={alias} onChange={(e) => setAlias(e.target.value)} />
+          <Input label="Broker" placeholder="e.g. FTMO" value={brokerName} onChange={(e) => setBrokerName(e.target.value)} />
+          <Input label="MT5 Login" placeholder="e.g. 9087654" value={mt5Login} onChange={(e) => setMt5Login(e.target.value)} />
 
           {formError && (
             <div className="flex items-start gap-2 rounded-xl border border-neon-red/30 bg-neon-red/5 p-3">
@@ -253,10 +371,8 @@ function AddAccountModal({
               <p className="text-sm text-neon-red">{formError}</p>
             </div>
           )}
-
           <Button type="submit" isLoading={isSubmitting} className="w-full">
-            <Plus size={16} />
-            Create Account
+            <Plus size={16} /> Add Follower
           </Button>
         </form>
       )}
@@ -601,7 +717,8 @@ function FollowerCard({
 export function AccountsPage() {
   const { accounts, isLoading, fetchAccounts } = useAccountsStore();
 
-  const [addOpen, setAddOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [addFollowerOpen, setAddFollowerOpen] = useState(false);
   const [configAccount, setConfigAccount] = useState<Account | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Account | null>(null);
 
@@ -613,6 +730,7 @@ export function AccountsPage() {
   const followers = accounts.filter((a) => a.role === 'follower');
 
   const masterMap = new Map(masters.map((m) => [m.id, m.alias]));
+  const hasMasters = masters.length > 0;
 
   return (
     <div className="space-y-8">
@@ -621,11 +739,19 @@ export function AccountsPage() {
         className="flex items-center justify-between animate-fade-in-up"
         style={{ animationDelay: '0ms' }}
       >
-        <h1 className="text-3xl font-black tracking-tight text-white font-display">Accounts</h1>
-        <Button onClick={() => setAddOpen(true)} className="shadow-[0_0_20px_#00e5ff25]">
-          <Plus size={16} />
-          Add Account
-        </Button>
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white font-display">Accounts</h1>
+        <div className="flex items-center gap-2">
+          {hasMasters && (
+            <Button variant="secondary" onClick={() => setAddFollowerOpen(true)}>
+              <Plus size={14} />
+              Add Follower
+            </Button>
+          )}
+          <Button onClick={() => setWizardOpen(true)} className="shadow-[0_0_20px_#00e5ff25]">
+            <Plus size={16} />
+            {hasMasters ? 'New Copier' : 'Setup Copier'}
+          </Button>
+        </div>
       </div>
 
       {isLoading && accounts.length === 0 ? (
@@ -635,50 +761,60 @@ export function AccountsPage() {
             Loading accounts...
           </div>
         </div>
+      ) : accounts.length === 0 ? (
+        /* Empty state — first-time user */
+        <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in-up">
+          <div className="relative mb-6">
+            <div className="h-20 w-20 rounded-2xl border-2 border-dashed border-neon-cyan/30 flex items-center justify-center">
+              <Radio size={32} className="text-neon-cyan/40" />
+            </div>
+            <div className="absolute -inset-4 rounded-3xl bg-neon-cyan/5 animate-pulse" />
+          </div>
+          <h2 className="text-lg font-bold text-white mb-2">Set up your first copier</h2>
+          <p className="text-sm text-terminal-muted max-w-sm mb-6">
+            Connect a signal source and a copy destination. Takes about 30 seconds.
+          </p>
+          <Button onClick={() => setWizardOpen(true)} className="shadow-[0_0_20px_#00e5ff25]">
+            <Plus size={16} />
+            Setup Copier
+          </Button>
+        </div>
       ) : (
         <>
-          {/* Master Accounts */}
-          <section
-            className="space-y-4 animate-fade-in-up"
-            style={{ animationDelay: '60ms' }}
-          >
+          {/* Signal Sources */}
+          <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '60ms' }}>
             <div className="flex items-center gap-3">
-              <h2 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+              <h2 className="text-[11px] sm:text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-neon-cyan" />
-                Master Accounts
+                Signal Sources
               </h2>
               <Badge variant="cyan">{masters.length}</Badge>
             </div>
 
-            {masters.length === 0 ? (
-              <div className="glass rounded-2xl border border-dashed border-terminal-border p-8 text-center text-sm text-terminal-muted">
-                No master accounts yet. Create one to start relaying signals.
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {masters.map((m) => (
-                  <MasterCard key={m.id} account={m} onDelete={setDeleteTarget} />
-                ))}
-              </div>
-            )}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {masters.map((m) => (
+                <MasterCard key={m.id} account={m} onDelete={setDeleteTarget} />
+              ))}
+            </div>
           </section>
 
-          {/* Follower Accounts */}
-          <section
-            className="space-y-4 animate-fade-in-up"
-            style={{ animationDelay: '120ms' }}
-          >
+          {/* Copy Destinations */}
+          <section className="space-y-4 animate-fade-in-up" style={{ animationDelay: '120ms' }}>
             <div className="flex items-center gap-3">
-              <h2 className="text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
+              <h2 className="text-[11px] sm:text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-medium flex items-center gap-1.5">
                 <span className="h-1 w-1 rounded-full bg-neon-purple" />
-                Follower Accounts
+                Copy Destinations
               </h2>
               <Badge variant="purple">{followers.length}</Badge>
             </div>
 
             {followers.length === 0 ? (
-              <div className="glass rounded-2xl border border-dashed border-terminal-border p-8 text-center text-sm text-terminal-muted">
-                No follower accounts yet. Add one and link it to a master.
+              <div className="rounded-2xl border border-dashed border-terminal-border bg-terminal-surface/30 p-8 text-center text-sm text-terminal-muted">
+                No copy destinations yet.{' '}
+                <button onClick={() => setAddFollowerOpen(true)} className="text-neon-cyan hover:underline underline-offset-4 cursor-pointer">
+                  Add one
+                </button>{' '}
+                to start copying trades.
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -698,7 +834,8 @@ export function AccountsPage() {
       )}
 
       {/* Modals */}
-      <AddAccountModal open={addOpen} onClose={() => setAddOpen(false)} masters={masters} />
+      <SetupCopierWizard open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      <AddFollowerModal open={addFollowerOpen} onClose={() => setAddFollowerOpen(false)} masters={masters} />
       <ConfigureFollowerModal
         open={configAccount !== null}
         onClose={() => setConfigAccount(null)}

@@ -127,9 +127,66 @@ strategyHubPublic.get('/strategies/:slug', async (c) => {
 // PROTECTED ROUTES (auth required)
 // ══════════════════════════════════════════════════════════════════
 
+// ── Constants ────────────────────────────────────────────────────
+const FREE_GENERATIONS = 3;
+const PRICE_PER_GENERATION = 1.99;
+
+// ── GET /strategy-hub/generation-status — Check free/paid status ─
+strategyHub.get('/generation-status', async (c) => {
+  const userId = c.get('userId');
+
+  const countRow = await c.env.DB.prepare(
+    'SELECT COUNT(*) as cnt FROM ea_generations WHERE user_id = ?',
+  )
+    .bind(userId)
+    .first<{ cnt: number }>();
+
+  const totalGenerated = countRow?.cnt ?? 0;
+  const freeRemaining = Math.max(0, FREE_GENERATIONS - totalGenerated);
+
+  return c.json<ApiResponse>({
+    data: {
+      total_generated: totalGenerated,
+      free_remaining: freeRemaining,
+      free_limit: FREE_GENERATIONS,
+      price_per_generation: PRICE_PER_GENERATION,
+      requires_payment: freeRemaining <= 0,
+    },
+    error: null,
+  });
+});
+
 // ── POST /strategy-hub/generate — Generate an EA .mq5 file ──────
 strategyHub.post('/generate', async (c) => {
   const userId = c.get('userId');
+
+  // Check generation limit
+  const countRow = await c.env.DB.prepare(
+    'SELECT COUNT(*) as cnt FROM ea_generations WHERE user_id = ?',
+  )
+    .bind(userId)
+    .first<{ cnt: number }>();
+
+  const totalGenerated = countRow?.cnt ?? 0;
+  const freeRemaining = Math.max(0, FREE_GENERATIONS - totalGenerated);
+
+  if (freeRemaining <= 0) {
+    return c.json<ApiResponse>(
+      {
+        data: {
+          requires_payment: true,
+          price: PRICE_PER_GENERATION,
+          total_generated: totalGenerated,
+          free_limit: FREE_GENERATIONS,
+        },
+        error: {
+          code: 'GENERATION_LIMIT',
+          message: `You've used all ${FREE_GENERATIONS} free EA generations. Each additional generation costs $${PRICE_PER_GENERATION.toFixed(2)}.`,
+        },
+      },
+      402,
+    );
+  }
 
   const body = await c.req.json<{
     strategy_id: string;

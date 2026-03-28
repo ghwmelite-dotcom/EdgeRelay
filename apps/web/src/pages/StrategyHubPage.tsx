@@ -361,9 +361,19 @@ function GeneratorModal({
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [genStatus, setGenStatus] = useState<{ free_remaining: number; total_generated: number; price_per_generation: number; requires_payment: boolean } | null>(null);
 
   const params = strategy ? parseParams(strategy.parameters_json) : [];
   const grouped = groupParameters(params);
+
+  // Fetch generation status
+  useEffect(() => {
+    if (isAuthenticated && strategy) {
+      api.get<{ free_remaining: number; total_generated: number; free_limit: number; price_per_generation: number; requires_payment: boolean }>('/strategy-hub/generation-status').then((res) => {
+        if (res.data) setGenStatus(res.data);
+      });
+    }
+  }, [isAuthenticated, strategy?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset form when strategy changes
   useEffect(() => {
@@ -407,8 +417,12 @@ function GeneratorModal({
       });
 
       if (!res.ok) {
-        const json = await res.json().catch(() => null);
-        throw new Error(json?.error ?? `Generation failed (${res.status})`);
+        const json = await res.json().catch(() => null) as { error?: { code?: string; message?: string }; data?: { requires_payment?: boolean } } | null;
+        if (json?.data?.requires_payment || json?.error?.code === 'GENERATION_LIMIT') {
+          setGenStatus((prev) => prev ? { ...prev, requires_payment: true, free_remaining: 0 } : null);
+          throw new Error(json?.error?.message ?? 'Free generations used. Payment required.');
+        }
+        throw new Error(json?.error?.message ?? `Generation failed (${res.status})`);
       }
 
       const blob = await res.blob();
@@ -605,18 +619,68 @@ function GeneratorModal({
             </div>
           )}
 
-          {/* Generate */}
+          {/* Generation Status + Button */}
+          {isAuthenticated && genStatus && (
+            <div className="flex items-center justify-between rounded-xl border border-terminal-border/30 bg-terminal-surface/20 px-4 py-2.5">
+              {genStatus.requires_payment ? (
+                <>
+                  <span className="text-sm text-neon-amber font-medium">Free generations used</span>
+                  <span className="font-mono-nums text-sm text-terminal-muted">
+                    ${genStatus.price_per_generation.toFixed(2)} per EA
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm text-terminal-muted">
+                    Free generations remaining
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-2 w-5 rounded-full ${
+                            i < genStatus.free_remaining
+                              ? 'bg-neon-green shadow-[0_0_4px_var(--color-neon-green)]'
+                              : 'bg-terminal-border/50'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-mono-nums text-sm font-bold text-neon-green">
+                      {genStatus.free_remaining}/3
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {isAuthenticated ? (
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full"
-              isLoading={generating}
-              onClick={handleGenerate}
-            >
-              <Download size={16} />
-              Generate Expert Advisor
-            </Button>
+            genStatus?.requires_payment ? (
+              <div className="rounded-xl border border-neon-amber/30 bg-neon-amber/5 p-5 text-center space-y-3">
+                <p className="text-sm text-neon-amber font-medium">
+                  You've used all 3 free EA generations
+                </p>
+                <p className="text-xs text-terminal-muted">
+                  Each additional EA costs <span className="font-mono-nums text-terminal-text font-bold">$1.99</span> — cheaper than a coffee, more valuable than a VPS.
+                </p>
+                <p className="text-xs text-terminal-muted italic">
+                  Payment integration coming soon. Contact support for early access.
+                </p>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full"
+                isLoading={generating}
+                onClick={handleGenerate}
+              >
+                <Download size={16} />
+                Generate Expert Advisor
+              </Button>
+            )
           ) : (
             <div className="rounded-xl border border-terminal-border/40 bg-terminal-surface/30 p-4 text-center">
               <p className="text-sm text-terminal-muted mb-3">

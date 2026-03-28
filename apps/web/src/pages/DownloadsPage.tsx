@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -390,6 +390,58 @@ function EADownloadCard({
 }
 
 /* ------------------------------------------------------------------ */
+/*  EA Package Download Button                                         */
+/* ------------------------------------------------------------------ */
+
+function EAPackageDownload() {
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const token = useAuthStore((s) => s.token);
+
+  const handleDownload = async () => {
+    setError(null);
+    setDownloading(true);
+    try {
+      const base = import.meta.env.PROD
+        ? 'https://edgerelay-api.ghwmelite.workers.dev'
+        : '';
+      const res = await fetch(`${base}/v1/accounts/ea-package`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        setError('Download failed. Please try again.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'TradeMetrics_EA_Package.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div>
+      <Button onClick={handleDownload} isLoading={downloading} className="shadow-[0_0_20px_#00e5ff25]">
+        <Download className="h-4 w-4" />
+        Download Full Package (.zip)
+      </Button>
+      {error && (
+        <p className="mt-2 text-xs text-neon-red">{error}</p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Downloads Page                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -451,25 +503,28 @@ export function DownloadsPage() {
         <EADownloadCard type="journal" accounts={accounts} />
       </div>
 
-      {/* Source Files Notice */}
+      {/* Full Package Download */}
       <div
-        className="glass-premium rounded-2xl p-5 animate-fade-in-up"
+        className="glass-premium rounded-2xl p-6 animate-fade-in-up border border-neon-cyan/20"
         style={{ animationDelay: '90ms' }}
       >
         <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full glass shadow-[0_0_15px_#ffb80025]">
-            <BookOpen className="h-5 w-5 text-neon-amber" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full glass shadow-[0_0_20px_#00e5ff25]">
+            <Package className="h-6 w-6 text-neon-cyan" />
           </div>
           <div className="flex-1">
-            <h3 className="font-display text-base font-semibold text-white">Source Files &amp; Include Libraries</h3>
+            <h3 className="font-display text-lg font-bold text-white">Complete EA Package</h3>
             <p className="text-sm text-terminal-muted mt-1">
-              The EAs require <strong className="text-terminal-text">11 include files</strong> (.mqh) in your MT5 <code className="text-neon-cyan">MQL5\Include\</code> folder.
-              Without them, the EAs won&apos;t compile. See Step 3 below for the complete file list and folder structure.
+              Everything you need in one ZIP — 3 Expert Advisors, 11 Include libraries, and the Setup Script.
+              Extract directly into your MT5 Data Folder.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge variant="cyan">3 Expert Advisors (.mq5)</Badge>
               <Badge variant="purple">11 Include Files (.mqh)</Badge>
               <Badge variant="amber">1 Setup Script (.mq5)</Badge>
+            </div>
+            <div className="mt-4">
+              <EAPackageDownload />
             </div>
           </div>
         </div>

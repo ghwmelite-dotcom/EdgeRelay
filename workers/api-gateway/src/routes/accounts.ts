@@ -640,4 +640,24 @@ accounts.get('/:id/ea-download/:type', async (c) => {
   });
 });
 
+// ── GET /accounts/ea-package — Download full EA source package ──
+accounts.get('/ea-package', async (c) => {
+  const object = await c.env.STORAGE.get('ea-builds/TradeMetrics_EA_Package.zip');
+
+  if (!object) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'EA package not yet available.' } },
+      404,
+    );
+  }
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': 'attachment; filename="TradeMetrics_EA_Package.zip"',
+      'Cache-Control': 'private, max-age=3600',
+    },
+  });
+});
+
 export { accounts };

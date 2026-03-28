@@ -85,6 +85,7 @@ function AddAccountModal({
   const [masterAccountId, setMasterAccountId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdAccount, setCreatedAccount] = useState<Account | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const resetForm = () => {
     setRole('master');
@@ -93,6 +94,7 @@ function AddAccountModal({
     setMt5Login('');
     setMasterAccountId('');
     setCreatedAccount(null);
+    setFormError(null);
   };
 
   const handleClose = () => {
@@ -102,17 +104,35 @@ function AddAccountModal({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    if (!alias.trim()) {
+      setFormError('Alias is required');
+      return;
+    }
+    if (role === 'follower' && !masterAccountId) {
+      setFormError('Please select a master account');
+      return;
+    }
+
     setIsSubmitting(true);
-    const result = await createAccount({
-      role,
-      alias,
-      broker_name: brokerName || undefined,
-      mt5_login: mt5Login || undefined,
-      master_account_id: role === 'follower' ? masterAccountId : undefined,
-    });
-    setIsSubmitting(false);
-    if (result) {
-      setCreatedAccount(result);
+    try {
+      const result = await createAccount({
+        role,
+        alias: alias.trim(),
+        broker_name: brokerName || undefined,
+        mt5_login: mt5Login || undefined,
+        master_account_id: role === 'follower' ? masterAccountId : undefined,
+      });
+      setIsSubmitting(false);
+      if (result) {
+        setCreatedAccount(result);
+      } else {
+        setFormError(useAccountsStore.getState().error ?? 'Failed to create account');
+      }
+    } catch {
+      setIsSubmitting(false);
+      setFormError('Network error — please try again');
     }
   };
 
@@ -179,11 +199,11 @@ function AddAccountModal({
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setRole(r)}
-                  className={`glass rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 focus-ring ${
+                  onClick={() => { setRole(r); setFormError(null); }}
+                  className={`rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 focus-ring border-2 ${
                     role === r
-                      ? 'bg-neon-cyan/15 border-neon-cyan text-neon-cyan shadow-[0_0_15px_rgba(0,229,255,0.15)]'
-                      : 'border-terminal-border text-slate-400 hover:border-terminal-border-hover hover:text-slate-200'
+                      ? 'border-neon-cyan bg-neon-cyan/15 text-neon-cyan shadow-[0_0_15px_rgba(0,229,255,0.15)]'
+                      : 'border-terminal-border bg-terminal-surface text-terminal-muted hover:border-terminal-border-hover hover:text-terminal-text'
                   }`}
                 >
                   {r === 'master' ? 'Master' : 'Follower'}
@@ -225,6 +245,13 @@ function AddAccountModal({
               onChange={(e) => setMasterAccountId(e.target.value)}
               required
             />
+          )}
+
+          {formError && (
+            <div className="flex items-start gap-2 rounded-xl border border-neon-red/30 bg-neon-red/5 p-3">
+              <AlertTriangle size={14} className="text-neon-red mt-0.5 shrink-0" />
+              <p className="text-sm text-neon-red">{formError}</p>
+            </div>
           )}
 
           <Button type="submit" isLoading={isSubmitting} className="w-full">

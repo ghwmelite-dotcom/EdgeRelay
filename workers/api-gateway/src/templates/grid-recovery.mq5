@@ -45,6 +45,12 @@ input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
 input int    GMTOffset           = {{GMT_OFFSET}};            // Broker GMT Offset (99=auto-detect)
 
+// ── Adaptive Mode ───────────────────────────────────────────────
+input bool   UseAdaptiveMode       = {{USE_ADAPTIVE}};        // Adaptive Mode (auto-adjust to market)
+input double TrendADXThreshold     = {{TREND_ADX_THRESH}};    // ADX Threshold for Trending
+input double RangeADXThreshold     = {{RANGE_ADX_THRESH}};    // ADX Threshold for Ranging
+input double VolatileATRMult       = {{VOLATILE_ATR_MULT}};   // ATR Spike Multiplier for Volatile
+
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
 input int    ConsecutiveLossLimit  = {{CONSEC_LOSS_LIMIT}};   // Consecutive Loss Limit

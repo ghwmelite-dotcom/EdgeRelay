@@ -49,6 +49,7 @@ input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
+input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -70,31 +71,115 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 // ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
+// ── Multi-Asset Support ─────────────────────────────────────────
+string g_symbols[];
+int    g_symbolCount;
+datetime g_lastBarTime[];
+
+void InitSymbols()
+{
+   if(StringLen(MultiSymbols) == 0)
+   {
+      g_symbolCount = 1;
+      ArrayResize(g_symbols, 1);
+      g_symbols[0] = _Symbol;
+   }
+   else
+   {
+      string parts[];
+      g_symbolCount = StringSplit(MultiSymbols, ',', parts);
+      ArrayResize(g_symbols, g_symbolCount);
+      for(int i = 0; i < g_symbolCount; i++)
+      {
+         StringTrimLeft(parts[i]);
+         StringTrimRight(parts[i]);
+         g_symbols[i] = parts[i];
+         SymbolSelect(g_symbols[i], true);
+      }
+   }
+   ArrayResize(g_lastBarTime, g_symbolCount);
+   for(int i = 0; i < g_symbolCount; i++)
+      g_lastBarTime[i] = 0;
+}
+
+int GetSymbolMagic(string symbol)
+{
+   int hash = MagicNumber;
+   for(int i = 0; i < StringLen(symbol); i++)
+      hash = ((hash << 5) - hash + StringGetCharacter(symbol, i)) & 0x7FFFFFFF;
+   return hash;
+}
+
+double GetSymbolPip(string symbol)
+{
+   int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+   double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+   return point * ((digits == 3 || digits == 5) ? 10 : 1);
+}
+
+bool HasPositionFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == direction)
+         return true;
+   }
+   return false;
+}
+
+void ClosePositionsFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   CTrade closeTrade;
+   closeTrade.SetExpertMagicNumber(magic);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) != direction) continue;
+      double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+      if(closeTrade.PositionClose(ticket))
+         TM_OnTradeClosed(ticket, profit);
+   }
+}
+
+bool IsNewBarForSymbol(int symIdx, string symbol)
+{
+   datetime currentBar = iTime(symbol, Timeframe, 0);
+   if(currentBar == g_lastBarTime[symIdx]) return false;
+   g_lastBarTime[symIdx] = currentBar;
+   return true;
+}
+
 // ── Strategy Variables ──────────────────────────────────────────
-int      g_rsiHandle    = INVALID_HANDLE;
-int      g_bbHandle     = INVALID_HANDLE;
-int      g_trendMAHandle = INVALID_HANDLE;
-int      g_adxHandle    = INVALID_HANDLE;
-int      g_atrHandle    = INVALID_HANDLE;
-double   g_rsiPrev      = 0.0;
+int      g_rsiHandles[];
+int      g_bbHandles[];
+int      g_trendMAHandles[];
+int      g_adxHandles[];
+int      g_atrHandles[];
+double   g_rsiPrev[];
 CTrade   g_trade;
 
 //+------------------------------------------------------------------+
 //| Calculate lot size based on risk percentage                       |
 //+------------------------------------------------------------------+
-double CalculateLotSize(double slPips)
+double CalculateLotSize(double slPips, string symbol, double symPip)
   {
    if(RiskPercent <= 0 || slPips <= 0) return LotSize;
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * RiskPercent / 100.0;
-   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
    if(tickValue <= 0 || tickSize <= 0) return LotSize;
-   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
-   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double lotSize = riskAmount / (slPips * symPip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
    lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
    return lotSize;
   }
@@ -104,56 +189,70 @@ double CalculateLotSize(double slPips)
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   //--- Create RSI handle
-   g_rsiHandle = iRSI(_Symbol, Timeframe, RSIPeriod, PRICE_CLOSE);
+   //--- Initialize multi-asset symbols
+   InitSymbols();
 
-   if(g_rsiHandle == INVALID_HANDLE)
-     {
-      PrintFormat("[RSIMeanReversion] Failed to create RSI handle. Error: %d", GetLastError());
-      return INIT_FAILED;
-     }
+   //--- Resize indicator handle arrays
+   ArrayResize(g_rsiHandles, g_symbolCount);
+   ArrayResize(g_bbHandles, g_symbolCount);
+   ArrayResize(g_trendMAHandles, g_symbolCount);
+   ArrayResize(g_adxHandles, g_symbolCount);
+   ArrayResize(g_atrHandles, g_symbolCount);
+   ArrayResize(g_rsiPrev, g_symbolCount);
 
-   //--- Bollinger Bands handle
-   if(RequireBBConfluence)
+   for(int i = 0; i < g_symbolCount; i++)
      {
-      g_bbHandle = iBands(_Symbol, Timeframe, BBPeriod, 0, BBDeviation, PRICE_CLOSE);
-      if(g_bbHandle == INVALID_HANDLE)
+      g_bbHandles[i] = INVALID_HANDLE;
+      g_trendMAHandles[i] = INVALID_HANDLE;
+      g_adxHandles[i] = INVALID_HANDLE;
+      g_atrHandles[i] = INVALID_HANDLE;
+      g_rsiPrev[i] = 0.0;
+
+      g_rsiHandles[i] = iRSI(g_symbols[i], Timeframe, RSIPeriod, PRICE_CLOSE);
+      if(g_rsiHandles[i] == INVALID_HANDLE)
         {
-         PrintFormat("[RSIMeanReversion] Failed to create BB handle. Error: %d", GetLastError());
+         PrintFormat("[RSIMeanReversion] Failed to create RSI handle for %s. Error: %d", g_symbols[i], GetLastError());
          return INIT_FAILED;
         }
-     }
 
-   //--- Trend MA filter handle
-   if(TrendMAPeriod > 0)
-     {
-      g_trendMAHandle = iMA(_Symbol, Timeframe, TrendMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
-      if(g_trendMAHandle == INVALID_HANDLE)
+      if(RequireBBConfluence)
         {
-         PrintFormat("[RSIMeanReversion] Failed to create Trend MA handle. Error: %d", GetLastError());
-         return INIT_FAILED;
+         g_bbHandles[i] = iBands(g_symbols[i], Timeframe, BBPeriod, 0, BBDeviation, PRICE_CLOSE);
+         if(g_bbHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[RSIMeanReversion] Failed to create BB handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
         }
-     }
 
-   //--- ADX filter handle
-   if(ADXPeriod > 0)
-     {
-      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
-      if(g_adxHandle == INVALID_HANDLE)
+      if(TrendMAPeriod > 0)
         {
-         PrintFormat("[RSIMeanReversion] Failed to create ADX handle. Error: %d", GetLastError());
-         return INIT_FAILED;
+         g_trendMAHandles[i] = iMA(g_symbols[i], Timeframe, TrendMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
+         if(g_trendMAHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[RSIMeanReversion] Failed to create Trend MA handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
         }
-     }
 
-   //--- ATR handle for dynamic stops
-   if(UseATRStops)
-     {
-      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
-      if(g_atrHandle == INVALID_HANDLE)
+      if(ADXPeriod > 0)
         {
-         PrintFormat("[RSIMeanReversion] Failed to create ATR handle. Error: %d", GetLastError());
-         return INIT_FAILED;
+         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod);
+         if(g_adxHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[RSIMeanReversion] Failed to create ADX handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
+        }
+
+      if(UseATRStops)
+        {
+         g_atrHandles[i] = iATR(g_symbols[i], Timeframe, ATRStopPeriod);
+         if(g_atrHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[RSIMeanReversion] Failed to create ATR handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
         }
      }
 
@@ -161,9 +260,6 @@ int OnInit()
    g_trade.SetExpertMagicNumber(MagicNumber);
    g_trade.SetDeviationInPoints(10);
    g_trade.SetTypeFilling(ORDER_FILLING_IOC);
-
-   //--- Reset previous RSI
-   g_rsiPrev = 0.0;
 
    //--- Initialize TradeMetrics integration
    return TM_OnInit();
@@ -174,17 +270,14 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   //--- Release indicator handles
-   if(g_rsiHandle != INVALID_HANDLE)
-      IndicatorRelease(g_rsiHandle);
-   if(g_bbHandle != INVALID_HANDLE)
-      IndicatorRelease(g_bbHandle);
-   if(g_trendMAHandle != INVALID_HANDLE)
-      IndicatorRelease(g_trendMAHandle);
-   if(g_adxHandle != INVALID_HANDLE)
-      IndicatorRelease(g_adxHandle);
-   if(g_atrHandle != INVALID_HANDLE)
-      IndicatorRelease(g_atrHandle);
+   for(int i = 0; i < g_symbolCount; i++)
+     {
+      if(g_rsiHandles[i] != INVALID_HANDLE) IndicatorRelease(g_rsiHandles[i]);
+      if(g_bbHandles[i] != INVALID_HANDLE) IndicatorRelease(g_bbHandles[i]);
+      if(g_trendMAHandles[i] != INVALID_HANDLE) IndicatorRelease(g_trendMAHandles[i]);
+      if(g_adxHandles[i] != INVALID_HANDLE) IndicatorRelease(g_adxHandles[i]);
+      if(g_atrHandles[i] != INVALID_HANDLE) IndicatorRelease(g_atrHandles[i]);
+     }
 
    TM_OnDeinit(reason);
   }
@@ -202,205 +295,180 @@ void OnTimer()
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
-   //--- Read RSI value for last closed bar
-   double rsi[];
-   ArraySetAsSeries(rsi, true);
-
-   if(CopyBuffer(g_rsiHandle, 0, 0, 2, rsi) < 2) return;
-
-   double rsiCurr = rsi[1];   // Last closed bar
-   double rsiPrev = g_rsiPrev;
-   g_rsiPrev = rsiCurr;
-
-   //--- Skip first bar (no previous value yet)
-   if(rsiPrev == 0.0) return;
-
-   //--- Calculate pip value for SL/TP
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
-   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-
-   //--- Read ATR for dynamic stops and trend filter buffer
-   double atrValue = 0.0;
-   if((UseATRStops || TrendMAPeriod > 0) && g_atrHandle != INVALID_HANDLE)
+   for(int si = 0; si < g_symbolCount; si++)
      {
-      double atrArr[];
-      ArraySetAsSeries(atrArr, true);
-      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
-         atrValue = atrArr[1];
-     }
-   //--- If ATR handle not created for trend filter but we need it, create a temp read
-   if(TrendMAPeriod > 0 && atrValue == 0.0 && g_atrHandle == INVALID_HANDLE)
-     {
-      //--- Use a simple fallback: no buffer applied
-      atrValue = 0.0;
-     }
+      string sym = g_symbols[si];
+      if(!IsNewBarForSymbol(si, sym)) continue;
 
-   //--- Exit logic: close BUY positions when RSI crosses above 50 (mean reversion complete)
-   if(rsiPrev <= 50.0 && rsiCurr > 50.0)
-      ClosePositionsByDirection(POSITION_TYPE_BUY);
+      int magic = GetSymbolMagic(sym);
+      double symPip = GetSymbolPip(sym);
+      double symAsk = SymbolInfoDouble(sym, SYMBOL_ASK);
+      double symBid = SymbolInfoDouble(sym, SYMBOL_BID);
+      int symDigits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
 
-   //--- Exit logic: close SELL positions when RSI crosses below 50 (mean reversion complete)
-   if(rsiPrev >= 50.0 && rsiCurr < 50.0)
-      ClosePositionsByDirection(POSITION_TYPE_SELL);
+      //--- Read RSI value for last closed bar
+      double rsi[];
+      ArraySetAsSeries(rsi, true);
+      if(CopyBuffer(g_rsiHandles[si], 0, 0, 2, rsi) < 2) continue;
 
-   //--- Read Bollinger Band values if confluence required
-   double bbUpper = 0.0;
-   double bbLower = 0.0;
-   if(RequireBBConfluence && g_bbHandle != INVALID_HANDLE)
-     {
-      double bbUpperArr[];
-      double bbLowerArr[];
-      ArraySetAsSeries(bbUpperArr, true);
-      ArraySetAsSeries(bbLowerArr, true);
-      if(CopyBuffer(g_bbHandle, 1, 0, 2, bbUpperArr) < 2) return;  // Buffer 1 = upper
-      if(CopyBuffer(g_bbHandle, 2, 0, 2, bbLowerArr) < 2) return;  // Buffer 2 = lower
-      bbUpper = bbUpperArr[1];
-      bbLower = bbLowerArr[1];
-     }
+      double rsiCurr = rsi[1];
+      double rsiPrev = g_rsiPrev[si];
+      g_rsiPrev[si] = rsiCurr;
 
-   //--- Read close price for BB and trend filter checks
-   double closeArr[];
-   ArraySetAsSeries(closeArr, true);
-   if(CopyClose(_Symbol, Timeframe, 1, 1, closeArr) < 1) return;
-   double lastClose = closeArr[0];
+      if(rsiPrev == 0.0) continue;
 
-   //--- Read trend MA if enabled
-   double trendMAValue = 0.0;
-   if(TrendMAPeriod > 0 && g_trendMAHandle != INVALID_HANDLE)
-     {
-      double trendMA[];
-      ArraySetAsSeries(trendMA, true);
-      if(CopyBuffer(g_trendMAHandle, 0, 0, 2, trendMA) >= 2)
-         trendMAValue = trendMA[1];
-     }
-
-   //--- ADX filter: if enabled, read ADX to skip when trend is too strong for mean reversion
-   bool adxBlocked = false;
-   if(ADXPeriod > 0 && g_adxHandle != INVALID_HANDLE)
-     {
-      double adxVal[];
-      ArraySetAsSeries(adxVal, true);
-      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+      //--- Read ATR for dynamic stops and trend filter buffer
+      double atrValue = 0.0;
+      if((UseATRStops || TrendMAPeriod > 0) && g_atrHandles[si] != INVALID_HANDLE)
         {
-         //--- For mean reversion: skip if ADX is ABOVE threshold (too trendy)
-         if(adxVal[1] > ADXMinStrength)
-            adxBlocked = true;
+         double atrArr[];
+         ArraySetAsSeries(atrArr, true);
+         if(CopyBuffer(g_atrHandles[si], 0, 0, 2, atrArr) >= 2)
+            atrValue = atrArr[1];
         }
-     }
 
-   //--- Entry: BUY when RSI is oversold (and no existing BUY position)
-   if(rsiCurr < RSIOversold && !HasPositionByDirection(POSITION_TYPE_BUY))
-     {
-      //--- ADX filter: skip if market is trending too hard
-      if(!adxBlocked)
+      //--- Exit logic: close BUY positions when RSI crosses above 50
+      if(rsiPrev <= 50.0 && rsiCurr > 50.0)
+         ClosePositionsFor(sym, POSITION_TYPE_BUY, magic);
+
+      //--- Exit logic: close SELL positions when RSI crosses below 50
+      if(rsiPrev >= 50.0 && rsiCurr < 50.0)
+         ClosePositionsFor(sym, POSITION_TYPE_SELL, magic);
+
+      //--- Read Bollinger Band values if confluence required
+      double bbUpper = 0.0;
+      double bbLower = 0.0;
+      if(RequireBBConfluence && g_bbHandles[si] != INVALID_HANDLE)
         {
-         //--- BB confluence: price must be at or below lower band
-         bool bbOk = true;
-         if(RequireBBConfluence && bbLower > 0)
+         double bbUpperArr[];
+         double bbLowerArr[];
+         ArraySetAsSeries(bbUpperArr, true);
+         ArraySetAsSeries(bbLowerArr, true);
+         if(CopyBuffer(g_bbHandles[si], 1, 0, 2, bbUpperArr) < 2) continue;
+         if(CopyBuffer(g_bbHandles[si], 2, 0, 2, bbLowerArr) < 2) continue;
+         bbUpper = bbUpperArr[1];
+         bbLower = bbLowerArr[1];
+        }
+
+      //--- Read close price for BB and trend filter checks
+      double closeArr[];
+      ArraySetAsSeries(closeArr, true);
+      if(CopyClose(sym, Timeframe, 1, 1, closeArr) < 1) continue;
+      double lastClose = closeArr[0];
+
+      //--- Read trend MA if enabled
+      double trendMAValue = 0.0;
+      if(TrendMAPeriod > 0 && g_trendMAHandles[si] != INVALID_HANDLE)
+        {
+         double trendMA[];
+         ArraySetAsSeries(trendMA, true);
+         if(CopyBuffer(g_trendMAHandles[si], 0, 0, 2, trendMA) >= 2)
+            trendMAValue = trendMA[1];
+        }
+
+      //--- ADX filter
+      bool adxBlocked = false;
+      if(ADXPeriod > 0 && g_adxHandles[si] != INVALID_HANDLE)
+        {
+         double adxVal[];
+         ArraySetAsSeries(adxVal, true);
+         if(CopyBuffer(g_adxHandles[si], 0, 0, 2, adxVal) >= 2)
            {
-            if(lastClose > bbLower)
+            if(adxVal[1] > ADXMinStrength)
+               adxBlocked = true;
+           }
+        }
+
+      //--- Entry: BUY when RSI is oversold
+      if(rsiCurr < RSIOversold && !HasPositionFor(sym, POSITION_TYPE_BUY, magic))
+        {
+         if(!adxBlocked)
+           {
+            bool bbOk = true;
+            if(RequireBBConfluence && bbLower > 0 && lastClose > bbLower)
                bbOk = false;
-           }
 
-         //--- Trend filter: don't buy if price is far below 200 EMA (strong downtrend)
-         bool trendOk = true;
-         if(TrendMAPeriod > 0 && trendMAValue > 0)
-           {
-            double trendBuffer = TrendMABuffer * atrValue;
-            if(lastClose < trendMAValue - trendBuffer)
-               trendOk = false;  // Price too far below EMA — strong downtrend, don't fade
-           }
-
-         if(bbOk && trendOk)
-           {
-            double slDist = 0.0;
-            double tpDist = 0.0;
-
-            if(UseATRStops && atrValue > 0)
+            bool trendOk = true;
+            if(TrendMAPeriod > 0 && trendMAValue > 0)
               {
-               slDist = atrValue * ATRSLMultiplier;
-               tpDist = atrValue * ATRTPMultiplier;
-              }
-            else
-              {
-               slDist = StopLossPips * pip;
-               tpDist = TakeProfitPips * pip;
+               double trendBuffer = TrendMABuffer * atrValue;
+               if(lastClose < trendMAValue - trendBuffer)
+                  trendOk = false;
               }
 
-            double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
-            double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
-
-            double slPips = (slDist > 0) ? slDist / pip : 0.0;
-            double lot = CalculateLotSize(slPips);
-
-            string comment = StringFormat("TM:%s|SIG:%s", "RSI_MR", "BUY_OVERSOLD");
-
-            if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
+            if(bbOk && trendOk)
               {
-               ulong ticket = g_trade.ResultOrder();
-               if(ticket > 0)
-                  TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
+               double slDist = 0.0;
+               double tpDist = 0.0;
+
+               if(UseATRStops && atrValue > 0)
+                 { slDist = atrValue * ATRSLMultiplier; tpDist = atrValue * ATRTPMultiplier; }
+               else
+                 { slDist = StopLossPips * symPip; tpDist = TakeProfitPips * symPip; }
+
+               double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
+               double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
+
+               double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+               double lot = CalculateLotSize(slPips, sym, symPip);
+
+               string comment = StringFormat("TM:%s|SIG:%s", "RSI_MR", "BUY_OVERSOLD");
+
+               g_trade.SetExpertMagicNumber(magic);
+               if(g_trade.Buy(lot, sym, symAsk, sl, tp, comment))
+                 {
+                  ulong ticket = g_trade.ResultOrder();
+                  if(ticket > 0)
+                     TM_OnTradeOpened(ticket, sym, "buy", lot, symAsk, sl, tp);
+                 }
               }
            }
         }
-     }
 
-   //--- Entry: SELL when RSI is overbought (and no existing SELL position)
-   if(rsiCurr > RSIOverbought && !HasPositionByDirection(POSITION_TYPE_SELL))
-     {
-      //--- ADX filter: skip if market is trending too hard
-      if(!adxBlocked)
+      //--- Entry: SELL when RSI is overbought
+      if(rsiCurr > RSIOverbought && !HasPositionFor(sym, POSITION_TYPE_SELL, magic))
         {
-         //--- BB confluence: price must be at or above upper band
-         bool bbOk = true;
-         if(RequireBBConfluence && bbUpper > 0)
+         if(!adxBlocked)
            {
-            if(lastClose < bbUpper)
+            bool bbOk = true;
+            if(RequireBBConfluence && bbUpper > 0 && lastClose < bbUpper)
                bbOk = false;
-           }
 
-         //--- Trend filter: don't sell if price is far above 200 EMA (strong uptrend)
-         bool trendOk = true;
-         if(TrendMAPeriod > 0 && trendMAValue > 0)
-           {
-            double trendBuffer = TrendMABuffer * atrValue;
-            if(lastClose > trendMAValue + trendBuffer)
-               trendOk = false;  // Price too far above EMA — strong uptrend, don't fade
-           }
-
-         if(bbOk && trendOk)
-           {
-            double slDist = 0.0;
-            double tpDist = 0.0;
-
-            if(UseATRStops && atrValue > 0)
+            bool trendOk = true;
+            if(TrendMAPeriod > 0 && trendMAValue > 0)
               {
-               slDist = atrValue * ATRSLMultiplier;
-               tpDist = atrValue * ATRTPMultiplier;
-              }
-            else
-              {
-               slDist = StopLossPips * pip;
-               tpDist = TakeProfitPips * pip;
+               double trendBuffer = TrendMABuffer * atrValue;
+               if(lastClose > trendMAValue + trendBuffer)
+                  trendOk = false;
               }
 
-            double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
-            double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
-
-            double slPips = (slDist > 0) ? slDist / pip : 0.0;
-            double lot = CalculateLotSize(slPips);
-
-            string comment = StringFormat("TM:%s|SIG:%s", "RSI_MR", "SELL_OVERBOUGHT");
-
-            if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
+            if(bbOk && trendOk)
               {
-               ulong ticket = g_trade.ResultOrder();
-               if(ticket > 0)
-                  TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
+               double slDist = 0.0;
+               double tpDist = 0.0;
+
+               if(UseATRStops && atrValue > 0)
+                 { slDist = atrValue * ATRSLMultiplier; tpDist = atrValue * ATRTPMultiplier; }
+               else
+                 { slDist = StopLossPips * symPip; tpDist = TakeProfitPips * symPip; }
+
+               double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
+               double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
+
+               double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+               double lot = CalculateLotSize(slPips, sym, symPip);
+
+               string comment = StringFormat("TM:%s|SIG:%s", "RSI_MR", "SELL_OVERBOUGHT");
+
+               g_trade.SetExpertMagicNumber(magic);
+               if(g_trade.Sell(lot, sym, symBid, sl, tp, comment))
+                 {
+                  ulong ticket = g_trade.ResultOrder();
+                  if(ticket > 0)
+                     TM_OnTradeOpened(ticket, sym, "sell", lot, symBid, sl, tp);
+                 }
               }
            }
         }

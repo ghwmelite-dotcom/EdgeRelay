@@ -50,6 +50,7 @@ input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
+input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -71,34 +72,131 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 // ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
+// ── Multi-Asset Support ─────────────────────────────────────────
+string g_symbols[];
+int    g_symbolCount;
+datetime g_lastBarTime[];
+
+void InitSymbols()
+{
+   if(StringLen(MultiSymbols) == 0)
+   {
+      g_symbolCount = 1;
+      ArrayResize(g_symbols, 1);
+      g_symbols[0] = _Symbol;
+   }
+   else
+   {
+      string parts[];
+      g_symbolCount = StringSplit(MultiSymbols, ',', parts);
+      ArrayResize(g_symbols, g_symbolCount);
+      for(int i = 0; i < g_symbolCount; i++)
+      {
+         StringTrimLeft(parts[i]);
+         StringTrimRight(parts[i]);
+         g_symbols[i] = parts[i];
+         SymbolSelect(g_symbols[i], true);
+      }
+   }
+   ArrayResize(g_lastBarTime, g_symbolCount);
+   for(int i = 0; i < g_symbolCount; i++)
+      g_lastBarTime[i] = 0;
+}
+
+int GetSymbolMagic(string symbol)
+{
+   int hash = MagicNumber;
+   for(int i = 0; i < StringLen(symbol); i++)
+      hash = ((hash << 5) - hash + StringGetCharacter(symbol, i)) & 0x7FFFFFFF;
+   return hash;
+}
+
+double GetSymbolPip(string symbol)
+{
+   int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+   double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+   return point * ((digits == 3 || digits == 5) ? 10 : 1);
+}
+
+bool HasPositionFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == direction)
+         return true;
+   }
+   return false;
+}
+
+void ClosePositionsFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   CTrade closeTrade;
+   closeTrade.SetExpertMagicNumber(magic);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) != direction) continue;
+      double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+      if(closeTrade.PositionClose(ticket))
+         TM_OnTradeClosed(ticket, profit);
+   }
+}
+
+void CloseAllPositionsFor(string symbol, int magic)
+{
+   CTrade closeTrade;
+   closeTrade.SetExpertMagicNumber(magic);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+      if(closeTrade.PositionClose(ticket))
+         TM_OnTradeClosed(ticket, profit);
+   }
+}
+
+bool IsNewBarForSymbol(int symIdx, string symbol)
+{
+   datetime currentBar = iTime(symbol, Timeframe, 0);
+   if(currentBar == g_lastBarTime[symIdx]) return false;
+   g_lastBarTime[symIdx] = currentBar;
+   return true;
+}
+
 // ── Strategy Variables ──────────────────────────────────────────
-int      g_emaHandle = INVALID_HANDLE;
-int      g_rsiHandle = INVALID_HANDLE;
-int      g_adxHandle = INVALID_HANDLE;
-int      g_atrHandle = INVALID_HANDLE;
+int      g_emaHandles[];
+int      g_rsiHandles[];
+int      g_adxHandles[];
+int      g_atrHandles[];
 CTrade   g_trade;
-double   g_asianHigh      = 0.0;
-double   g_asianLow       = 0.0;
-datetime g_asianCalcDay    = 0;
-double   g_avgSpread       = 0.0;
-int      g_spreadSamples   = 0;
+double   g_avgSpread[];
+int      g_spreadSamples[];
 
 //+------------------------------------------------------------------+
 //| Calculate lot size based on risk percentage                       |
 //+------------------------------------------------------------------+
-double CalculateLotSize(double slPips)
+double CalculateLotSize(double slPips, string symbol, double symPip)
   {
    if(RiskPercent <= 0 || slPips <= 0) return LotSize;
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * RiskPercent / 100.0;
-   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
    if(tickValue <= 0 || tickSize <= 0) return LotSize;
-   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
-   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double lotSize = riskAmount / (slPips * symPip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
    lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
    return lotSize;
   }
@@ -106,49 +204,38 @@ double CalculateLotSize(double slPips)
 //+------------------------------------------------------------------+
 //| Calculate Asian session high/low for current day                  |
 //+------------------------------------------------------------------+
-void CalculateAsianRange()
+void CalculateAsianRange(string sym, double &asianHigh, double &asianLow)
   {
+   asianHigh = 0.0;
+   asianLow  = 99999.0;
+
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
-   if(today == g_asianCalcDay && g_asianHigh > 0) return;  // Already calculated today
-
-   g_asianCalcDay = today;
-   g_asianHigh = 0.0;
-   g_asianLow  = 99999.0;
-
-   //--- Scan bars within Asian session hours for today
-   int totalBars = iBars(_Symbol, Timeframe);
+   int totalBars = iBars(sym, Timeframe);
    for(int i = 1; i < totalBars && i < 500; i++)
      {
-      datetime barTime = iTime(_Symbol, Timeframe, i);
-      if(barTime < today) break;  // Past today's start
+      datetime barTime = iTime(sym, Timeframe, i);
+      if(barTime < today) break;
 
       MqlDateTime dt;
       TimeToStruct(barTime, dt);
 
       bool inAsian = false;
       if(AsianStartHour < AsianEndHour)
-        {
          inAsian = (dt.hour >= AsianStartHour && dt.hour < AsianEndHour);
-        }
       else
-        {
          inAsian = (dt.hour >= AsianStartHour || dt.hour < AsianEndHour);
-        }
 
       if(inAsian)
         {
-         double h = iHigh(_Symbol, Timeframe, i);
-         double l = iLow(_Symbol, Timeframe, i);
-         if(h > g_asianHigh) g_asianHigh = h;
-         if(l < g_asianLow)  g_asianLow  = l;
+         double h = iHigh(sym, Timeframe, i);
+         double l = iLow(sym, Timeframe, i);
+         if(h > asianHigh) asianHigh = h;
+         if(l < asianLow)  asianLow  = l;
         }
      }
 
-   if(g_asianLow >= 99999.0)
-     {
-      g_asianHigh = 0.0;
-      g_asianLow  = 0.0;
-     }
+   if(asianLow >= 99999.0)
+     { asianHigh = 0.0; asianLow = 0.0; }
   }
 
 //+------------------------------------------------------------------+
@@ -156,48 +243,56 @@ void CalculateAsianRange()
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   //--- Create indicator handles
-   g_emaHandle = iMA(_Symbol, Timeframe, EMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
-   g_rsiHandle = iRSI(_Symbol, Timeframe, RSIFilterPeriod, PRICE_CLOSE);
+   InitSymbols();
 
-   if(g_emaHandle == INVALID_HANDLE || g_rsiHandle == INVALID_HANDLE)
-     {
-      PrintFormat("[LondonScalper] Failed to create indicator handles. Error: %d", GetLastError());
-      return INIT_FAILED;
-     }
+   ArrayResize(g_emaHandles, g_symbolCount);
+   ArrayResize(g_rsiHandles, g_symbolCount);
+   ArrayResize(g_adxHandles, g_symbolCount);
+   ArrayResize(g_atrHandles, g_symbolCount);
+   ArrayResize(g_avgSpread, g_symbolCount);
+   ArrayResize(g_spreadSamples, g_symbolCount);
 
-   //--- ADX filter handle
-   if(ADXPeriod > 0)
+   for(int i = 0; i < g_symbolCount; i++)
      {
-      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
-      if(g_adxHandle == INVALID_HANDLE)
+      g_adxHandles[i] = INVALID_HANDLE;
+      g_atrHandles[i] = INVALID_HANDLE;
+      g_avgSpread[i] = 0.0;
+      g_spreadSamples[i] = 0;
+
+      g_emaHandles[i] = iMA(g_symbols[i], Timeframe, EMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
+      g_rsiHandles[i] = iRSI(g_symbols[i], Timeframe, RSIFilterPeriod, PRICE_CLOSE);
+
+      if(g_emaHandles[i] == INVALID_HANDLE || g_rsiHandles[i] == INVALID_HANDLE)
         {
-         PrintFormat("[LondonScalper] Failed to create ADX handle. Error: %d", GetLastError());
+         PrintFormat("[LondonScalper] Failed to create indicator handles for %s. Error: %d", g_symbols[i], GetLastError());
          return INIT_FAILED;
+        }
+
+      if(ADXPeriod > 0)
+        {
+         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod);
+         if(g_adxHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[LondonScalper] Failed to create ADX handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
+        }
+
+      if(UseATRStops)
+        {
+         g_atrHandles[i] = iATR(g_symbols[i], Timeframe, ATRStopPeriod);
+         if(g_atrHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[LondonScalper] Failed to create ATR handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
         }
      }
 
-   //--- ATR handle for dynamic stops
-   if(UseATRStops)
-     {
-      g_atrHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
-      if(g_atrHandle == INVALID_HANDLE)
-        {
-         PrintFormat("[LondonScalper] Failed to create ATR handle. Error: %d", GetLastError());
-         return INIT_FAILED;
-        }
-     }
-
-   //--- Configure trade object
    g_trade.SetExpertMagicNumber(MagicNumber);
    g_trade.SetDeviationInPoints(10);
    g_trade.SetTypeFilling(ORDER_FILLING_IOC);
 
-   //--- Initialize spread tracking
-   g_avgSpread = 0.0;
-   g_spreadSamples = 0;
-
-   //--- Initialize TradeMetrics integration
    return TM_OnInit();
   }
 
@@ -206,15 +301,13 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   //--- Release indicator handles
-   if(g_emaHandle != INVALID_HANDLE)
-      IndicatorRelease(g_emaHandle);
-   if(g_rsiHandle != INVALID_HANDLE)
-      IndicatorRelease(g_rsiHandle);
-   if(g_adxHandle != INVALID_HANDLE)
-      IndicatorRelease(g_adxHandle);
-   if(g_atrHandle != INVALID_HANDLE)
-      IndicatorRelease(g_atrHandle);
+   for(int i = 0; i < g_symbolCount; i++)
+     {
+      if(g_emaHandles[i] != INVALID_HANDLE) IndicatorRelease(g_emaHandles[i]);
+      if(g_rsiHandles[i] != INVALID_HANDLE) IndicatorRelease(g_rsiHandles[i]);
+      if(g_adxHandles[i] != INVALID_HANDLE) IndicatorRelease(g_adxHandles[i]);
+      if(g_atrHandles[i] != INVALID_HANDLE) IndicatorRelease(g_atrHandles[i]);
+     }
 
    TM_OnDeinit(reason);
   }
@@ -232,206 +325,180 @@ void OnTimer()
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if(!TM_IsNewBar()) return;
-
-   //--- Update rolling average spread
-   double currentSpread = (double)SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
-   if(g_spreadSamples < AvgSpreadBars)
-     {
-      g_avgSpread = (g_avgSpread * g_spreadSamples + currentSpread) / (g_spreadSamples + 1);
-      g_spreadSamples++;
-     }
-   else
-     {
-      //--- Exponential moving average of spread
-      double alpha = 2.0 / (AvgSpreadBars + 1);
-      g_avgSpread = alpha * currentSpread + (1.0 - alpha) * g_avgSpread;
-     }
-
-   //--- Calculate Asian range for TP reference
-   if(UseAsianTP)
-      CalculateAsianRange();
+   if(!TM_CanTrade()) return;
 
    //--- Get current GMT hour
    MqlDateTime dt;
    TimeToStruct(TimeGMT(), dt);
    int gmtHour = dt.hour;
 
-   //--- At session end: close ALL open positions with our MagicNumber
-   if(gmtHour >= ScalpSessionEnd)
+   for(int si = 0; si < g_symbolCount; si++)
      {
-      CloseAllPositions();
-      return;
-     }
+      string sym = g_symbols[si];
+      if(!IsNewBarForSymbol(si, sym)) continue;
 
-   //--- Only trade within session window
-   if(gmtHour < ScalpSessionStart || gmtHour >= ScalpSessionEnd)
-      return;
+      int magic = GetSymbolMagic(sym);
+      double symPip = GetSymbolPip(sym);
+      double symAsk = SymbolInfoDouble(sym, SYMBOL_ASK);
+      double symBid = SymbolInfoDouble(sym, SYMBOL_BID);
+      int symDigits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
 
-   if(!TM_CanTrade()) return;
-
-   //--- Spread spike protection: if current spread > SpreadSpikeMultiplier × average, skip
-   if(g_avgSpread > 0 && SpreadSpikeMultiplier > 0)
-     {
-      if(currentSpread > SpreadSpikeMultiplier * g_avgSpread)
+      //--- Update rolling average spread per symbol
+      double currentSpread = (double)SymbolInfoInteger(sym, SYMBOL_SPREAD);
+      if(g_spreadSamples[si] < AvgSpreadBars)
         {
-         PrintFormat("[LondonScalper] Spread spike blocked: %.0f > %.1f × %.1f",
-                     currentSpread, SpreadSpikeMultiplier, g_avgSpread);
-         return;
-        }
-     }
-
-   //--- Read EMA values: [0] = bar 0 (current), [1] = bar 1 (last closed)
-   double ema[];
-   ArraySetAsSeries(ema, true);
-   if(CopyBuffer(g_emaHandle, 0, 0, 2, ema) < 2) return;
-
-   //--- Read RSI values
-   double rsi[];
-   ArraySetAsSeries(rsi, true);
-   if(CopyBuffer(g_rsiHandle, 0, 0, 2, rsi) < 2) return;
-
-   //--- Use bar 1 (last closed) for signal detection
-   double emaValue = ema[1];
-   double rsiValue = rsi[1];
-
-   //--- Get close of last completed bar
-   double closeArr[];
-   ArraySetAsSeries(closeArr, true);
-   if(CopyClose(_Symbol, Timeframe, 1, 1, closeArr) < 1) return;
-   double lastClose = closeArr[0];
-
-   //--- Detect signals
-   bool buySignal  = (lastClose > emaValue && rsiValue > 50.0);
-   bool sellSignal = (lastClose < emaValue && rsiValue < 50.0);
-
-   //--- ADX momentum filter
-   if((buySignal || sellSignal) && ADXPeriod > 0 && g_adxHandle != INVALID_HANDLE)
-     {
-      double adxVal[];
-      ArraySetAsSeries(adxVal, true);
-      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
-        {
-         if(adxVal[1] < ADXMinStrength)
-           {
-            buySignal  = false;
-            sellSignal = false;
-           }
+         g_avgSpread[si] = (g_avgSpread[si] * g_spreadSamples[si] + currentSpread) / (g_spreadSamples[si] + 1);
+         g_spreadSamples[si]++;
         }
       else
         {
-         buySignal  = false;
-         sellSignal = false;
+         double alpha = 2.0 / (AvgSpreadBars + 1);
+         g_avgSpread[si] = alpha * currentSpread + (1.0 - alpha) * g_avgSpread[si];
         }
-     }
 
-   //--- Calculate pip value for SL/TP
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
-   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-
-   //--- Read ATR for dynamic stops
-   double atrValue = 0.0;
-   if(UseATRStops && g_atrHandle != INVALID_HANDLE)
-     {
-      double atrArr[];
-      ArraySetAsSeries(atrArr, true);
-      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
-         atrValue = atrArr[1];
-     }
-
-   //--- BUY signal: price above EMA and RSI > 50
-   if(buySignal)
-     {
-      //--- Close any existing SELL positions with our magic number
-      ClosePositionsByDirection(POSITION_TYPE_SELL);
-
-      //--- Only open if no existing BUY position
-      if(!HasPositionByDirection(POSITION_TYPE_BUY))
+      //--- At session end: close ALL open positions for this symbol
+      if(gmtHour >= ScalpSessionEnd)
         {
-         double slDist = 0.0;
-         double tpDist = 0.0;
+         CloseAllPositionsFor(sym, magic);
+         continue;
+        }
 
-         if(UseATRStops && atrValue > 0)
+      //--- Only trade within session window
+      if(gmtHour < ScalpSessionStart || gmtHour >= ScalpSessionEnd)
+         continue;
+
+      //--- Spread spike protection
+      if(g_avgSpread[si] > 0 && SpreadSpikeMultiplier > 0)
+        {
+         if(currentSpread > SpreadSpikeMultiplier * g_avgSpread[si])
+            continue;
+        }
+
+      //--- Calculate Asian range for TP reference
+      double asianHigh = 0.0;
+      double asianLow  = 0.0;
+      if(UseAsianTP)
+         CalculateAsianRange(sym, asianHigh, asianLow);
+
+      //--- Read indicators
+      double ema[];
+      ArraySetAsSeries(ema, true);
+      if(CopyBuffer(g_emaHandles[si], 0, 0, 2, ema) < 2) continue;
+
+      double rsi[];
+      ArraySetAsSeries(rsi, true);
+      if(CopyBuffer(g_rsiHandles[si], 0, 0, 2, rsi) < 2) continue;
+
+      double emaValue = ema[1];
+      double rsiValue = rsi[1];
+
+      double closeArr[];
+      ArraySetAsSeries(closeArr, true);
+      if(CopyClose(sym, Timeframe, 1, 1, closeArr) < 1) continue;
+      double lastClose = closeArr[0];
+
+      bool buySignal  = (lastClose > emaValue && rsiValue > 50.0);
+      bool sellSignal = (lastClose < emaValue && rsiValue < 50.0);
+
+      //--- ADX momentum filter
+      if((buySignal || sellSignal) && ADXPeriod > 0 && g_adxHandles[si] != INVALID_HANDLE)
+        {
+         double adxVal[];
+         ArraySetAsSeries(adxVal, true);
+         if(CopyBuffer(g_adxHandles[si], 0, 0, 2, adxVal) >= 2)
            {
-            slDist = atrValue * ATRSLMultiplier;
-            tpDist = atrValue * ATRTPMultiplier;
+            if(adxVal[1] < ADXMinStrength)
+              { buySignal = false; sellSignal = false; }
            }
          else
+           { buySignal = false; sellSignal = false; }
+        }
+
+      //--- Read ATR for dynamic stops
+      double atrValue = 0.0;
+      if(UseATRStops && g_atrHandles[si] != INVALID_HANDLE)
+        {
+         double atrArr[];
+         ArraySetAsSeries(atrArr, true);
+         if(CopyBuffer(g_atrHandles[si], 0, 0, 2, atrArr) >= 2)
+            atrValue = atrArr[1];
+        }
+
+      //--- BUY signal
+      if(buySignal)
+        {
+         ClosePositionsFor(sym, POSITION_TYPE_SELL, magic);
+
+         if(!HasPositionFor(sym, POSITION_TYPE_BUY, magic))
            {
-            slDist = StopLossPips * pip;
-            tpDist = TakeProfitPips * pip;
-           }
+            double slDist = 0.0;
+            double tpDist = 0.0;
 
-         //--- Asian range TP override: target Asian high if available and larger
-         if(UseAsianTP && g_asianHigh > 0 && g_asianHigh > ask)
-           {
-            double asianTPDist = g_asianHigh - ask;
-            if(asianTPDist > tpDist)
-               tpDist = asianTPDist;
-           }
+            if(UseATRStops && atrValue > 0)
+              { slDist = atrValue * ATRSLMultiplier; tpDist = atrValue * ATRTPMultiplier; }
+            else
+              { slDist = StopLossPips * symPip; tpDist = TakeProfitPips * symPip; }
 
-         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
-         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+            if(UseAsianTP && asianHigh > 0 && asianHigh > symAsk)
+              {
+               double asianTPDist = asianHigh - symAsk;
+               if(asianTPDist > tpDist) tpDist = asianTPDist;
+              }
 
-         double slPips = (slDist > 0) ? slDist / pip : 0.0;
-         double lot = CalculateLotSize(slPips);
+            double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
 
-         string comment = StringFormat("TM:%s|SIG:%s", "London_Scalp", "BUY_MOMENTUM");
+            double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+            double lot = CalculateLotSize(slPips, sym, symPip);
 
-         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
-           {
-            ulong ticket = g_trade.ResultOrder();
-            if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
+            string comment = StringFormat("TM:%s|SIG:%s", "London_Scalp", "BUY_MOMENTUM");
+
+            g_trade.SetExpertMagicNumber(magic);
+            if(g_trade.Buy(lot, sym, symAsk, sl, tp, comment))
+              {
+               ulong ticket = g_trade.ResultOrder();
+               if(ticket > 0)
+                  TM_OnTradeOpened(ticket, sym, "buy", lot, symAsk, sl, tp);
+              }
            }
         }
-     }
 
-   //--- SELL signal: price below EMA and RSI < 50
-   if(sellSignal)
-     {
-      //--- Close any existing BUY positions with our magic number
-      ClosePositionsByDirection(POSITION_TYPE_BUY);
-
-      //--- Only open if no existing SELL position
-      if(!HasPositionByDirection(POSITION_TYPE_SELL))
+      //--- SELL signal
+      if(sellSignal)
         {
-         double slDist = 0.0;
-         double tpDist = 0.0;
+         ClosePositionsFor(sym, POSITION_TYPE_BUY, magic);
 
-         if(UseATRStops && atrValue > 0)
+         if(!HasPositionFor(sym, POSITION_TYPE_SELL, magic))
            {
-            slDist = atrValue * ATRSLMultiplier;
-            tpDist = atrValue * ATRTPMultiplier;
-           }
-         else
-           {
-            slDist = StopLossPips * pip;
-            tpDist = TakeProfitPips * pip;
-           }
+            double slDist = 0.0;
+            double tpDist = 0.0;
 
-         //--- Asian range TP override: target Asian low if available and larger
-         if(UseAsianTP && g_asianLow > 0 && g_asianLow < bid)
-           {
-            double asianTPDist = bid - g_asianLow;
-            if(asianTPDist > tpDist)
-               tpDist = asianTPDist;
-           }
+            if(UseATRStops && atrValue > 0)
+              { slDist = atrValue * ATRSLMultiplier; tpDist = atrValue * ATRTPMultiplier; }
+            else
+              { slDist = StopLossPips * symPip; tpDist = TakeProfitPips * symPip; }
 
-         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
-         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+            if(UseAsianTP && asianLow > 0 && asianLow < symBid)
+              {
+               double asianTPDist = symBid - asianLow;
+               if(asianTPDist > tpDist) tpDist = asianTPDist;
+              }
 
-         double slPips = (slDist > 0) ? slDist / pip : 0.0;
-         double lot = CalculateLotSize(slPips);
+            double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
 
-         string comment = StringFormat("TM:%s|SIG:%s", "London_Scalp", "SELL_MOMENTUM");
+            double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+            double lot = CalculateLotSize(slPips, sym, symPip);
 
-         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
-           {
-            ulong ticket = g_trade.ResultOrder();
-            if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
+            string comment = StringFormat("TM:%s|SIG:%s", "London_Scalp", "SELL_MOMENTUM");
+
+            g_trade.SetExpertMagicNumber(magic);
+            if(g_trade.Sell(lot, sym, symBid, sl, tp, comment))
+              {
+               ulong ticket = g_trade.ResultOrder();
+               if(ticket > 0)
+                  TM_OnTradeOpened(ticket, sym, "sell", lot, symBid, sl, tp);
+              }
            }
         }
      }

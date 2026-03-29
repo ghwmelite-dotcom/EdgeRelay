@@ -45,6 +45,7 @@ input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
+input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -66,32 +67,112 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 // ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
+// ── Multi-Asset Support ─────────────────────────────────────────
+string g_symbols[];
+int    g_symbolCount;
+datetime g_lastBarTime[];
+
+void InitSymbols()
+{
+   if(StringLen(MultiSymbols) == 0)
+   {
+      g_symbolCount = 1;
+      ArrayResize(g_symbols, 1);
+      g_symbols[0] = _Symbol;
+   }
+   else
+   {
+      string parts[];
+      g_symbolCount = StringSplit(MultiSymbols, ',', parts);
+      ArrayResize(g_symbols, g_symbolCount);
+      for(int i = 0; i < g_symbolCount; i++)
+      {
+         StringTrimLeft(parts[i]);
+         StringTrimRight(parts[i]);
+         g_symbols[i] = parts[i];
+         SymbolSelect(g_symbols[i], true);
+      }
+   }
+   ArrayResize(g_lastBarTime, g_symbolCount);
+   for(int i = 0; i < g_symbolCount; i++)
+      g_lastBarTime[i] = 0;
+}
+
+int GetSymbolMagic(string symbol)
+{
+   int hash = MagicNumber;
+   for(int i = 0; i < StringLen(symbol); i++)
+      hash = ((hash << 5) - hash + StringGetCharacter(symbol, i)) & 0x7FFFFFFF;
+   return hash;
+}
+
+double GetSymbolPip(string symbol)
+{
+   int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
+   double point = SymbolInfoDouble(symbol, SYMBOL_POINT);
+   return point * ((digits == 3 || digits == 5) ? 10 : 1);
+}
+
+bool HasPositionFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == direction)
+         return true;
+   }
+   return false;
+}
+
+void ClosePositionsFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   CTrade closeTrade;
+   closeTrade.SetExpertMagicNumber(magic);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+      if(PositionGetString(POSITION_SYMBOL) != symbol) continue;
+      if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) != direction) continue;
+      double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+      if(closeTrade.PositionClose(ticket))
+         TM_OnTradeClosed(ticket, profit);
+   }
+}
+
+bool IsNewBarForSymbol(int symIdx, string symbol)
+{
+   datetime currentBar = iTime(symbol, Timeframe, 0);
+   if(currentBar == g_lastBarTime[symIdx]) return false;
+   g_lastBarTime[symIdx] = currentBar;
+   return true;
+}
+
 // ── Strategy Variables ──────────────────────────────────────────
-int      g_adxHandle    = INVALID_HANDLE;
-int      g_atrRangeHandle = INVALID_HANDLE;
-int      g_atrStopHandle  = INVALID_HANDLE;
+int      g_adxHandles[];
+int      g_atrRangeHandles[];
+int      g_atrStopHandles[];
 CTrade   g_trade;
-double   g_rangeHigh = 0.0;
-double   g_rangeLow  = 0.0;
-int      g_confirmBuyCount  = 0;
-int      g_confirmSellCount = 0;
 
 //+------------------------------------------------------------------+
 //| Calculate lot size based on risk percentage                       |
 //+------------------------------------------------------------------+
-double CalculateLotSize(double slPips)
+double CalculateLotSize(double slPips, string symbol, double symPip)
   {
    if(RiskPercent <= 0 || slPips <= 0) return LotSize;
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * RiskPercent / 100.0;
-   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
    if(tickValue <= 0 || tickSize <= 0) return LotSize;
-   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
-   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double lotSize = riskAmount / (slPips * symPip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
    lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
    return lotSize;
   }
@@ -101,52 +182,58 @@ double CalculateLotSize(double slPips)
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   //--- ADX filter handle
-   if(ADXPeriod > 0)
-     {
-      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
-      if(g_adxHandle == INVALID_HANDLE)
-        {
-         PrintFormat("[BreakoutRetest] Failed to create ADX handle. Error: %d", GetLastError());
-         return INIT_FAILED;
-        }
-     }
+   InitSymbols();
 
-   //--- ATR handle for range validation
-   if(ATRRangePeriod > 0)
-     {
-      g_atrRangeHandle = iATR(_Symbol, Timeframe, ATRRangePeriod);
-      if(g_atrRangeHandle == INVALID_HANDLE)
-        {
-         PrintFormat("[BreakoutRetest] Failed to create ATR range handle. Error: %d", GetLastError());
-         return INIT_FAILED;
-        }
-     }
+   ArrayResize(g_adxHandles, g_symbolCount);
+   ArrayResize(g_atrRangeHandles, g_symbolCount);
+   ArrayResize(g_atrStopHandles, g_symbolCount);
 
-   //--- ATR handle for dynamic stops (separate period allowed)
-   if(UseATRStops)
+   for(int i = 0; i < g_symbolCount; i++)
      {
-      if(ATRStopPeriod == ATRRangePeriod && g_atrRangeHandle != INVALID_HANDLE)
+      g_adxHandles[i] = INVALID_HANDLE;
+      g_atrRangeHandles[i] = INVALID_HANDLE;
+      g_atrStopHandles[i] = INVALID_HANDLE;
+
+      if(ADXPeriod > 0)
         {
-         g_atrStopHandle = g_atrRangeHandle;  // Reuse same handle
-        }
-      else
-        {
-         g_atrStopHandle = iATR(_Symbol, Timeframe, ATRStopPeriod);
-         if(g_atrStopHandle == INVALID_HANDLE)
+         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod);
+         if(g_adxHandles[i] == INVALID_HANDLE)
            {
-            PrintFormat("[BreakoutRetest] Failed to create ATR stop handle. Error: %d", GetLastError());
+            PrintFormat("[BreakoutRetest] Failed to create ADX handle for %s. Error: %d", g_symbols[i], GetLastError());
             return INIT_FAILED;
+           }
+        }
+
+      if(ATRRangePeriod > 0)
+        {
+         g_atrRangeHandles[i] = iATR(g_symbols[i], Timeframe, ATRRangePeriod);
+         if(g_atrRangeHandles[i] == INVALID_HANDLE)
+           {
+            PrintFormat("[BreakoutRetest] Failed to create ATR range handle for %s. Error: %d", g_symbols[i], GetLastError());
+            return INIT_FAILED;
+           }
+        }
+
+      if(UseATRStops)
+        {
+         if(ATRStopPeriod == ATRRangePeriod && g_atrRangeHandles[i] != INVALID_HANDLE)
+            g_atrStopHandles[i] = g_atrRangeHandles[i];
+         else
+           {
+            g_atrStopHandles[i] = iATR(g_symbols[i], Timeframe, ATRStopPeriod);
+            if(g_atrStopHandles[i] == INVALID_HANDLE)
+              {
+               PrintFormat("[BreakoutRetest] Failed to create ATR stop handle for %s. Error: %d", g_symbols[i], GetLastError());
+               return INIT_FAILED;
+              }
            }
         }
      }
 
-   //--- Configure trade object
    g_trade.SetExpertMagicNumber(MagicNumber);
    g_trade.SetDeviationInPoints(10);
    g_trade.SetTypeFilling(ORDER_FILLING_IOC);
 
-   //--- Initialize TradeMetrics integration
    return TM_OnInit();
   }
 
@@ -155,13 +242,13 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   //--- Release indicator handles
-   if(g_adxHandle != INVALID_HANDLE)
-      IndicatorRelease(g_adxHandle);
-   if(g_atrRangeHandle != INVALID_HANDLE)
-      IndicatorRelease(g_atrRangeHandle);
-   if(g_atrStopHandle != INVALID_HANDLE && g_atrStopHandle != g_atrRangeHandle)
-      IndicatorRelease(g_atrStopHandle);
+   for(int i = 0; i < g_symbolCount; i++)
+     {
+      if(g_adxHandles[i] != INVALID_HANDLE) IndicatorRelease(g_adxHandles[i]);
+      if(g_atrRangeHandles[i] != INVALID_HANDLE) IndicatorRelease(g_atrRangeHandles[i]);
+      if(g_atrStopHandles[i] != INVALID_HANDLE && g_atrStopHandles[i] != g_atrRangeHandles[i])
+         IndicatorRelease(g_atrStopHandles[i]);
+     }
 
    TM_OnDeinit(reason);
   }
@@ -179,209 +266,176 @@ void OnTimer()
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
-   //--- Calculate range: highest high and lowest low over LookbackBars
-   double highArr[];
-   double lowArr[];
-   ArraySetAsSeries(highArr, true);
-   ArraySetAsSeries(lowArr, true);
-
-   if(CopyHigh(_Symbol, Timeframe, 1, LookbackBars, highArr) < LookbackBars) return;
-   if(CopyLow(_Symbol, Timeframe, 1, LookbackBars, lowArr) < LookbackBars)   return;
-
-   g_rangeHigh = highArr[0];
-   g_rangeLow  = lowArr[0];
-   for(int i = 1; i < LookbackBars; i++)
+   for(int si = 0; si < g_symbolCount; si++)
      {
-      if(highArr[i] > g_rangeHigh) g_rangeHigh = highArr[i];
-      if(lowArr[i]  < g_rangeLow)  g_rangeLow  = lowArr[i];
-     }
+      string sym = g_symbols[si];
+      if(!IsNewBarForSymbol(si, sym)) continue;
 
-   double rangeSize = g_rangeHigh - g_rangeLow;
+      int magic = GetSymbolMagic(sym);
+      double symPip = GetSymbolPip(sym);
+      double symAsk = SymbolInfoDouble(sym, SYMBOL_ASK);
+      double symBid = SymbolInfoDouble(sym, SYMBOL_BID);
+      int symDigits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
 
-   //--- ATR range validation: skip if range is too tight or overextended
-   if(g_atrRangeHandle != INVALID_HANDLE)
-     {
-      double atrRangeArr[];
-      ArraySetAsSeries(atrRangeArr, true);
-      if(CopyBuffer(g_atrRangeHandle, 0, 0, 2, atrRangeArr) >= 2)
+      //--- Calculate range
+      double highArr[];
+      double lowArr[];
+      ArraySetAsSeries(highArr, true);
+      ArraySetAsSeries(lowArr, true);
+
+      if(CopyHigh(sym, Timeframe, 1, LookbackBars, highArr) < LookbackBars) continue;
+      if(CopyLow(sym, Timeframe, 1, LookbackBars, lowArr) < LookbackBars)   continue;
+
+      double rangeHigh = highArr[0];
+      double rangeLow  = lowArr[0];
+      for(int i = 1; i < LookbackBars; i++)
         {
-         double atrVal = atrRangeArr[1];
-         if(atrVal > 0)
+         if(highArr[i] > rangeHigh) rangeHigh = highArr[i];
+         if(lowArr[i]  < rangeLow)  rangeLow  = lowArr[i];
+        }
+
+      double rangeSize = rangeHigh - rangeLow;
+
+      //--- ATR range validation
+      if(g_atrRangeHandles[si] != INVALID_HANDLE)
+        {
+         double atrRangeArr[];
+         ArraySetAsSeries(atrRangeArr, true);
+         if(CopyBuffer(g_atrRangeHandles[si], 0, 0, 2, atrRangeArr) >= 2)
            {
-            if(rangeSize < MinRangeATRMult * atrVal)
-               return;  // Range too tight — likely noise
-            if(rangeSize > MaxRangeATRMult * atrVal)
-               return;  // Range too wide — overextended
+            double atrVal = atrRangeArr[1];
+            if(atrVal > 0)
+              {
+               if(rangeSize < MinRangeATRMult * atrVal) continue;
+               if(rangeSize > MaxRangeATRMult * atrVal) continue;
+              }
            }
         }
-     }
 
-   //--- Get last closed bar close price
-   double closeArr[];
-   ArraySetAsSeries(closeArr, true);
-   int needBars = ConfirmationCandles + 1;
-   if(CopyClose(_Symbol, Timeframe, 1, needBars, closeArr) < needBars) return;
+      //--- Get close prices for confirmation
+      double closeArr[];
+      ArraySetAsSeries(closeArr, true);
+      int needBars = ConfirmationCandles + 1;
+      if(CopyClose(sym, Timeframe, 1, needBars, closeArr) < needBars) continue;
 
-   //--- Calculate pip value for SL/TP and buffer
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
-   double buffer = BreakoutBufferPips * pip;
+      double buffer = BreakoutBufferPips * symPip;
 
-   //--- Count confirmation candles closing above range high (for BUY)
-   g_confirmBuyCount = 0;
-   for(int i = 0; i < ConfirmationCandles; i++)
-     {
-      if(closeArr[i] > g_rangeHigh + buffer)
-         g_confirmBuyCount++;
-      else
-         break;
-     }
+      int confirmBuyCount = 0;
+      for(int i = 0; i < ConfirmationCandles; i++)
+        { if(closeArr[i] > rangeHigh + buffer) confirmBuyCount++; else break; }
 
-   //--- Count confirmation candles closing below range low (for SELL)
-   g_confirmSellCount = 0;
-   for(int i = 0; i < ConfirmationCandles; i++)
-     {
-      if(closeArr[i] < g_rangeLow - buffer)
-         g_confirmSellCount++;
-      else
-         break;
-     }
+      int confirmSellCount = 0;
+      for(int i = 0; i < ConfirmationCandles; i++)
+        { if(closeArr[i] < rangeLow - buffer) confirmSellCount++; else break; }
 
-   //--- Detect signals
-   bool buySignal  = (g_confirmBuyCount >= ConfirmationCandles);
-   bool sellSignal = (g_confirmSellCount >= ConfirmationCandles);
+      bool buySignal  = (confirmBuyCount >= ConfirmationCandles);
+      bool sellSignal = (confirmSellCount >= ConfirmationCandles);
 
-   //--- ADX confirmation: breakout more reliable when ADX > threshold and rising
-   if((buySignal || sellSignal) && ADXPeriod > 0 && g_adxHandle != INVALID_HANDLE)
-     {
-      double adxVal[];
-      ArraySetAsSeries(adxVal, true);
-      if(CopyBuffer(g_adxHandle, 0, 0, 3, adxVal) >= 3)
+      //--- ADX confirmation
+      if((buySignal || sellSignal) && ADXPeriod > 0 && g_adxHandles[si] != INVALID_HANDLE)
         {
-         //--- Require ADX above minimum strength
-         if(adxVal[1] < ADXMinStrength)
+         double adxVal[];
+         ArraySetAsSeries(adxVal, true);
+         if(CopyBuffer(g_adxHandles[si], 0, 0, 3, adxVal) >= 3)
            {
-            buySignal  = false;
-            sellSignal = false;
-           }
-         //--- Bonus: ADX should be rising (current > previous) for stronger confirmation
-         //--- If ADX is falling, skip — breakout likely to fail
-         else if(adxVal[1] < adxVal[2])
-           {
-            buySignal  = false;
-            sellSignal = false;
-           }
-        }
-      else
-        {
-         buySignal  = false;
-         sellSignal = false;
-        }
-     }
-
-   //--- Read ATR for dynamic stops
-   double atrStopValue = 0.0;
-   if(UseATRStops && g_atrStopHandle != INVALID_HANDLE)
-     {
-      double atrStopArr[];
-      ArraySetAsSeries(atrStopArr, true);
-      if(CopyBuffer(g_atrStopHandle, 0, 0, 2, atrStopArr) >= 2)
-         atrStopValue = atrStopArr[1];
-     }
-
-   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-
-   //--- BUY signal: breakout above range high confirmed
-   if(buySignal)
-     {
-      //--- Close any existing SELL positions with our magic number
-      ClosePositionsByDirection(POSITION_TYPE_SELL);
-
-      //--- Only open if no existing BUY position
-      if(!HasPositionByDirection(POSITION_TYPE_BUY))
-        {
-         double slDist = 0.0;
-         double tpDist = 0.0;
-
-         if(UseATRStops && atrStopValue > 0)
-           {
-            slDist = atrStopValue * ATRSLMultiplier;
-            tpDist = atrStopValue * ATRTPMultiplier;
+            if(adxVal[1] < ADXMinStrength || adxVal[1] < adxVal[2])
+              { buySignal = false; sellSignal = false; }
            }
          else
+           { buySignal = false; sellSignal = false; }
+        }
+
+      //--- Read ATR for dynamic stops
+      double atrStopValue = 0.0;
+      if(UseATRStops && g_atrStopHandles[si] != INVALID_HANDLE)
+        {
+         double atrStopArr[];
+         ArraySetAsSeries(atrStopArr, true);
+         if(CopyBuffer(g_atrStopHandles[si], 0, 0, 2, atrStopArr) >= 2)
+            atrStopValue = atrStopArr[1];
+        }
+
+      //--- BUY signal
+      if(buySignal)
+        {
+         ClosePositionsFor(sym, POSITION_TYPE_SELL, magic);
+
+         if(!HasPositionFor(sym, POSITION_TYPE_BUY, magic))
            {
-            //--- SL below range low, or use fixed SL if smaller
-            double rangeSLDist = ask - g_rangeLow;
-            double fixedSLDist = StopLossPips * pip;
-            if(StopLossPips > 0 && fixedSLDist < rangeSLDist)
-               slDist = fixedSLDist;
+            double slDist = 0.0;
+            double tpDist = 0.0;
+
+            if(UseATRStops && atrStopValue > 0)
+              { slDist = atrStopValue * ATRSLMultiplier; tpDist = atrStopValue * ATRTPMultiplier; }
             else
-               slDist = rangeSLDist;
-            tpDist = TakeProfitPips * pip;
-           }
+              {
+               double rangeSLDist = symAsk - rangeLow;
+               double fixedSLDist = StopLossPips * symPip;
+               if(StopLossPips > 0 && fixedSLDist < rangeSLDist)
+                  slDist = fixedSLDist;
+               else
+                  slDist = rangeSLDist;
+               tpDist = TakeProfitPips * symPip;
+              }
 
-         double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
-         double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
+            double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
 
-         double slPips = (slDist > 0) ? slDist / pip : 0.0;
-         double lot = CalculateLotSize(slPips);
+            double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+            double lot = CalculateLotSize(slPips, sym, symPip);
 
-         string comment = StringFormat("TM:%s|SIG:%s", "Breakout", "BUY_BREAK");
+            string comment = StringFormat("TM:%s|SIG:%s", "Breakout", "BUY_BREAK");
 
-         if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
-           {
-            ulong ticket = g_trade.ResultOrder();
-            if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
+            g_trade.SetExpertMagicNumber(magic);
+            if(g_trade.Buy(lot, sym, symAsk, sl, tp, comment))
+              {
+               ulong ticket = g_trade.ResultOrder();
+               if(ticket > 0)
+                  TM_OnTradeOpened(ticket, sym, "buy", lot, symAsk, sl, tp);
+              }
            }
         }
-     }
 
-   //--- SELL signal: breakout below range low confirmed
-   if(sellSignal)
-     {
-      //--- Close any existing BUY positions with our magic number
-      ClosePositionsByDirection(POSITION_TYPE_BUY);
-
-      //--- Only open if no existing SELL position
-      if(!HasPositionByDirection(POSITION_TYPE_SELL))
+      //--- SELL signal
+      if(sellSignal)
         {
-         double slDist = 0.0;
-         double tpDist = 0.0;
+         ClosePositionsFor(sym, POSITION_TYPE_BUY, magic);
 
-         if(UseATRStops && atrStopValue > 0)
+         if(!HasPositionFor(sym, POSITION_TYPE_SELL, magic))
            {
-            slDist = atrStopValue * ATRSLMultiplier;
-            tpDist = atrStopValue * ATRTPMultiplier;
-           }
-         else
-           {
-            //--- SL above range high, or use fixed SL if smaller
-            double rangeSLDist = g_rangeHigh - bid;
-            double fixedSLDist = StopLossPips * pip;
-            if(StopLossPips > 0 && fixedSLDist < rangeSLDist)
-               slDist = fixedSLDist;
+            double slDist = 0.0;
+            double tpDist = 0.0;
+
+            if(UseATRStops && atrStopValue > 0)
+              { slDist = atrStopValue * ATRSLMultiplier; tpDist = atrStopValue * ATRTPMultiplier; }
             else
-               slDist = rangeSLDist;
-            tpDist = TakeProfitPips * pip;
-           }
+              {
+               double rangeSLDist = rangeHigh - symBid;
+               double fixedSLDist = StopLossPips * symPip;
+               if(StopLossPips > 0 && fixedSLDist < rangeSLDist)
+                  slDist = fixedSLDist;
+               else
+                  slDist = rangeSLDist;
+               tpDist = TakeProfitPips * symPip;
+              }
 
-         double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
-         double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
+            double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
+            double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
 
-         double slPips = (slDist > 0) ? slDist / pip : 0.0;
-         double lot = CalculateLotSize(slPips);
+            double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+            double lot = CalculateLotSize(slPips, sym, symPip);
 
-         string comment = StringFormat("TM:%s|SIG:%s", "Breakout", "SELL_BREAK");
+            string comment = StringFormat("TM:%s|SIG:%s", "Breakout", "SELL_BREAK");
 
-         if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
-           {
-            ulong ticket = g_trade.ResultOrder();
-            if(ticket > 0)
-               TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
+            g_trade.SetExpertMagicNumber(magic);
+            if(g_trade.Sell(lot, sym, symBid, sl, tp, comment))
+              {
+               ulong ticket = g_trade.ResultOrder();
+               if(ticket > 0)
+                  TM_OnTradeOpened(ticket, sym, "sell", lot, symBid, sl, tp);
+              }
            }
         }
      }

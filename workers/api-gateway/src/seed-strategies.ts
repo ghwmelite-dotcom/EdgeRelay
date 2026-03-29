@@ -20,6 +20,7 @@ const COMMON_PARAMS = [
   {"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},
   {"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},
   {"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},
+  {"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},
   {"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5.0,"min":1.0,"max":20.0,"step":0.5,"tooltip":"Stop trading after this % loss."},
   {"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},
   {"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1.0,"min":0.0,"max":3.0,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},

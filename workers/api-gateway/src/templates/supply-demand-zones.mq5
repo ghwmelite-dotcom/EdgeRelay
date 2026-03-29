@@ -40,6 +40,7 @@ input int    StopLossPips        = {{SL_PIPS}};               // Stop Loss (pips
 input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pips)
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
+input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -61,104 +62,124 @@ input bool   EnableJournal    = true;                         // Enable Journal 
 // ── Shared Integration Block ────────────────────────────────────
 {{TRADEMETRICS_BLOCK}}
 
+// ── Multi-Asset Support ─────────────────────────────────────────
+string g_symbols[];
+int    g_symbolCount;
+datetime g_lastBarTime[];
+
+void InitSymbols()
+{
+   if(StringLen(MultiSymbols) == 0)
+   { g_symbolCount = 1; ArrayResize(g_symbols, 1); g_symbols[0] = _Symbol; }
+   else
+   {
+      string parts[];
+      g_symbolCount = StringSplit(MultiSymbols, ',', parts);
+      ArrayResize(g_symbols, g_symbolCount);
+      for(int i = 0; i < g_symbolCount; i++)
+      { StringTrimLeft(parts[i]); StringTrimRight(parts[i]); g_symbols[i] = parts[i]; SymbolSelect(g_symbols[i], true); }
+   }
+   ArrayResize(g_lastBarTime, g_symbolCount);
+   for(int i = 0; i < g_symbolCount; i++) g_lastBarTime[i] = 0;
+}
+
+int GetSymbolMagic(string symbol)
+{ int hash = MagicNumber; for(int i = 0; i < StringLen(symbol); i++) hash = ((hash << 5) - hash + StringGetCharacter(symbol, i)) & 0x7FFFFFFF; return hash; }
+
+double GetSymbolPip(string symbol)
+{ int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS); double point = SymbolInfoDouble(symbol, SYMBOL_POINT); return point * ((digits == 3 || digits == 5) ? 10 : 1); }
+
+bool HasPositionFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   { ulong ticket = PositionGetTicket(i); if(ticket == 0) continue; if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+     if(PositionGetString(POSITION_SYMBOL) != symbol) continue; if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) == direction) return true; }
+   return false;
+}
+
+void ClosePositionsFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
+{
+   CTrade closeTrade; closeTrade.SetExpertMagicNumber(magic);
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   { ulong ticket = PositionGetTicket(i); if(ticket == 0) continue; if(PositionGetInteger(POSITION_MAGIC) != magic) continue;
+     if(PositionGetString(POSITION_SYMBOL) != symbol) continue; if((ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE) != direction) continue;
+     double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+     if(closeTrade.PositionClose(ticket)) TM_OnTradeClosed(ticket, profit); }
+}
+
+bool IsNewBarForSymbol(int symIdx, string symbol)
+{ datetime currentBar = iTime(symbol, Timeframe, 0); if(currentBar == g_lastBarTime[symIdx]) return false; g_lastBarTime[symIdx] = currentBar; return true; }
+
 // ── Strategy Variables ──────────────────────────────────────────
 #define MAX_ZONES 3
 
 struct SZone
   {
    double price;
-   double strength;   // impulse body size relative to ATR
+   double strength;
    bool   active;
-   bool   tested;     // true after first retest (zone freshness)
+   bool   tested;
   };
 
-SZone    g_demandZones[MAX_ZONES];
-SZone    g_supplyZones[MAX_ZONES];
-int      g_demandCount = 0;
-int      g_supplyCount = 0;
-int      g_adxHandle   = INVALID_HANDLE;
-int      g_atrHandle   = INVALID_HANDLE;
+int      g_adxHandles[];
+int      g_atrHandles[];
 CTrade   g_trade;
 
 //+------------------------------------------------------------------+
 //| Calculate lot size based on risk percentage                       |
 //+------------------------------------------------------------------+
-double CalculateLotSize(double slPips)
+double CalculateLotSize(double slPips, string symbol, double symPip)
   {
    if(RiskPercent <= 0 || slPips <= 0) return LotSize;
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double riskAmount = balance * RiskPercent / 100.0;
-   double tickValue = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
+   double tickValue = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_VALUE);
+   double tickSize = SymbolInfoDouble(symbol, SYMBOL_TRADE_TICK_SIZE);
    if(tickValue <= 0 || tickSize <= 0) return LotSize;
-   double lotSize = riskAmount / (slPips * pip / tickSize * tickValue);
-   double minLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-   double lotStep = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
+   double lotSize = riskAmount / (slPips * symPip / tickSize * tickValue);
+   double minLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   double maxLot = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   double lotStep = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
    lotSize = MathMax(minLot, MathMin(maxLot, MathFloor(lotSize / lotStep) * lotStep));
    return lotSize;
   }
 
-//+------------------------------------------------------------------+
-//| Expert initialization function                                    |
-//+------------------------------------------------------------------+
 int OnInit()
   {
-   //--- Reset zones
-   for(int i = 0; i < MAX_ZONES; i++)
-     {
-      g_demandZones[i].price    = 0.0;
-      g_demandZones[i].strength = 0.0;
-      g_demandZones[i].active   = false;
-      g_demandZones[i].tested   = false;
-      g_supplyZones[i].price    = 0.0;
-      g_supplyZones[i].strength = 0.0;
-      g_supplyZones[i].active   = false;
-      g_supplyZones[i].tested   = false;
-     }
-   g_demandCount = 0;
-   g_supplyCount = 0;
+   InitSymbols();
 
-   //--- ADX filter handle (low ADX = ranging = better for S/D)
-   if(ADXPeriod > 0)
+   ArrayResize(g_adxHandles, g_symbolCount);
+   ArrayResize(g_atrHandles, g_symbolCount);
+
+   for(int i = 0; i < g_symbolCount; i++)
      {
-      g_adxHandle = iADX(_Symbol, Timeframe, ADXPeriod);
-      if(g_adxHandle == INVALID_HANDLE)
+      g_adxHandles[i] = INVALID_HANDLE;
+
+      if(ADXPeriod > 0)
         {
-         PrintFormat("[SDZones] Failed to create ADX handle. Error: %d", GetLastError());
-         return INIT_FAILED;
+         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod);
+         if(g_adxHandles[i] == INVALID_HANDLE)
+           { PrintFormat("[SDZones] Failed to create ADX handle for %s. Error: %d", g_symbols[i], GetLastError()); return INIT_FAILED; }
         }
+
+      g_atrHandles[i] = iATR(g_symbols[i], Timeframe, (UseATRStops ? ATRStopPeriod : 14));
+      if(g_atrHandles[i] == INVALID_HANDLE)
+        { PrintFormat("[SDZones] Failed to create ATR handle for %s. Error: %d", g_symbols[i], GetLastError()); return INIT_FAILED; }
      }
 
-   //--- ATR handle for dynamic stops and zone strength scoring
-   g_atrHandle = iATR(_Symbol, Timeframe, (UseATRStops ? ATRStopPeriod : 14));
-   if(g_atrHandle == INVALID_HANDLE)
-     {
-      PrintFormat("[SDZones] Failed to create ATR handle. Error: %d", GetLastError());
-      return INIT_FAILED;
-     }
-
-   //--- Configure trade object
    g_trade.SetExpertMagicNumber(MagicNumber);
    g_trade.SetDeviationInPoints(10);
    g_trade.SetTypeFilling(ORDER_FILLING_IOC);
-
-   //--- Initialize TradeMetrics integration
    return TM_OnInit();
   }
 
-//+------------------------------------------------------------------+
-//| Expert deinitialization function                                  |
-//+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   //--- Release indicator handles
-   if(g_adxHandle != INVALID_HANDLE)
-      IndicatorRelease(g_adxHandle);
-   if(g_atrHandle != INVALID_HANDLE)
-      IndicatorRelease(g_atrHandle);
-
+   for(int i = 0; i < g_symbolCount; i++)
+     {
+      if(g_adxHandles[i] != INVALID_HANDLE) IndicatorRelease(g_adxHandles[i]);
+      if(g_atrHandles[i] != INVALID_HANDLE) IndicatorRelease(g_atrHandles[i]);
+     }
    TM_OnDeinit(reason);
   }
 
@@ -175,151 +196,106 @@ void OnTimer()
 //+------------------------------------------------------------------+
 void OnTick()
   {
-   if(!TM_IsNewBar()) return;
    if(!TM_CanTrade()) return;
 
-   double pip = _Point * ((_Digits == 3 || _Digits == 5) ? 10 : 1);
-   double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-   double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
-   double tolerance = RetestTolerance * pip;
-
-   //--- Read ATR for zone strength scoring and dynamic stops
-   double atrValue = 0.0;
-   if(g_atrHandle != INVALID_HANDLE)
+   for(int si = 0; si < g_symbolCount; si++)
      {
-      double atrArr[];
-      ArraySetAsSeries(atrArr, true);
-      if(CopyBuffer(g_atrHandle, 0, 0, 2, atrArr) >= 2)
-         atrValue = atrArr[1];
-     }
+      string sym = g_symbols[si];
+      if(!IsNewBarForSymbol(si, sym)) continue;
 
-   //--- Scan for new impulse candles and build zones
-   ScanForZones(pip, atrValue);
+      int magic = GetSymbolMagic(sym);
+      double symPip = GetSymbolPip(sym);
+      double symAsk = SymbolInfoDouble(sym, SYMBOL_ASK);
+      double symBid = SymbolInfoDouble(sym, SYMBOL_BID);
+      int symDigits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+      double tolerance = RetestTolerance * symPip;
 
-   //--- Invalidate broken zones
-   double close1 = iClose(_Symbol, Timeframe, 1);
+      double atrValue = 0.0;
+      if(g_atrHandles[si] != INVALID_HANDLE)
+        { double atrArr[]; ArraySetAsSeries(atrArr, true); if(CopyBuffer(g_atrHandles[si], 0, 0, 2, atrArr) >= 2) atrValue = atrArr[1]; }
 
-   for(int i = 0; i < g_demandCount; i++)
-     {
-      if(g_demandZones[i].active && close1 < g_demandZones[i].price - tolerance)
-         g_demandZones[i].active = false;
-     }
-   for(int i = 0; i < g_supplyCount; i++)
-     {
-      if(g_supplyZones[i].active && close1 > g_supplyZones[i].price + tolerance)
-         g_supplyZones[i].active = false;
-     }
+      //--- Scan for zones per symbol
+      SZone demandZones[MAX_ZONES];
+      SZone supplyZones[MAX_ZONES];
+      int demandCount = 0;
+      int supplyCount = 0;
+      ScanForZones(sym, symPip, atrValue, demandZones, supplyZones, demandCount, supplyCount);
 
-   //--- ADX filter: for S/D, low ADX (ranging) is better — skip if ADX too high
-   bool adxOK = true;
-   if(ADXPeriod > 0)
-     {
-      double adxVal[];
-      ArraySetAsSeries(adxVal, true);
-      if(CopyBuffer(g_adxHandle, 0, 0, 2, adxVal) >= 2)
+      double close1 = iClose(sym, Timeframe, 1);
+
+      //--- Invalidate broken zones
+      for(int i = 0; i < demandCount; i++)
+        { if(demandZones[i].active && close1 < demandZones[i].price - tolerance) demandZones[i].active = false; }
+      for(int i = 0; i < supplyCount; i++)
+        { if(supplyZones[i].active && close1 > supplyZones[i].price + tolerance) supplyZones[i].active = false; }
+
+      bool adxOK = true;
+      if(ADXPeriod > 0 && g_adxHandles[si] != INVALID_HANDLE)
         {
-         if(adxVal[1] > ADXMinStrength)
-            adxOK = false;  // Market trending too hard for S/D
+         double adxVal[]; ArraySetAsSeries(adxVal, true);
+         if(CopyBuffer(g_adxHandles[si], 0, 0, 2, adxVal) >= 2)
+           { if(adxVal[1] > ADXMinStrength) adxOK = false; }
+         else adxOK = false;
         }
-      else
-         adxOK = false;
-     }
 
-   //--- BUY: price retests a demand zone (first touch only)
-   for(int i = 0; i < g_demandCount; i++)
-     {
-      if(!g_demandZones[i].active) continue;
-      if(g_demandZones[i].tested) continue;  // Zone freshness: skip already-tested zones
-      if(!adxOK) continue;
-
-      double low1 = iLow(_Symbol, Timeframe, 1);
-      if(low1 <= g_demandZones[i].price + tolerance && close1 > g_demandZones[i].price)
+      //--- BUY: demand zone retest
+      for(int i = 0; i < demandCount; i++)
         {
-         //--- Mark zone as tested (first touch used)
-         g_demandZones[i].tested = true;
-
-         if(!HasPositionByDirection(POSITION_TYPE_BUY))
+         if(!demandZones[i].active || demandZones[i].tested || !adxOK) continue;
+         double low1 = iLow(sym, Timeframe, 1);
+         if(low1 <= demandZones[i].price + tolerance && close1 > demandZones[i].price)
            {
-            double slDist = 0.0;
-            double tpDist = 0.0;
-            double riskDist = ask - g_demandZones[i].price;
-
-            if(UseATRStops && atrValue > 0)
+            demandZones[i].tested = true;
+            if(!HasPositionFor(sym, POSITION_TYPE_BUY, magic))
               {
-               slDist = atrValue * ATRSLMultiplier;
-               tpDist = atrValue * ATRTPMultiplier;
+               double slDist = 0.0, tpDist = 0.0;
+               double riskDist = symAsk - demandZones[i].price;
+               if(UseATRStops && atrValue > 0)
+                 { slDist = atrValue * ATRSLMultiplier; tpDist = atrValue * ATRTPMultiplier; }
+               else
+                 { slDist = (StopLossPips > 0) ? StopLossPips * symPip : riskDist + tolerance; tpDist = (TakeProfitPips > 0) ? TakeProfitPips * symPip : riskDist * 2.0; }
+
+               double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
+               double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
+               double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+               double lot = CalculateLotSize(slPips, sym, symPip);
+
+               g_trade.SetExpertMagicNumber(magic);
+               if(g_trade.Buy(lot, sym, symAsk, sl, tp, StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "BUY_DEMAND", demandZones[i].strength)))
+                 { ulong ticket = g_trade.ResultOrder(); if(ticket > 0) TM_OnTradeOpened(ticket, sym, "buy", lot, symAsk, sl, tp); }
               }
-            else
-              {
-               slDist = (StopLossPips > 0) ? StopLossPips * pip : riskDist + tolerance;
-               tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : riskDist * 2.0;
-              }
-
-            double sl = (slDist > 0) ? NormalizeDouble(ask - slDist, _Digits) : 0.0;
-            double tp = (tpDist > 0) ? NormalizeDouble(ask + tpDist, _Digits) : 0.0;
-
-            double slPips = (slDist > 0) ? slDist / pip : 0.0;
-            double lot = CalculateLotSize(slPips);
-
-            string comment = StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "BUY_DEMAND", g_demandZones[i].strength);
-
-            if(g_trade.Buy(lot, _Symbol, ask, sl, tp, comment))
-              {
-               ulong ticket = g_trade.ResultOrder();
-               if(ticket > 0)
-                  TM_OnTradeOpened(ticket, _Symbol, "buy", lot, ask, sl, tp);
-              }
+            break;
            }
-         break;
         }
-     }
 
-   //--- SELL: price retests a supply zone (first touch only)
-   for(int i = 0; i < g_supplyCount; i++)
-     {
-      if(!g_supplyZones[i].active) continue;
-      if(g_supplyZones[i].tested) continue;  // Zone freshness: skip already-tested zones
-      if(!adxOK) continue;
-
-      double high1 = iHigh(_Symbol, Timeframe, 1);
-      if(high1 >= g_supplyZones[i].price - tolerance && close1 < g_supplyZones[i].price)
+      //--- SELL: supply zone retest
+      for(int i = 0; i < supplyCount; i++)
         {
-         //--- Mark zone as tested (first touch used)
-         g_supplyZones[i].tested = true;
-
-         if(!HasPositionByDirection(POSITION_TYPE_SELL))
+         if(!supplyZones[i].active || supplyZones[i].tested || !adxOK) continue;
+         double high1 = iHigh(sym, Timeframe, 1);
+         if(high1 >= supplyZones[i].price - tolerance && close1 < supplyZones[i].price)
            {
-            double slDist = 0.0;
-            double tpDist = 0.0;
-            double riskDist = g_supplyZones[i].price - bid;
-
-            if(UseATRStops && atrValue > 0)
+            supplyZones[i].tested = true;
+            if(!HasPositionFor(sym, POSITION_TYPE_SELL, magic))
               {
-               slDist = atrValue * ATRSLMultiplier;
-               tpDist = atrValue * ATRTPMultiplier;
+               double slDist = 0.0, tpDist = 0.0;
+               double riskDist = supplyZones[i].price - symBid;
+               if(UseATRStops && atrValue > 0)
+                 { slDist = atrValue * ATRSLMultiplier; tpDist = atrValue * ATRTPMultiplier; }
+               else
+                 { slDist = (StopLossPips > 0) ? StopLossPips * symPip : riskDist + tolerance; tpDist = (TakeProfitPips > 0) ? TakeProfitPips * symPip : riskDist * 2.0; }
+
+               double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
+               double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
+               double slPips = (slDist > 0) ? slDist / symPip : 0.0;
+               double lot = CalculateLotSize(slPips, sym, symPip);
+
+               g_trade.SetExpertMagicNumber(magic);
+               if(g_trade.Sell(lot, sym, symBid, sl, tp, StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "SELL_SUPPLY", supplyZones[i].strength)))
+                 { ulong ticket = g_trade.ResultOrder(); if(ticket > 0) TM_OnTradeOpened(ticket, sym, "sell", lot, symBid, sl, tp); }
               }
-            else
-              {
-               slDist = (StopLossPips > 0) ? StopLossPips * pip : riskDist + tolerance;
-               tpDist = (TakeProfitPips > 0) ? TakeProfitPips * pip : riskDist * 2.0;
-              }
-
-            double sl = (slDist > 0) ? NormalizeDouble(bid + slDist, _Digits) : 0.0;
-            double tp = (tpDist > 0) ? NormalizeDouble(bid - tpDist, _Digits) : 0.0;
-
-            double slPips = (slDist > 0) ? slDist / pip : 0.0;
-            double lot = CalculateLotSize(slPips);
-
-            string comment = StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "SELL_SUPPLY", g_supplyZones[i].strength);
-
-            if(g_trade.Sell(lot, _Symbol, bid, sl, tp, comment))
-              {
-               ulong ticket = g_trade.ResultOrder();
-               if(ticket > 0)
-                  TM_OnTradeOpened(ticket, _Symbol, "sell", lot, bid, sl, tp);
-              }
+            break;
            }
-         break;
         }
      }
 
@@ -329,52 +305,34 @@ void OnTick()
 //+------------------------------------------------------------------+
 //| Scan for impulse candles and register zones with strength scoring |
 //+------------------------------------------------------------------+
-void ScanForZones(double pip, double atrValue)
+void ScanForZones(string sym, double pip, double atrValue, SZone &demandZones[], SZone &supplyZones[], int &demandCount, int &supplyCount)
   {
-   //--- Reset zones each scan
-   g_demandCount = 0;
-   g_supplyCount = 0;
+   demandCount = 0;
+   supplyCount = 0;
 
-   for(int bar = 1; bar <= ZoneLookback && bar < iBars(_Symbol, Timeframe); bar++)
+   for(int bar = 1; bar <= ZoneLookback && bar < iBars(sym, Timeframe); bar++)
      {
-      double open  = iOpen(_Symbol, Timeframe, bar);
-      double close = iClose(_Symbol, Timeframe, bar);
-      double high  = iHigh(_Symbol, Timeframe, bar);
-      double low   = iLow(_Symbol, Timeframe, bar);
+      double open  = iOpen(sym, Timeframe, bar);
+      double close = iClose(sym, Timeframe, bar);
+      double high  = iHigh(sym, Timeframe, bar);
+      double low   = iLow(sym, Timeframe, bar);
 
       double body    = MathAbs(close - open);
       double upperWk = high - MathMax(open, close);
       double lowerWk = MathMin(open, close) - low;
       double totalWk = upperWk + lowerWk;
-
-      //--- Avoid division by zero
       if(totalWk < pip * 0.1) totalWk = pip * 0.1;
 
       double ratio = body / totalWk;
       if(ratio < MinZoneStrength) continue;
 
-      //--- Zone strength scoring: impulse body size relative to ATR
       double strength = (atrValue > 0) ? body / atrValue : ratio;
 
-      //--- Bullish impulse → demand zone at candle low
-      if(close > open && g_demandCount < MAX_ZONES)
-        {
-         g_demandZones[g_demandCount].price    = low;
-         g_demandZones[g_demandCount].strength = strength;
-         g_demandZones[g_demandCount].active   = true;
-         g_demandZones[g_demandCount].tested   = false;
-         g_demandCount++;
-        }
+      if(close > open && demandCount < MAX_ZONES)
+        { demandZones[demandCount].price = low; demandZones[demandCount].strength = strength; demandZones[demandCount].active = true; demandZones[demandCount].tested = false; demandCount++; }
 
-      //--- Bearish impulse → supply zone at candle high
-      if(close < open && g_supplyCount < MAX_ZONES)
-        {
-         g_supplyZones[g_supplyCount].price    = high;
-         g_supplyZones[g_supplyCount].strength = strength;
-         g_supplyZones[g_supplyCount].active   = true;
-         g_supplyZones[g_supplyCount].tested   = false;
-         g_supplyCount++;
-        }
+      if(close < open && supplyCount < MAX_ZONES)
+        { supplyZones[supplyCount].price = high; supplyZones[supplyCount].strength = strength; supplyZones[supplyCount].active = true; supplyZones[supplyCount].tested = false; supplyCount++; }
      }
   }
 

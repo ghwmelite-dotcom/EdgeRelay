@@ -445,9 +445,12 @@ export function DisciplinePage() {
       {/* AI Coaching */}
       <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-500/5 via-terminal-card/50 to-terminal-card/50 p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Brain size={18} className="text-purple-400" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">AI Coach</h2>
+          <div>
+            <div className="flex items-center gap-2">
+              <Brain size={18} className="text-purple-400" />
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">AI Coach</h2>
+            </div>
+            <p className="text-[11px] text-terminal-muted mt-1 ml-[26px]">Personalized coaching unlocks after 10+ closed trades</p>
           </div>
           <button
             onClick={fetchCoaching}

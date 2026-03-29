@@ -180,8 +180,8 @@ const FOOTER_LINKS_RESOURCES = [
 ];
 
 const FOOTER_LINKS_LEGAL = [
-  { label: 'Privacy', href: '#' },
-  { label: 'Terms', href: '#' },
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Terms', href: '/terms' },
   { label: 'Risk Disclosure', href: '#' },
 ];
 
@@ -1440,15 +1440,25 @@ export function LandingPage() {
                 Legal
               </p>
               <div className="flex flex-col gap-2">
-                {FOOTER_LINKS_LEGAL.map((l) => (
-                  <a
-                    key={l.label}
-                    href={l.href}
-                    className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
-                  >
-                    {l.label}
-                  </a>
-                ))}
+                {FOOTER_LINKS_LEGAL.map((l) =>
+                  l.href.startsWith('/') ? (
+                    <Link
+                      key={l.label}
+                      to={l.href}
+                      className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                    >
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={l.label}
+                      href={l.href}
+                      className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                    >
+                      {l.label}
+                    </a>
+                  )
+                )}
               </div>
             </div>
           </div>

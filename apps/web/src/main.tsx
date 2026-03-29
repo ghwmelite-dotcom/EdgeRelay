@@ -31,6 +31,8 @@ import { MarketplacePage } from '@/pages/MarketplacePage';
 import { StrategyHubPage } from '@/pages/StrategyHubPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
+import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -60,6 +62,10 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+
+        {/* Public legal pages */}
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
 
         {/* Public firms pages — redirect to in-app version if logged in */}
         <Route path="/firms" element={<PublicOrAppRoute><FirmDirectoryPage /></PublicOrAppRoute>} />

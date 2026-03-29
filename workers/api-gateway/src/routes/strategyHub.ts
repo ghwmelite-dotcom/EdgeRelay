@@ -186,6 +186,390 @@ strategyHub.get('/generation-status', async (c) => {
   });
 });
 
+// ── Helpers for optimize (reused from analytics pattern) ─────────
+
+async function getUserAccountIds(db: D1Database, userId: string): Promise<string[]> {
+  const { results } = await db
+    .prepare('SELECT id FROM accounts WHERE user_id = ? AND is_active = true')
+    .bind(userId)
+    .all<{ id: string }>();
+  return results?.map((r) => r.id) ?? [];
+}
+
+function inClause(ids: string[]): { placeholders: string; values: string[] } {
+  return {
+    placeholders: ids.map(() => '?').join(','),
+    values: ids,
+  };
+}
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// ── POST /strategy-hub/optimize — AI Strategy Optimizer ──────────
+
+strategyHub.post('/optimize', async (c) => {
+  const userId = c.get('userId');
+
+  const body = await c.req.json<{ generation_id: string }>();
+  if (!body.generation_id) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'VALIDATION_ERROR', message: 'generation_id is required' } },
+      400,
+    );
+  }
+
+  // 1. Look up the generation record
+  const generation = await c.env.DB.prepare(
+    'SELECT id, strategy_id, parameters_json FROM ea_generations WHERE id = ? AND user_id = ?',
+  )
+    .bind(body.generation_id, userId)
+    .first<{ id: string; strategy_id: string; parameters_json: string }>();
+
+  if (!generation) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Generation not found' } },
+      404,
+    );
+  }
+
+  // 2. Look up the strategy template
+  const strategy = await c.env.DB.prepare(
+    'SELECT id, name, slug, parameters_json FROM strategy_templates WHERE id = ?',
+  )
+    .bind(generation.strategy_id)
+    .first<{ id: string; name: string; slug: string; parameters_json: string }>();
+
+  if (!strategy) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Strategy template not found' } },
+      404,
+    );
+  }
+
+  // 3. Get user's account IDs
+  const accountIds = await getUserAccountIds(c.env.DB, userId);
+  if (accountIds.length === 0) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NO_DATA', message: 'No active accounts found. Set up an account first.' } },
+      404,
+    );
+  }
+
+  const { placeholders, values } = inClause(accountIds);
+  const baseWhere = `account_id IN (${placeholders}) AND deal_entry = 'out'`;
+
+  // 4. Check minimum trade count
+  const countRow = await c.env.DB.prepare(
+    `SELECT COUNT(*) as cnt FROM journal_trades WHERE ${baseWhere}`,
+  ).bind(...values).first<{ cnt: number }>();
+
+  const totalTrades = countRow?.cnt ?? 0;
+  if (totalTrades < 10) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'INSUFFICIENT_DATA', message: 'Need at least 10 closed trades to optimize' } },
+      400,
+    );
+  }
+
+  // 5. Compute analysis stats — all aggregate queries in parallel
+  const [
+    { results: bySession },
+    { results: byDay },
+    { results: bySymbol },
+    overallStats,
+    { results: streakTrades },
+    durationStats,
+  ] = await Promise.all([
+    // By session
+    c.env.DB.prepare(
+      `SELECT session_tag as session,
+              COUNT(*) as trades,
+              COALESCE(SUM(profit), 0) as pnl,
+              ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+       FROM journal_trades WHERE ${baseWhere}
+       GROUP BY session_tag ORDER BY pnl DESC`,
+    ).bind(...values).all(),
+
+    // By day of week
+    c.env.DB.prepare(
+      `SELECT CAST(strftime('%w', datetime(time, 'unixepoch')) AS INTEGER) as day_num,
+              COUNT(*) as trades,
+              COALESCE(SUM(profit), 0) as pnl,
+              ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+       FROM journal_trades WHERE ${baseWhere}
+       GROUP BY day_num ORDER BY day_num`,
+    ).bind(...values).all(),
+
+    // By symbol
+    c.env.DB.prepare(
+      `SELECT symbol,
+              COUNT(*) as trades,
+              COALESCE(SUM(profit), 0) as pnl,
+              ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+       FROM journal_trades WHERE ${baseWhere}
+       GROUP BY symbol ORDER BY pnl DESC`,
+    ).bind(...values).all(),
+
+    // Overall stats
+    c.env.DB.prepare(
+      `SELECT COUNT(*) as total_trades,
+              COALESCE(SUM(profit), 0) as total_pnl,
+              ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) * 100.0 / COUNT(*), 1) as win_rate,
+              ROUND(AVG(CASE WHEN profit > 0 THEN profit END), 2) as avg_winner,
+              ROUND(AVG(CASE WHEN profit < 0 THEN profit END), 2) as avg_loser,
+              COALESCE(SUM(CASE WHEN profit > 0 THEN profit ELSE 0 END), 0) as gross_profit,
+              COALESCE(ABS(SUM(CASE WHEN profit < 0 THEN profit ELSE 0 END)), 0) as gross_loss
+       FROM journal_trades WHERE ${baseWhere}`,
+    ).bind(...values).first<{
+      total_trades: number; total_pnl: number; win_rate: number;
+      avg_winner: number; avg_loser: number; gross_profit: number; gross_loss: number;
+    }>(),
+
+    // Win/loss streak data (just profit column ordered by time)
+    c.env.DB.prepare(
+      `SELECT profit FROM journal_trades WHERE ${baseWhere} ORDER BY time ASC`,
+    ).bind(...values).all<{ profit: number }>(),
+
+    // Trade duration: avg duration of winners vs losers
+    c.env.DB.prepare(
+      `SELECT
+        ROUND(AVG(CASE WHEN profit > 0 THEN duration_seconds END)) as avg_winner_duration,
+        ROUND(AVG(CASE WHEN profit < 0 THEN duration_seconds END)) as avg_loser_duration
+       FROM journal_trades WHERE ${baseWhere} AND duration_seconds IS NOT NULL`,
+    ).bind(...values).first<{ avg_winner_duration: number | null; avg_loser_duration: number | null }>(),
+  ]);
+
+  // Compute win/loss streaks
+  let maxWinStreak = 0;
+  let maxLossStreak = 0;
+  let currentWinStreak = 0;
+  let currentLossStreak = 0;
+  for (const t of streakTrades ?? []) {
+    if (t.profit > 0) {
+      currentWinStreak++;
+      currentLossStreak = 0;
+      if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
+    } else {
+      currentLossStreak++;
+      currentWinStreak = 0;
+      if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
+    }
+  }
+
+  const profitFactor = (overallStats?.gross_loss ?? 0) > 0
+    ? Math.round(((overallStats?.gross_profit ?? 0) / (overallStats?.gross_loss ?? 1)) * 100) / 100
+    : (overallStats?.gross_profit ?? 0) > 0 ? 999 : 0;
+
+  const expectancy = totalTrades > 0
+    ? Math.round(((overallStats?.total_pnl ?? 0) / totalTrades) * 100) / 100
+    : 0;
+
+  const avgWinner = overallStats?.avg_winner ?? 0;
+  const avgLoser = overallStats?.avg_loser ?? 0;
+  const riskReward = avgLoser !== 0 ? Math.round((Math.abs(avgWinner) / Math.abs(avgLoser)) * 100) / 100 : 0;
+
+  const stats = {
+    overall: {
+      total_trades: totalTrades,
+      total_pnl: overallStats?.total_pnl ?? 0,
+      win_rate: overallStats?.win_rate ?? 0,
+      profit_factor: profitFactor,
+      expectancy,
+    },
+    sl_tp_effectiveness: {
+      avg_winner: avgWinner,
+      avg_loser: avgLoser,
+      risk_reward_ratio: riskReward,
+    },
+    streaks: {
+      max_consecutive_wins: maxWinStreak,
+      max_consecutive_losses: maxLossStreak,
+    },
+    duration: {
+      avg_winner_seconds: durationStats?.avg_winner_duration ?? null,
+      avg_loser_seconds: durationStats?.avg_loser_duration ?? null,
+    },
+    by_session: bySession ?? [],
+    by_day: (byDay ?? []).map((d: Record<string, unknown>) => ({
+      day: DAY_NAMES[(d.day_num as number) ?? 0],
+      ...d,
+    })),
+    by_symbol: bySymbol ?? [],
+  };
+
+  const currentParams = JSON.parse(generation.parameters_json);
+  const paramSchema: ParamSchema[] = JSON.parse(strategy.parameters_json);
+
+  // 6. Build AI prompt
+  const systemPrompt = `You are an expert forex EA optimizer. You are given a trader's current EA parameters and their actual trading results. Analyze the performance data and recommend specific parameter changes to improve profitability and stability.
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "summary": "One paragraph overall assessment of current performance",
+  "recommendations": [
+    {
+      "param_key": "SL_PIPS",
+      "current_value": 50,
+      "recommended_value": 75,
+      "reason": "68% of losing trades reversed within 5 pips of SL. Widening to 75 pips would have saved 12 trades worth $340."
+    }
+  ],
+  "projected_improvement": {
+    "estimated_win_rate_change": "+8%",
+    "estimated_pf_change": "+0.4",
+    "confidence": "medium"
+  }
+}
+
+Rules:
+- Only recommend changes to parameters that exist in the schema
+- Respect min/max ranges from the schema
+- Use specific numbers from the trading data to justify each recommendation
+- Maximum 6 recommendations
+- Be conservative — small changes that are well-supported by data
+- If performance is already good, say so and suggest minor tweaks`;
+
+  const userPrompt = JSON.stringify({
+    strategy_name: strategy.name,
+    current_parameters: currentParams,
+    parameter_schema: paramSchema.map((p) => ({
+      key: p.key,
+      label: p.label,
+      type: p.type,
+      current_value: currentParams[p.key],
+      min: p.min,
+      max: p.max,
+      options: p.options,
+      tooltip: p.tooltip,
+    })),
+    trading_stats: stats,
+  }, null, 2);
+
+  let result: { summary: string; recommendations: unknown[]; projected_improvement: unknown } | null = null;
+  let modelUsed = '';
+
+  // 7. Call Workers AI
+  try {
+    const aiResponse = await c.env.AI.run(
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as Parameters<typeof c.env.AI.run>[0],
+      {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 2000,
+      },
+    );
+
+    const text = typeof aiResponse === 'string'
+      ? aiResponse
+      : (aiResponse as { response?: string }).response ?? '';
+
+    // Extract JSON from response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.summary && Array.isArray(parsed.recommendations)) {
+        result = parsed;
+        modelUsed = 'llama-3.3-70b-instruct-fp8-fast';
+      }
+    }
+  } catch {
+    // Fall through to fallback
+  }
+
+  // 8. Fallback template recommendations
+  if (!result) {
+    modelUsed = 'template-fallback';
+    const recommendations: { param_key: string; current_value: unknown; recommended_value: unknown; reason: string }[] = [];
+    const winRate = overallStats?.win_rate ?? 0;
+
+    // If win rate < 50%: recommend widening SL by 20%
+    if (winRate < 50 && currentParams.SL_PIPS != null) {
+      const slSchema = paramSchema.find((p) => p.key === 'SL_PIPS');
+      const currentSL = Number(currentParams.SL_PIPS);
+      const newSL = Math.round(currentSL * 1.2);
+      const clampedSL = slSchema?.max ? Math.min(newSL, slSchema.max) : newSL;
+      recommendations.push({
+        param_key: 'SL_PIPS',
+        current_value: currentSL,
+        recommended_value: clampedSL,
+        reason: `Win rate is ${winRate}%. Widening stop loss by 20% may prevent premature exits.`,
+      });
+    }
+
+    // If avg loser > 2x avg winner: tighten SL or widen TP
+    if (Math.abs(avgLoser) > 2 * Math.abs(avgWinner) && currentParams.TP_PIPS != null) {
+      const tpSchema = paramSchema.find((p) => p.key === 'TP_PIPS');
+      const currentTP = Number(currentParams.TP_PIPS);
+      const newTP = Math.round(currentTP * 1.3);
+      const clampedTP = tpSchema?.max ? Math.min(newTP, tpSchema.max) : newTP;
+      recommendations.push({
+        param_key: 'TP_PIPS',
+        current_value: currentTP,
+        recommended_value: clampedTP,
+        reason: `Average loser ($${Math.abs(avgLoser).toFixed(2)}) is more than 2x average winner ($${avgWinner.toFixed(2)}). Widening TP may improve risk-reward.`,
+      });
+    }
+
+    // If one session is negative: recommend enabling session filter
+    const negativeSession = (bySession ?? []).find((s: Record<string, unknown>) => (s.pnl as number) < 0);
+    if (negativeSession && currentParams.USE_SESSION_FILTER !== undefined) {
+      recommendations.push({
+        param_key: 'USE_SESSION_FILTER',
+        current_value: currentParams.USE_SESSION_FILTER,
+        recommended_value: true,
+        reason: `${String(negativeSession.session)} session is losing money (${negativeSession.pnl} P&L). Enable session filter to avoid unprofitable hours.`,
+      });
+    }
+
+    // If consecutive losses > 5: recommend reducing lot size
+    if (maxLossStreak > 5 && currentParams.LOT_SIZE != null) {
+      const lotSchema = paramSchema.find((p) => p.key === 'LOT_SIZE');
+      const currentLot = Number(currentParams.LOT_SIZE);
+      const newLot = Math.round(currentLot * 0.7 * 100) / 100;
+      const clampedLot = lotSchema?.min ? Math.max(newLot, lotSchema.min) : newLot;
+      recommendations.push({
+        param_key: 'LOT_SIZE',
+        current_value: currentLot,
+        recommended_value: clampedLot,
+        reason: `Max consecutive losses is ${maxLossStreak}. Reducing lot size by 30% will limit drawdown during losing streaks.`,
+      });
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push({
+        param_key: 'LOT_SIZE',
+        current_value: currentParams.LOT_SIZE ?? 0.01,
+        recommended_value: currentParams.LOT_SIZE ?? 0.01,
+        reason: 'Performance looks reasonable. Consider maintaining current settings and collecting more data.',
+      });
+    }
+
+    result = {
+      summary: `Analysis of ${totalTrades} trades shows a ${winRate}% win rate with profit factor ${profitFactor}. ${winRate >= 50 ? 'Performance is acceptable' : 'Win rate needs improvement'}. ${maxLossStreak > 5 ? `Max losing streak of ${maxLossStreak} suggests risk management adjustments.` : ''}`,
+      recommendations,
+      projected_improvement: {
+        estimated_win_rate_change: winRate < 50 ? '+5-10%' : '+1-3%',
+        estimated_pf_change: profitFactor < 1.5 ? '+0.2-0.5' : '+0.1-0.2',
+        confidence: 'low',
+      },
+    };
+  }
+
+  return c.json<ApiResponse>({
+    data: {
+      summary: result.summary,
+      recommendations: result.recommendations,
+      projected_improvement: result.projected_improvement,
+      current_params: currentParams,
+      stats,
+      model: modelUsed,
+    },
+    error: null,
+  });
+});
+
 // ── POST /strategy-hub/generate — Generate an EA .mq5 file ──────
 strategyHub.post('/generate', async (c) => {
   const userId = c.get('userId');

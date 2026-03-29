@@ -8,7 +8,7 @@ const auth = new Hono<{ Bindings: Env }>();
 
 // ── POST /auth/register ─────────────────────────────────────────
 auth.post('/register', async (c) => {
-  const body = await c.req.json<{ email?: string; password?: string; name?: string }>();
+  const body = await c.req.json<{ email?: string; password?: string; name?: string; referral_code?: string }>();
 
   if (!body.email || !body.password) {
     return c.json<ApiResponse>(
@@ -55,6 +55,22 @@ auth.post('/register', async (c) => {
       { data: null, error: { code: 'INTERNAL_ERROR', message: 'Failed to create user' } },
       500,
     );
+  }
+
+  // Link referral if referral code provided
+  const refCode = body.referral_code;
+  if (refCode) {
+    const referrer = await c.env.DB.prepare(
+      'SELECT id FROM users WHERE referral_code = ?',
+    )
+      .bind(refCode)
+      .first<{ id: string }>();
+
+    if (referrer && referrer.id !== result.id) {
+      await c.env.DB.prepare('UPDATE users SET referred_by = ? WHERE id = ?')
+        .bind(referrer.id, result.id)
+        .run();
+    }
   }
 
   const expiryHours = parseInt(c.env.JWT_EXPIRY_HOURS || '24', 10);

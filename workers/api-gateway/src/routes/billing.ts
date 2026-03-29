@@ -101,6 +101,24 @@ billing.post('/webhook', async (c) => {
           .bind(userId, reference)
           .run();
         console.log('EA generation credit purchased:', userId, reference);
+
+        // Check if user was referred — create commission
+        const referredUser = await c.env.DB.prepare(
+          'SELECT referred_by FROM users WHERE id = ?',
+        )
+          .bind(userId)
+          .first<{ referred_by: string | null }>();
+
+        if (referredUser?.referred_by) {
+          const commissionCents = 50; // $0.50 (25% of $1.99)
+          await c.env.DB.prepare(
+            `INSERT INTO referral_commissions (referrer_user_id, referred_user_id, event_type, source_amount_cents, commission_cents, reference, status)
+             VALUES (?, ?, 'ea_purchase', 199, ?, ?, 'pending')`,
+          )
+            .bind(referredUser.referred_by, userId, commissionCents, reference)
+            .run();
+          console.log('Referral commission created:', referredUser.referred_by, commissionCents);
+        }
       }
 
       console.log('Charge success:', event.data.reference);

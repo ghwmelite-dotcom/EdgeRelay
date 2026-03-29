@@ -115,6 +115,10 @@ const RISK_MGMT_KEYS = new Set([
   'USE_SESSION_FILTER',
   'SESSION_START',
   'SESSION_END',
+  'CLOSE_FRIDAY',
+  'FRIDAY_CLOSE_HOUR',
+  'PROP_DAILY_LIMIT',
+  'PROP_MAX_DD',
 ]);
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -646,6 +650,39 @@ function GeneratorModal({
             values={values}
             onChange={handleChange}
           />
+          {/* Prop Firm Presets */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-terminal-muted uppercase tracking-wider">
+              Prop Firm Preset
+            </label>
+            <select
+              className="w-full rounded-xl border border-terminal-border bg-terminal-card/80 px-3.5 py-3 text-[15px] text-terminal-text"
+              onChange={(e) => {
+                const presets: Record<string, { PROP_DAILY_LIMIT: number; PROP_MAX_DD: number; CLOSE_FRIDAY: boolean }> = {
+                  '': { PROP_DAILY_LIMIT: 0, PROP_MAX_DD: 0, CLOSE_FRIDAY: true },
+                  'ftmo': { PROP_DAILY_LIMIT: 5, PROP_MAX_DD: 10, CLOSE_FRIDAY: true },
+                  'fundednext': { PROP_DAILY_LIMIT: 5, PROP_MAX_DD: 10, CLOSE_FRIDAY: true },
+                  'the5ers': { PROP_DAILY_LIMIT: 4, PROP_MAX_DD: 6, CLOSE_FRIDAY: true },
+                  'myfundedfx': { PROP_DAILY_LIMIT: 5, PROP_MAX_DD: 8, CLOSE_FRIDAY: true },
+                  'apex': { PROP_DAILY_LIMIT: 2.5, PROP_MAX_DD: 7, CLOSE_FRIDAY: true },
+                };
+                const p = presets[e.target.value];
+                if (p) {
+                  handleChange('PROP_DAILY_LIMIT', p.PROP_DAILY_LIMIT);
+                  handleChange('PROP_MAX_DD', p.PROP_MAX_DD);
+                  handleChange('CLOSE_FRIDAY', p.CLOSE_FRIDAY);
+                }
+              }}
+            >
+              <option value="">No Prop Firm (Custom)</option>
+              <option value="ftmo">FTMO (5% daily / 10% DD)</option>
+              <option value="fundednext">FundedNext (5% daily / 10% DD)</option>
+              <option value="the5ers">The5ers (4% daily / 6% DD)</option>
+              <option value="myfundedfx">MyFundedFX (5% daily / 8% DD)</option>
+              <option value="apex">Apex (2.5% daily / 7% DD)</option>
+            </select>
+          </div>
+
           <ParamSection
             title="Risk Management"
             params={grouped.risk}

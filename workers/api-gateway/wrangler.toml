@@ -25,6 +25,9 @@ binding = "STORAGE"
 bucket_name = "edgerelay-storage"
 
 # PAYSTACK_SECRET_KEY must be set via: wrangler secret put PAYSTACK_SECRET_KEY
+# Google OAuth:
+# wrangler secret put GOOGLE_CLIENT_ID
+# wrangler secret put GOOGLE_CLIENT_SECRET
 [durable_objects]
 bindings = [
   { name = "ACCOUNT_RELAY", class_name = "AccountRelay", script_name = "edgerelay-account-relay" }

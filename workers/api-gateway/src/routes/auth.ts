@@ -221,4 +221,114 @@ auth.post('/refresh', async (c) => {
   });
 });
 
+// ── GET /auth/google — Redirect to Google OAuth ─────────────────
+auth.get('/google', async (c) => {
+  const clientId = c.env.GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NOT_CONFIGURED', message: 'Google OAuth not configured' } }, 500);
+  }
+
+  const redirectUri = `https://edgerelay-api.ghwmelite.workers.dev/v1/auth/google/callback`;
+  const scope = encodeURIComponent('openid email profile');
+  const state = crypto.randomUUID(); // CSRF protection
+
+  // Store state in KV for verification
+  await c.env.SESSIONS.put(`google-oauth-state:${state}`, '1', { expirationTtl: 600 });
+
+  const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}&prompt=select_account`;
+
+  return c.redirect(googleUrl);
+});
+
+// ── GET /auth/google/callback — Handle Google OAuth callback ────
+auth.get('/google/callback', async (c) => {
+  const code = c.req.query('code');
+  const state = c.req.query('state');
+  const error = c.req.query('error');
+
+  const frontendUrl = 'https://trademetricspro.com';
+
+  if (error || !code) {
+    return c.redirect(`${frontendUrl}/login?error=google_denied`);
+  }
+
+  // Verify state
+  if (state) {
+    const valid = await c.env.SESSIONS.get(`google-oauth-state:${state}`);
+    if (!valid) {
+      return c.redirect(`${frontendUrl}/login?error=invalid_state`);
+    }
+    await c.env.SESSIONS.delete(`google-oauth-state:${state}`);
+  }
+
+  const clientId = c.env.GOOGLE_CLIENT_ID;
+  const clientSecret = c.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = `https://edgerelay-api.ghwmelite.workers.dev/v1/auth/google/callback`;
+
+  // Exchange code for tokens
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    }),
+  });
+
+  const tokenData = await tokenRes.json() as { access_token?: string; error?: string };
+  if (!tokenData.access_token) {
+    return c.redirect(`${frontendUrl}/login?error=google_token_failed`);
+  }
+
+  // Fetch user info
+  const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  });
+
+  const googleUser = await userInfoRes.json() as { email?: string; name?: string; picture?: string };
+  if (!googleUser.email) {
+    return c.redirect(`${frontendUrl}/login?error=google_no_email`);
+  }
+
+  const email = googleUser.email.toLowerCase().trim();
+  const name = googleUser.name || email.split('@')[0];
+
+  // Check if user exists
+  let user = await c.env.DB.prepare(
+    'SELECT id, email, name, plan FROM users WHERE email = ?',
+  ).bind(email).first<{ id: string; email: string; name: string | null; plan: string }>();
+
+  if (!user) {
+    // Auto-register with random password (they'll use Google to login)
+    const randomPassword = crypto.randomUUID();
+    const passwordHash = await hashPassword(randomPassword);
+
+    user = await c.env.DB.prepare(
+      `INSERT INTO users (email, password_hash, name, plan) VALUES (?, ?, ?, 'free')
+       RETURNING id, email, name, plan`,
+    ).bind(email, passwordHash, name).first();
+
+    if (!user) {
+      return c.redirect(`${frontendUrl}/login?error=registration_failed`);
+    }
+  }
+
+  // Issue JWT
+  const expiryHours = parseInt(c.env.JWT_EXPIRY_HOURS || '24', 10);
+  const token = await generateToken(user.id, c.env.JWT_SECRET, expiryHours);
+
+  // Store session in KV
+  await c.env.SESSIONS.put(
+    `session:${user.id}:${token}`,
+    JSON.stringify({ userId: user.id, createdAt: Date.now() }),
+    { expirationTtl: expiryHours * 3600 },
+  );
+
+  // Redirect to frontend with token (use hash fragment for security — not in URL params)
+  return c.redirect(`${frontendUrl}/auth/callback#token=${token}&user=${encodeURIComponent(JSON.stringify({ id: user.id, email: user.email, name: user.name, plan: user.plan }))}`);
+});
+
 export { auth };

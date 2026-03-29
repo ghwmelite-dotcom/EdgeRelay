@@ -31,6 +31,12 @@ export interface Env {
 
   /** Workers AI binding */
   AI: Ai;
+
+  /** Google OAuth client ID (set via wrangler secret) */
+  GOOGLE_CLIENT_ID: string;
+
+  /** Google OAuth client secret (set via wrangler secret) */
+  GOOGLE_CLIENT_SECRET: string;
 }
 
 export interface JwtPayload {

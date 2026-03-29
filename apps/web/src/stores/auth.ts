@@ -48,15 +48,19 @@ export const useAuthStore = create<AuthState>()(
 
       register: async (email, password, name) => {
         set({ isLoading: true, error: null });
+        const referralCode = localStorage.getItem('referral_code');
         const res = await api.post<{ token: string; user: User }>('/auth/register', {
           email,
           password,
           name,
+          referral_code: referralCode || undefined,
         });
         if (res.error) {
           set({ isLoading: false, error: res.error.message });
           return false;
         }
+        // Clear referral code after successful registration
+        if (referralCode) localStorage.removeItem('referral_code');
         const { token, user } = res.data!;
         api.setToken(token);
         set({ user, token, isAuthenticated: true, isLoading: false });

@@ -11,7 +11,7 @@ VALUES (
   'beginner',
   'EURUSD,GBPUSD,USDJPY',
   'H1',
-  '[{"key":"FAST_MA_PERIOD","label":"Fast MA Period","type":"int","default":10,"min":5,"max":50,"step":1,"tooltip":"Period for the fast moving average."},{"key":"SLOW_MA_PERIOD","label":"Slow MA Period","type":"int","default":50,"min":20,"max":200,"step":5,"tooltip":"Period for the slow moving average."},{"key":"MA_METHOD","label":"MA Type","type":"enum","options":["MODE_SMA","MODE_EMA","MODE_SMMA","MODE_LWMA"],"labels":["SMA","EMA","SMMA","LWMA"],"default":"MODE_EMA","tooltip":"Moving average calculation method."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for trend strength filter. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value to allow entry."},{"key":"SLOPE_BAR_COUNT","label":"Slope Lookback Bars","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Bars to compare for MA slope confirmation."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"FAST_MA_PERIOD","label":"Fast MA Period","type":"int","default":10,"min":5,"max":50,"step":1,"tooltip":"Period for the fast moving average."},{"key":"SLOW_MA_PERIOD","label":"Slow MA Period","type":"int","default":50,"min":20,"max":200,"step":5,"tooltip":"Period for the slow moving average."},{"key":"MA_METHOD","label":"MA Type","type":"enum","options":["MODE_SMA","MODE_EMA","MODE_SMMA","MODE_LWMA"],"labels":["SMA","EMA","SMMA","LWMA"],"default":"MODE_EMA","tooltip":"Moving average calculation method."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for trend strength filter. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value to allow entry."},{"key":"SLOPE_BAR_COUNT","label":"Slope Lookback Bars","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Bars to compare for MA slope confirmation."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -72,6 +72,14 @@ input bool   UseAdaptiveMode       = {{USE_ADAPTIVE}};        // Adaptive Mode (
 input double TrendADXThreshold     = {{TREND_ADX_THRESH}};    // ADX Threshold for Trending
 input double RangeADXThreshold     = {{RANGE_ADX_THRESH}};    // ADX Threshold for Ranging
 input double VolatileATRMult       = {{VOLATILE_ATR_MULT}};   // ATR Spike Multiplier for Volatile
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -671,6 +679,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -789,7 +800,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -1045,7 +1142,7 @@ VALUES (
   'beginner',
   'EURUSD,GBPJPY,AUDUSD',
   'H1',
-  '[{"key":"RSI_PERIOD","label":"RSI Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"Number of bars for RSI calculation."},{"key":"RSI_OVERBOUGHT","label":"Overbought Level","type":"int","default":70,"min":60,"max":90,"step":1,"tooltip":"RSI level to trigger sell signals."},{"key":"RSI_OVERSOLD","label":"Oversold Level","type":"int","default":30,"min":10,"max":40,"step":1,"tooltip":"RSI level to trigger buy signals."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"BB_PERIOD","label":"Bollinger Band Period","type":"int","default":20,"min":10,"max":50,"step":1,"tooltip":"Period for Bollinger Bands confluence check."},{"key":"BB_DEVIATION","label":"Bollinger Deviation","type":"double","default":2,"min":1,"max":3,"step":0.5,"tooltip":"Standard deviation for Bollinger Bands."},{"key":"REQUIRE_BB_CONFLUENCE","label":"Require BB Confluence","type":"bool","default":true,"tooltip":"Only enter when price is at/beyond Bollinger Band."},{"key":"TREND_MA_PERIOD","label":"Trend MA Period","type":"int","default":200,"min":0,"max":500,"step":10,"tooltip":"EMA period for trend filter. 0 = disabled."},{"key":"TREND_MA_BUFFER","label":"Trend MA Buffer (ATR)","type":"double","default":1,"min":0,"max":3,"step":0.5,"tooltip":"Distance from MA in ATR units before blocking entry."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Blocks entry when ADX > threshold (too trendy for mean reversion). 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Max ADX for Entry","type":"double","default":30,"min":15,"max":50,"step":1,"tooltip":"Skip entry if ADX exceeds this (market trending too hard)."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"RSI_PERIOD","label":"RSI Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"Number of bars for RSI calculation."},{"key":"RSI_OVERBOUGHT","label":"Overbought Level","type":"int","default":70,"min":60,"max":90,"step":1,"tooltip":"RSI level to trigger sell signals."},{"key":"RSI_OVERSOLD","label":"Oversold Level","type":"int","default":30,"min":10,"max":40,"step":1,"tooltip":"RSI level to trigger buy signals."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"BB_PERIOD","label":"Bollinger Band Period","type":"int","default":20,"min":10,"max":50,"step":1,"tooltip":"Period for Bollinger Bands confluence check."},{"key":"BB_DEVIATION","label":"Bollinger Deviation","type":"double","default":2,"min":1,"max":3,"step":0.5,"tooltip":"Standard deviation for Bollinger Bands."},{"key":"REQUIRE_BB_CONFLUENCE","label":"Require BB Confluence","type":"bool","default":true,"tooltip":"Only enter when price is at/beyond Bollinger Band."},{"key":"TREND_MA_PERIOD","label":"Trend MA Period","type":"int","default":200,"min":0,"max":500,"step":10,"tooltip":"EMA period for trend filter. 0 = disabled."},{"key":"TREND_MA_BUFFER","label":"Trend MA Buffer (ATR)","type":"double","default":1,"min":0,"max":3,"step":0.5,"tooltip":"Distance from MA in ATR units before blocking entry."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Blocks entry when ADX > threshold (too trendy for mean reversion). 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Max ADX for Entry","type":"double","default":30,"min":15,"max":50,"step":1,"tooltip":"Skip entry if ADX exceeds this (market trending too hard)."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -1114,6 +1211,14 @@ input bool   UseAdaptiveMode       = {{USE_ADAPTIVE}};        // Adaptive Mode (
 input double TrendADXThreshold     = {{TREND_ADX_THRESH}};    // ADX Threshold for Trending
 input double RangeADXThreshold     = {{RANGE_ADX_THRESH}};    // ADX Threshold for Ranging
 input double VolatileATRMult       = {{VOLATILE_ATR_MULT}};   // ATR Spike Multiplier for Volatile
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -1776,6 +1881,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -1894,7 +2002,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -2150,7 +2344,7 @@ VALUES (
   'intermediate',
   'GBPUSD,XAUUSD,USDJPY',
   'H1',
-  '[{"key":"LOOKBACK_BARS","label":"Range Lookback Bars","type":"int","default":20,"min":10,"max":100,"step":5,"tooltip":"Number of bars to calculate the range."},{"key":"BREAKOUT_BUFFER_PIPS","label":"Breakout Buffer (pips)","type":"int","default":5,"min":0,"max":20,"step":1,"tooltip":"Extra distance beyond range for confirmation."},{"key":"CONFIRMATION_CANDLES","label":"Confirmation Candles","type":"int","default":1,"min":1,"max":3,"step":1,"tooltip":"Candles that must close beyond breakout level."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ATR_RANGE_PERIOD","label":"ATR Range Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for range validation."},{"key":"MIN_RANGE_ATR_MULT","label":"Min Range (ATR x)","type":"double","default":0.5,"min":0.1,"max":2,"step":0.1,"tooltip":"Skip breakout if range < this × ATR (too tight)."},{"key":"MAX_RANGE_ATR_MULT","label":"Max Range (ATR x)","type":"double","default":3,"min":1,"max":5,"step":0.5,"tooltip":"Skip breakout if range > this × ATR (overextended)."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for breakout confirmation. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value; also requires rising ADX."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of range-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"LOOKBACK_BARS","label":"Range Lookback Bars","type":"int","default":20,"min":10,"max":100,"step":5,"tooltip":"Number of bars to calculate the range."},{"key":"BREAKOUT_BUFFER_PIPS","label":"Breakout Buffer (pips)","type":"int","default":5,"min":0,"max":20,"step":1,"tooltip":"Extra distance beyond range for confirmation."},{"key":"CONFIRMATION_CANDLES","label":"Confirmation Candles","type":"int","default":1,"min":1,"max":3,"step":1,"tooltip":"Candles that must close beyond breakout level."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ATR_RANGE_PERIOD","label":"ATR Range Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for range validation."},{"key":"MIN_RANGE_ATR_MULT","label":"Min Range (ATR x)","type":"double","default":0.5,"min":0.1,"max":2,"step":0.1,"tooltip":"Skip breakout if range < this × ATR (too tight)."},{"key":"MAX_RANGE_ATR_MULT","label":"Max Range (ATR x)","type":"double","default":3,"min":1,"max":5,"step":0.5,"tooltip":"Skip breakout if range > this × ATR (overextended)."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for breakout confirmation. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value; also requires rising ADX."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of range-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -2215,6 +2409,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -2848,6 +3050,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -2966,7 +3171,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -3222,7 +3513,7 @@ VALUES (
   'intermediate',
   'EURUSD,GBPUSD,EURGBP',
   'M15',
-  '[{"key":"SCALP_SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":5,"max":9,"step":1,"tooltip":"Hour to start scalping."},{"key":"SCALP_SESSION_END","label":"Session End (UTC)","type":"int","default":16,"min":14,"max":18,"step":1,"tooltip":"Hour to stop and close all."},{"key":"EMA_PERIOD","label":"EMA Period","type":"int","default":20,"min":10,"max":50,"step":1,"tooltip":"EMA period for trend direction."},{"key":"RSI_FILTER_PERIOD","label":"RSI Filter Period","type":"int","default":14,"min":7,"max":21,"step":1,"tooltip":"RSI period for momentum filter."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M5","PERIOD_M15"],"labels":["M5","M15"],"default":"PERIOD_M15","tooltip":"Scalping timeframe."},{"key":"ASIAN_START_HOUR","label":"Asian Start (UTC)","type":"int","default":0,"min":0,"max":6,"step":1,"tooltip":"Hour the Asian session starts for range calculation."},{"key":"ASIAN_END_HOUR","label":"Asian End (UTC)","type":"int","default":8,"min":4,"max":10,"step":1,"tooltip":"Hour the Asian session ends."},{"key":"USE_ASIAN_TP","label":"Use Asian Range TP","type":"bool","default":true,"tooltip":"Target Asian session high/low for take profit."},{"key":"AVG_SPREAD_BARS","label":"Avg Spread Bars","type":"int","default":50,"min":10,"max":200,"step":10,"tooltip":"Bars to average for spread spike detection."},{"key":"SPREAD_SPIKE_MULT","label":"Spread Spike Multiplier","type":"double","default":2,"min":1.5,"max":5,"step":0.5,"tooltip":"Block entry if spread > this × average spread."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for momentum filter. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX to confirm momentum."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"SCALP_SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":5,"max":9,"step":1,"tooltip":"Hour to start scalping."},{"key":"SCALP_SESSION_END","label":"Session End (UTC)","type":"int","default":16,"min":14,"max":18,"step":1,"tooltip":"Hour to stop and close all."},{"key":"EMA_PERIOD","label":"EMA Period","type":"int","default":20,"min":10,"max":50,"step":1,"tooltip":"EMA period for trend direction."},{"key":"RSI_FILTER_PERIOD","label":"RSI Filter Period","type":"int","default":14,"min":7,"max":21,"step":1,"tooltip":"RSI period for momentum filter."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M5","PERIOD_M15"],"labels":["M5","M15"],"default":"PERIOD_M15","tooltip":"Scalping timeframe."},{"key":"ASIAN_START_HOUR","label":"Asian Start (UTC)","type":"int","default":0,"min":0,"max":6,"step":1,"tooltip":"Hour the Asian session starts for range calculation."},{"key":"ASIAN_END_HOUR","label":"Asian End (UTC)","type":"int","default":8,"min":4,"max":10,"step":1,"tooltip":"Hour the Asian session ends."},{"key":"USE_ASIAN_TP","label":"Use Asian Range TP","type":"bool","default":true,"tooltip":"Target Asian session high/low for take profit."},{"key":"AVG_SPREAD_BARS","label":"Avg Spread Bars","type":"int","default":50,"min":10,"max":200,"step":10,"tooltip":"Bars to average for spread spike detection."},{"key":"SPREAD_SPIKE_MULT","label":"Spread Spike Multiplier","type":"double","default":2,"min":1.5,"max":5,"step":0.5,"tooltip":"Block entry if spread > this × average spread."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for momentum filter. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX to confirm momentum."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -3292,6 +3583,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -4003,6 +4302,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -4121,7 +4423,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -4377,7 +4765,7 @@ VALUES (
   'advanced',
   'EURUSD,GBPUSD,AUDUSD,XAUUSD',
   'H1 entry / H4 trend',
-  '[{"key":"HIGHER_TF","label":"Trend Timeframe","type":"enum","options":["PERIOD_H4","PERIOD_D1"],"labels":["H4","D1"],"default":"PERIOD_H4","tooltip":"Higher timeframe for trend detection."},{"key":"LOWER_TF","label":"Entry Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1"],"labels":["M15","H1"],"default":"PERIOD_H1","tooltip":"Lower timeframe for trade entry."},{"key":"TREND_EMA_PERIOD","label":"Trend EMA Period","type":"int","default":50,"min":20,"max":200,"step":10,"tooltip":"EMA period on higher timeframe."},{"key":"STOCH_K","label":"Stochastic %K","type":"int","default":14,"min":5,"max":21,"step":1,"tooltip":"Stochastic %K period."},{"key":"STOCH_D","label":"Stochastic %D","type":"int","default":3,"min":3,"max":7,"step":1,"tooltip":"Stochastic %D smoothing."},{"key":"STOCH_SLOWING","label":"Stochastic Slowing","type":"int","default":3,"min":3,"max":7,"step":1,"tooltip":"Stochastic slowing factor."},{"key":"EMA_SLOPE_THRESHOLD","label":"EMA Slope Threshold","type":"double","default":0.0005,"min":0,"max":0.01,"step":0.0001,"tooltip":"Minimum EMA slope (price units) to confirm trend. 0 = disabled."},{"key":"EMA_SLOPE_BARS","label":"EMA Slope Bars","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Bars to compare for EMA slope measurement."},{"key":"ADX_PERIOD","label":"ADX Period (Higher TF)","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX on higher timeframe for trend strength. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX to confirm trend strength."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP on entry timeframe."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"HIGHER_TF","label":"Trend Timeframe","type":"enum","options":["PERIOD_H4","PERIOD_D1"],"labels":["H4","D1"],"default":"PERIOD_H4","tooltip":"Higher timeframe for trend detection."},{"key":"LOWER_TF","label":"Entry Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1"],"labels":["M15","H1"],"default":"PERIOD_H1","tooltip":"Lower timeframe for trade entry."},{"key":"TREND_EMA_PERIOD","label":"Trend EMA Period","type":"int","default":50,"min":20,"max":200,"step":10,"tooltip":"EMA period on higher timeframe."},{"key":"STOCH_K","label":"Stochastic %K","type":"int","default":14,"min":5,"max":21,"step":1,"tooltip":"Stochastic %K period."},{"key":"STOCH_D","label":"Stochastic %D","type":"int","default":3,"min":3,"max":7,"step":1,"tooltip":"Stochastic %D smoothing."},{"key":"STOCH_SLOWING","label":"Stochastic Slowing","type":"int","default":3,"min":3,"max":7,"step":1,"tooltip":"Stochastic slowing factor."},{"key":"EMA_SLOPE_THRESHOLD","label":"EMA Slope Threshold","type":"double","default":0.0005,"min":0,"max":0.01,"step":0.0001,"tooltip":"Minimum EMA slope (price units) to confirm trend. 0 = disabled."},{"key":"EMA_SLOPE_BARS","label":"EMA Slope Bars","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Bars to compare for EMA slope measurement."},{"key":"ADX_PERIOD","label":"ADX Period (Higher TF)","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX on higher timeframe for trend strength. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX to confirm trend strength."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP on entry timeframe."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -4443,6 +4831,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -5021,6 +5417,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -5139,7 +5538,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -5395,7 +5880,7 @@ VALUES (
   'beginner',
   'GBPUSD,EURJPY,GBPJPY',
   'M15',
-  '[{"key":"ASIAN_START","label":"Asian Start (UTC)","type":"int","default":0,"min":0,"max":6,"step":1,"tooltip":"Hour the Asian range tracking begins."},{"key":"ASIAN_END","label":"Asian End (UTC)","type":"int","default":6,"min":4,"max":10,"step":1,"tooltip":"Hour the Asian range tracking ends."},{"key":"BREAKOUT_BUFFER","label":"Breakout Buffer (pips)","type":"int","default":3,"min":0,"max":20,"step":1,"tooltip":"Extra pips beyond range for breakout confirmation."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M5","PERIOD_M15","PERIOD_H1"],"labels":["M5","M15","H1"],"default":"PERIOD_M15","tooltip":"Chart timeframe."},{"key":"MIN_RANGE_PIPS","label":"Min Range Size (pips)","type":"int","default":15,"min":0,"max":100,"step":5,"tooltip":"Skip breakout if Asian range is smaller than this."},{"key":"MAX_RANGE_PIPS","label":"Max Range Size (pips)","type":"int","default":80,"min":0,"max":300,"step":10,"tooltip":"Skip breakout if Asian range is larger than this. 0 = no limit."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for trend strength filter. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value to allow entry."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of range-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"ASIAN_START","label":"Asian Start (UTC)","type":"int","default":0,"min":0,"max":6,"step":1,"tooltip":"Hour the Asian range tracking begins."},{"key":"ASIAN_END","label":"Asian End (UTC)","type":"int","default":6,"min":4,"max":10,"step":1,"tooltip":"Hour the Asian range tracking ends."},{"key":"BREAKOUT_BUFFER","label":"Breakout Buffer (pips)","type":"int","default":3,"min":0,"max":20,"step":1,"tooltip":"Extra pips beyond range for breakout confirmation."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M5","PERIOD_M15","PERIOD_H1"],"labels":["M5","M15","H1"],"default":"PERIOD_M15","tooltip":"Chart timeframe."},{"key":"MIN_RANGE_PIPS","label":"Min Range Size (pips)","type":"int","default":15,"min":0,"max":100,"step":5,"tooltip":"Skip breakout if Asian range is smaller than this."},{"key":"MAX_RANGE_PIPS","label":"Max Range Size (pips)","type":"int","default":80,"min":0,"max":300,"step":10,"tooltip":"Skip breakout if Asian range is larger than this. 0 = no limit."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for trend strength filter. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value to allow entry."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of range-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -5459,6 +5944,14 @@ input bool   UseAdaptiveMode       = {{USE_ADAPTIVE}};        // Adaptive Mode (
 input double TrendADXThreshold     = {{TREND_ADX_THRESH}};    // ADX Threshold for Trending
 input double RangeADXThreshold     = {{RANGE_ADX_THRESH}};    // ADX Threshold for Ranging
 input double VolatileATRMult       = {{VOLATILE_ATR_MULT}};   // ATR Spike Multiplier for Volatile
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -5990,6 +6483,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -6108,7 +6604,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -6364,7 +6946,7 @@ VALUES (
   'advanced',
   'EURUSD,GBPUSD,XAUUSD',
   'H1',
-  '[{"key":"ZONE_LOOKBACK","label":"Zone Lookback","type":"int","default":50,"min":10,"max":200,"step":10,"tooltip":"Number of bars to scan for impulse candles."},{"key":"MIN_ZONE_STRENGTH","label":"Min Body/Wick Ratio","type":"double","default":2,"min":1,"max":5,"step":0.5,"tooltip":"Minimum body-to-wick ratio for impulse detection."},{"key":"RETEST_TOLERANCE","label":"Retest Tolerance (pips)","type":"int","default":10,"min":1,"max":30,"step":1,"tooltip":"How close price must get to zone for a valid retest."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Blocks entry when ADX > threshold (too trendy for S/D). 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Max ADX for Entry","type":"double","default":30,"min":15,"max":50,"step":1,"tooltip":"Skip entry if ADX exceeds this (market trending too hard for S/D)."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of zone-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops and zone strength scoring."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"ZONE_LOOKBACK","label":"Zone Lookback","type":"int","default":50,"min":10,"max":200,"step":10,"tooltip":"Number of bars to scan for impulse candles."},{"key":"MIN_ZONE_STRENGTH","label":"Min Body/Wick Ratio","type":"double","default":2,"min":1,"max":5,"step":0.5,"tooltip":"Minimum body-to-wick ratio for impulse detection."},{"key":"RETEST_TOLERANCE","label":"Retest Tolerance (pips)","type":"int","default":10,"min":1,"max":30,"step":1,"tooltip":"How close price must get to zone for a valid retest."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Blocks entry when ADX > threshold (too trendy for S/D). 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Max ADX for Entry","type":"double","default":30,"min":15,"max":50,"step":1,"tooltip":"Skip entry if ADX exceeds this (market trending too hard for S/D)."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of zone-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops and zone strength scoring."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -6424,6 +7006,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -6955,6 +7545,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -7073,7 +7666,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -7329,7 +8008,7 @@ VALUES (
   'intermediate',
   'XAUUSD,GBPUSD,EURUSD',
   'H1',
-  '[{"key":"BB_PERIOD","label":"Bollinger Period","type":"int","default":20,"min":10,"max":50,"step":1,"tooltip":"Period for Bollinger Bands calculation."},{"key":"BB_DEVIATION","label":"Bollinger Deviation","type":"double","default":2,"min":1,"max":3,"step":0.5,"tooltip":"Standard deviation multiplier."},{"key":"SQUEEZE_THRESHOLD","label":"Squeeze Threshold %","type":"double","default":1,"min":0.3,"max":3,"step":0.1,"tooltip":"Bandwidth below this % signals a squeeze."},{"key":"RSI_CONFIRM","label":"RSI Period","type":"int","default":14,"min":5,"max":30,"step":1,"tooltip":"RSI period for direction confirmation."},{"key":"KELTNER_ATR_MULT","label":"Keltner ATR Multiplier","type":"double","default":1.5,"min":1,"max":3,"step":0.1,"tooltip":"ATR multiplier for Keltner Channel width. BB inside KC = true squeeze."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Rising ADX confirms squeeze expansion. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value; also requires rising ADX."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"BB_PERIOD","label":"Bollinger Period","type":"int","default":20,"min":10,"max":50,"step":1,"tooltip":"Period for Bollinger Bands calculation."},{"key":"BB_DEVIATION","label":"Bollinger Deviation","type":"double","default":2,"min":1,"max":3,"step":0.5,"tooltip":"Standard deviation multiplier."},{"key":"SQUEEZE_THRESHOLD","label":"Squeeze Threshold %","type":"double","default":1,"min":0.3,"max":3,"step":0.1,"tooltip":"Bandwidth below this % signals a squeeze."},{"key":"RSI_CONFIRM","label":"RSI Period","type":"int","default":14,"min":5,"max":30,"step":1,"tooltip":"RSI period for direction confirmation."},{"key":"KELTNER_ATR_MULT","label":"Keltner ATR Multiplier","type":"double","default":1.5,"min":1,"max":3,"step":0.1,"tooltip":"ATR multiplier for Keltner Channel width. BB inside KC = true squeeze."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4","PERIOD_D1"],"labels":["M15","H1","H4","D1"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Rising ADX confirms squeeze expansion. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX value; also requires rising ADX."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -7391,6 +8070,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -7884,6 +8571,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -8002,7 +8692,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -8258,7 +9034,7 @@ VALUES (
   'advanced',
   'EURUSD,USDJPY,AUDUSD',
   'H1',
-  '[{"key":"GRID_SPACING","label":"Grid Spacing (pips)","type":"int","default":20,"min":5,"max":100,"step":5,"tooltip":"Distance between grid levels in pips."},{"key":"MAX_GRID_LEVELS","label":"Max Grid Levels","type":"int","default":5,"min":2,"max":10,"step":1,"tooltip":"Maximum number of grid positions."},{"key":"LOT_MULTIPLIER","label":"Lot Multiplier","type":"double","default":1.5,"min":1,"max":3,"step":0.1,"tooltip":"Lot size multiplier for each new level."},{"key":"TP_GRID","label":"Grid TP (pips)","type":"int","default":15,"min":5,"max":50,"step":5,"tooltip":"Take profit distance from average entry."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4"],"labels":["M15","H1","H4"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Blocks new grid if trend too strong. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Max ADX for Grid","type":"double","default":30,"min":15,"max":50,"step":1,"tooltip":"Skip new grid / stop adding levels if ADX exceeds this."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based per-level SL instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for per-level stop loss."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier (unused — grid manages TP via Grid TP)."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"MAX_ACCOUNT_RISK","label":"Max Account Risk %","type":"double","default":15,"min":5,"max":50,"step":1,"tooltip":"Close all grid positions if floating loss exceeds this % of balance."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"GRID_SPACING","label":"Grid Spacing (pips)","type":"int","default":20,"min":5,"max":100,"step":5,"tooltip":"Distance between grid levels in pips."},{"key":"MAX_GRID_LEVELS","label":"Max Grid Levels","type":"int","default":5,"min":2,"max":10,"step":1,"tooltip":"Maximum number of grid positions."},{"key":"LOT_MULTIPLIER","label":"Lot Multiplier","type":"double","default":1.5,"min":1,"max":3,"step":0.1,"tooltip":"Lot size multiplier for each new level."},{"key":"TP_GRID","label":"Grid TP (pips)","type":"int","default":15,"min":5,"max":50,"step":5,"tooltip":"Take profit distance from average entry."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M15","PERIOD_H1","PERIOD_H4"],"labels":["M15","H1","H4"],"default":"PERIOD_H1","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period. Blocks new grid if trend too strong. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Max ADX for Grid","type":"double","default":30,"min":15,"max":50,"step":1,"tooltip":"Skip new grid / stop adding levels if ADX exceeds this."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based per-level SL instead of fixed pips."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for per-level stop loss."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier (unused — grid manages TP via Grid TP)."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"MAX_ACCOUNT_RISK","label":"Max Account Risk %","type":"double","default":15,"min":5,"max":50,"step":1,"tooltip":"Close all grid positions if floating loss exceeds this % of balance."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -8320,6 +9096,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -8596,6 +9380,7 @@ void OnTick()
          double slDist = 0.0;
          if(UseATRStops && atrValue > 0) slDist = atrValue * ATRSLMultiplier;
          else if(StopLossPips > 0) slDist = StopLossPips * symPip;
+         double tpDist = TakeProfitGrid * symPip;
          double slPips = (slDist > 0) ? slDist / symPip : 0.0;
          double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
@@ -8875,6 +9660,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -8993,7 +9781,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -9249,7 +10123,7 @@ VALUES (
   'intermediate',
   'XAUUSD,GBPUSD,EURUSD',
   'M5',
-  '[{"key":"ATR_PERIOD","label":"ATR Period","type":"int","default":14,"min":5,"max":30,"step":1,"tooltip":"Period for ATR calculation."},{"key":"ATR_MULTIPLIER","label":"Spike Threshold (x ATR)","type":"double","default":2,"min":1.5,"max":4,"step":0.5,"tooltip":"Bar range must exceed this multiple of ATR."},{"key":"SPIKE_TRAIL","label":"Trailing Stop (pips)","type":"int","default":20,"min":5,"max":50,"step":5,"tooltip":"Trailing stop distance after spike entry."},{"key":"COOLDOWN_BARS","label":"Cooldown Bars","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Bars to wait after entry before allowing new trades."},{"key":"MOMENTUM_PCT","label":"Momentum Close %","type":"double","default":70,"min":50,"max":90,"step":5,"tooltip":"Close must be within this % of candle high/low for momentum confirmation."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M1","PERIOD_M5","PERIOD_M15"],"labels":["M1","M5","M15"],"default":"PERIOD_M5","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for momentum confirmation. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX to confirm spike momentum."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of spike-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."}]',
+  '[{"key":"ATR_PERIOD","label":"ATR Period","type":"int","default":14,"min":5,"max":30,"step":1,"tooltip":"Period for ATR calculation."},{"key":"ATR_MULTIPLIER","label":"Spike Threshold (x ATR)","type":"double","default":2,"min":1.5,"max":4,"step":0.5,"tooltip":"Bar range must exceed this multiple of ATR."},{"key":"SPIKE_TRAIL","label":"Trailing Stop (pips)","type":"int","default":20,"min":5,"max":50,"step":5,"tooltip":"Trailing stop distance after spike entry."},{"key":"COOLDOWN_BARS","label":"Cooldown Bars","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Bars to wait after entry before allowing new trades."},{"key":"MOMENTUM_PCT","label":"Momentum Close %","type":"double","default":70,"min":50,"max":90,"step":5,"tooltip":"Close must be within this % of candle high/low for momentum confirmation."},{"key":"TIMEFRAME","label":"Timeframe","type":"enum","options":["PERIOD_M1","PERIOD_M5","PERIOD_M15"],"labels":["M1","M5","M15"],"default":"PERIOD_M5","tooltip":"Chart timeframe."},{"key":"ADX_PERIOD","label":"ADX Period","type":"int","default":14,"min":0,"max":50,"step":1,"tooltip":"ADX period for momentum confirmation. 0 = disabled."},{"key":"ADX_MIN_STRENGTH","label":"Min ADX Strength","type":"double","default":20,"min":10,"max":50,"step":1,"tooltip":"Minimum ADX to confirm spike momentum."},{"key":"USE_ATR_STOPS","label":"Use ATR Stops","type":"bool","default":false,"tooltip":"Use ATR-based dynamic SL/TP instead of spike-based stops."},{"key":"ATR_STOP_PERIOD","label":"ATR Stop Period","type":"int","default":14,"min":5,"max":50,"step":1,"tooltip":"ATR period for dynamic stops."},{"key":"ATR_SL_MULT","label":"ATR SL Multiplier","type":"double","default":1.5,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for stop loss."},{"key":"ATR_TP_MULT","label":"ATR TP Multiplier","type":"double","default":2,"min":0.5,"max":5,"step":0.1,"tooltip":"ATR multiplier for take profit."},{"key":"RISK_PERCENT","label":"Risk % per Trade","type":"double","default":0,"min":0,"max":5,"step":0.25,"tooltip":"Risk percentage of balance per trade. 0 = use fixed lot."},{"key":"LOT_SIZE","label":"Lot Size","type":"double","default":0.1,"min":0.01,"max":10,"step":0.01,"tooltip":"Trade volume in lots."},{"key":"SL_PIPS","label":"Stop Loss (pips)","type":"int","default":50,"min":5,"max":500,"step":5,"tooltip":"Stop loss distance in pips."},{"key":"TP_PIPS","label":"Take Profit (pips)","type":"int","default":100,"min":5,"max":1000,"step":5,"tooltip":"Take profit distance in pips."},{"key":"MAX_SPREAD","label":"Max Spread (points)","type":"int","default":30,"min":5,"max":100,"step":5,"tooltip":"Block entry if spread exceeds this."},{"key":"MULTI_SYMBOLS","label":"Multi-Asset Symbols","type":"string","default":"","tooltip":"Comma-separated symbols to trade (e.g. EURUSD,GBPUSD,USDJPY). Leave empty to trade chart symbol only."},{"key":"MAX_DAILY_LOSS","label":"Max Daily Loss %","type":"double","default":5,"min":1,"max":20,"step":0.5,"tooltip":"Stop trading after this % loss."},{"key":"CONSEC_LOSS_LIMIT","label":"Consecutive Loss Limit","type":"int","default":3,"min":1,"max":10,"step":1,"tooltip":"Pause after this many consecutive losses."},{"key":"BE_TRIGGER_RR","label":"Breakeven at R:R","type":"double","default":1,"min":0,"max":3,"step":0.1,"tooltip":"Move SL to breakeven at this R:R. 0 = disabled."},{"key":"TRAILING_STOP","label":"Trailing Stop (pips)","type":"int","default":0,"min":0,"max":200,"step":5,"tooltip":"Trailing stop distance. 0 = disabled."},{"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},{"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},{"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},{"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},{"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},{"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25,"min":15,"max":40,"step":1,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},{"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18,"min":10,"max":25,"step":1,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},{"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},{"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},{"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},{"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},{"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."}]',
   '//+------------------------------------------------------------------+
 //| {{STRATEGY_NAME}} EA                                              |
 //| Generated by TradeMetrics Pro Strategy Hub                        |
@@ -9311,6 +10185,14 @@ input double TrailingStopPips      = {{TRAILING_STOP}};       // Trailing Stop (
 input bool   UseSessionFilter      = {{USE_SESSION_FILTER}};  // Session Filter
 input int    SessionStartHour      = {{SESSION_START}};       // Session Start (UTC)
 input int    SessionEndHour        = {{SESSION_END}};         // Session End (UTC)
+
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
 
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
@@ -9795,6 +10677,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it''s Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -9913,7 +10798,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+

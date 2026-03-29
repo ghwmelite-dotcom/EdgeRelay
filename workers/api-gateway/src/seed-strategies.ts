@@ -33,6 +33,10 @@ const COMMON_PARAMS = [
   {"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25.0,"min":15.0,"max":40.0,"step":1.0,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},
   {"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18.0,"min":10.0,"max":25.0,"step":1.0,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},
   {"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3.0,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},
+  {"key":"CLOSE_FRIDAY","label":"Close Trades on Friday","type":"bool","default":true,"tooltip":"Automatically close all positions before the weekend."},
+  {"key":"FRIDAY_CLOSE_HOUR","label":"Friday Close Hour (UTC)","type":"int","default":20,"min":15,"max":23,"step":1,"tooltip":"UTC hour to close all positions on Friday."},
+  {"key":"PROP_DAILY_LIMIT","label":"Prop Firm Daily Loss %","type":"double","default":0,"min":0,"max":10,"step":0.5,"tooltip":"Hard daily loss limit for prop firm rules. 0 = disabled. FTMO = 5%, The5ers = 4%."},
+  {"key":"PROP_MAX_DD","label":"Prop Firm Max Drawdown %","type":"double","default":0,"min":0,"max":15,"step":0.5,"tooltip":"Hard max drawdown limit. 0 = disabled. FTMO = 10%, FundedNext = 10%, The5ers = 6%."},
 ];
 
 // ── Strategy definitions ────────────────────────────────────────

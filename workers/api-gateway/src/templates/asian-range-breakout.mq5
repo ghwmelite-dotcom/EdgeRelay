@@ -62,6 +62,14 @@ input double TrendADXThreshold     = {{TREND_ADX_THRESH}};    // ADX Threshold f
 input double RangeADXThreshold     = {{RANGE_ADX_THRESH}};    // ADX Threshold for Ranging
 input double VolatileATRMult       = {{VOLATILE_ATR_MULT}};   // ATR Spike Multiplier for Volatile
 
+// ── Friday Close ────────────────────────────────────────────────
+input bool   CloseFriday           = {{CLOSE_FRIDAY}};        // Close All Trades on Friday
+input int    FridayCloseHour       = {{FRIDAY_CLOSE_HOUR}};    // Friday Close Hour (UTC)
+
+// ── Prop Firm Limits ────────────────────────────────────────────
+input double PropFirmDailyLimit   = {{PROP_DAILY_LIMIT}};     // Prop Firm Daily Loss Limit % (0=off)
+input double PropFirmMaxDD        = {{PROP_MAX_DD}};           // Prop Firm Max Drawdown % (0=off)
+
 // ── TradeMetrics Integration ────────────────────────────────────
 input string AccountID        = "{{ACCOUNT_ID}}";
 input string API_Key          = "{{API_KEY}}";

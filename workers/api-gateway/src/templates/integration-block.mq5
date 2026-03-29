@@ -145,6 +145,9 @@ void TM_OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void TM_OnTimer()
   {
+   //--- Friday close: close all positions if it's Friday past close hour
+   TM_CheckFridayClose();
+
    //--- Day rollover: reset daily P&L and counters
    datetime today = StringToTime(TimeToString(TimeCurrent(), TIME_DATE));
    if(today != g_tm_lastDay)
@@ -263,7 +266,93 @@ bool TM_CanTrade()
       return false;
      }
 
+   //--- Friday close — block new entries
+   if(CloseFriday)
+     {
+      MqlDateTime dtFri;
+      TimeToStruct(TimeCurrent(), dtFri);
+      int utcHourFri = BrokerHourToUTC(dtFri.hour);
+      // Friday = day_of_week 5
+      if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+        {
+         return false;
+        }
+      // Saturday/Sunday — should never trade
+      if(dtFri.day_of_week == 0 || dtFri.day_of_week == 6)
+        {
+         return false;
+        }
+     }
+
+   //--- Prop firm daily loss limit
+   if(PropFirmDailyLimit > 0.0)
+     {
+      double floatingPnlPF = 0.0;
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         if(PositionGetTicket(i) > 0 && PositionGetInteger(POSITION_MAGIC) == MagicNumber)
+            floatingPnlPF += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
+      double totalDailyLossPF = g_tm_dailyPnl + floatingPnlPF;
+      double startBalPF = g_tm_dailyStartBalance > 0 ? g_tm_dailyStartBalance : AccountInfoDouble(ACCOUNT_BALANCE);
+      double lossPctPF = startBalPF > 0 ? (-totalDailyLossPF / startBalPF) * 100.0 : 0.0;
+
+      if(lossPctPF >= PropFirmDailyLimit)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM daily loss limit reached: %.2f%% >= %.2f%%", lossPctPF, PropFirmDailyLimit);
+         return false;
+        }
+     }
+
+   //--- Prop firm max drawdown (total, from peak balance)
+   if(PropFirmMaxDD > 0.0)
+     {
+      double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+      double peakBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+      // Use higher of balance and any historical peak
+      if(g_tm_dailyStartBalance > peakBalance) peakBalance = g_tm_dailyStartBalance;
+
+      double ddPct = peakBalance > 0 ? ((peakBalance - currentEquity) / peakBalance) * 100.0 : 0.0;
+
+      if(ddPct >= PropFirmMaxDD)
+        {
+         PrintFormat("[TradeMetrics] PROP FIRM max drawdown reached: %.2f%% >= %.2f%%", ddPct, PropFirmMaxDD);
+         return false;
+        }
+     }
+
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//| TM_CheckFridayClose — close all positions on Friday at close hour|
+//+------------------------------------------------------------------+
+void TM_CheckFridayClose()
+  {
+   if(!CloseFriday) return;
+
+   MqlDateTime dtFri;
+   TimeToStruct(TimeCurrent(), dtFri);
+   int utcHourFri = BrokerHourToUTC(dtFri.hour);
+
+   if(dtFri.day_of_week == 5 && utcHourFri >= FridayCloseHour)
+     {
+      // Close all positions with our magic number
+      for(int i = PositionsTotal() - 1; i >= 0; i--)
+        {
+         ulong ticket = PositionGetTicket(i);
+         if(ticket == 0) continue;
+         if(PositionGetInteger(POSITION_MAGIC) != MagicNumber) continue;
+
+         double profit = PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+         CTrade fridayTrade;
+         if(fridayTrade.PositionClose(ticket))
+           {
+            TM_OnTradeClosed(ticket, profit);
+            PrintFormat("[TradeMetrics] Friday close: closed ticket %d, profit %.2f", ticket, profit);
+           }
+        }
+     }
   }
 
 //+------------------------------------------------------------------+

@@ -68,17 +68,17 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
   const displayError = validationError || error;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+        className="fixed inset-0 bg-black/80 backdrop-blur-xl"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-md animate-fade-in-scale">
+      <div className="relative z-10 w-full max-w-md my-auto animate-fade-in-scale">
         {/* Glass card */}
-        <div className="glass-premium border-gradient rounded-2xl p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
+        <div className="glass-premium border-gradient rounded-2xl p-6 sm:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto">
           {/* Scan line effect */}
           <div
             className="pointer-events-none absolute inset-0 z-0 rounded-2xl overflow-hidden"

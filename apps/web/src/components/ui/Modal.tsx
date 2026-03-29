@@ -23,17 +23,17 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-xl"
+        className="fixed inset-0 bg-black/70 backdrop-blur-xl"
         onClick={onClose}
       />
 
       {/* Modal Card */}
       <div
         className={clsx(
-          'relative z-10 w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl p-6 shadow-2xl',
+          'relative z-10 w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl p-4 sm:p-6 shadow-2xl my-auto',
           'glass backdrop-blur-2xl border-gradient',
           'animate-fade-in-scale',
           className,

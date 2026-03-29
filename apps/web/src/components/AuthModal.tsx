@@ -78,7 +78,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md my-auto animate-fade-in-scale">
         {/* Glass card */}
-        <div className="glass-premium border-gradient rounded-2xl p-6 sm:p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto">
+        <div className="glass-premium border-gradient rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] max-h-[90vh] flex flex-col">
           {/* Scan line effect */}
           <div
             className="pointer-events-none absolute inset-0 z-0 rounded-2xl overflow-hidden"
@@ -88,31 +88,33 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
             }}
           />
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-20 rounded-xl p-1.5 text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all"
-          >
-            <X size={18} />
-          </button>
+          {/* Fixed header — logo + close + tabs (not scrollable) */}
+          <div className="relative z-10 p-6 sm:p-8 pb-0 shrink-0">
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 z-20 rounded-xl p-1.5 text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all"
+            >
+              <X size={18} />
+            </button>
 
-          {/* Logo */}
-          <div className="relative z-10 text-center mb-6">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <Shield className="h-5 w-5 text-neon-cyan" />
-              <span className="font-display text-xl font-black tracking-tight">
-                <span className="text-white">TRADE</span>
-                <span className="text-neon-cyan glow-text-cyan">METRICS</span>
-                <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
-              </span>
+            {/* Logo */}
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Shield className="h-5 w-5 text-neon-cyan" />
+                <span className="font-display text-xl font-black tracking-tight">
+                  <span className="text-white">TRADE</span>
+                  <span className="text-neon-cyan glow-text-cyan">METRICS</span>
+                  <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
+                </span>
+              </div>
+              <p className="text-sm text-terminal-muted">
+                {mode === 'login' ? 'Sign in to your trading terminal' : 'Create your free account'}
+              </p>
             </div>
-            <p className="text-sm text-terminal-muted">
-              {mode === 'login' ? 'Sign in to your trading terminal' : 'Create your free account'}
-            </p>
-          </div>
 
-          {/* Tab switcher */}
-          <div className="relative z-10 flex mb-6 glass rounded-xl p-1">
+            {/* Tab switcher */}
+            <div className="flex mb-4 glass rounded-xl p-1">
             <button
               type="button"
               onClick={() => switchMode('login')}
@@ -136,16 +138,20 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
               Create Account
             </button>
           </div>
+          </div>
+
+          {/* Scrollable content area */}
+          <div className="relative z-10 overflow-y-auto px-6 sm:px-8 pb-6 sm:pb-8 flex-1">
 
           {/* Error */}
           {displayError && (
-            <div className="relative z-10 glass rounded-xl border border-neon-red/30 bg-neon-red/5 px-4 py-3 text-sm text-neon-red mb-4">
+            <div className="glass rounded-xl border border-neon-red/30 bg-neon-red/5 px-4 py-3 text-sm text-neon-red mb-4">
               {displayError}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="relative z-10 space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <Input
                 label="Name"
@@ -217,13 +223,14 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
           </form>
 
           {/* Secure badge */}
-          <div className="relative z-10 flex items-center justify-center gap-2 mt-6">
+          <div className="flex items-center justify-center gap-2 mt-6">
             <div className="live-dot" style={{ width: 4, height: 4 }} />
             <span className="text-[10px] uppercase tracking-[0.2em] text-terminal-muted/60">
               Secure Connection · Free Until 2027
             </span>
           </div>
-        </div>
+          </div>{/* end scrollable content */}
+        </div>{/* end glass card */}
       </div>
     </div>
   );

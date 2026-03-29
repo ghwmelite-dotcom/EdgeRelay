@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio } from 'lucide-react';
+import { LayoutDashboard, Shield, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
+
+const ADMIN_EMAILS = ['oh84dev@gmail.com'];
 
 const NAV_GROUPS = [
   {
@@ -45,6 +47,7 @@ const NAV_GROUPS = [
       { label: 'Usage', icon: Gauge, to: '/usage' },
       { label: 'Settings', icon: Settings, to: '/settings' },
       { label: 'Billing', icon: CreditCard, to: '/billing' },
+      { label: 'Admin', icon: Crown, to: '/admin', adminOnly: true },
     ],
   },
 ];
@@ -187,7 +190,7 @@ export function AppLayout() {
                 </div>
               )}
               <div className="space-y-0.5">
-                {group.items.map(({ label, icon: Icon, to }) => {
+                {group.items.filter((item) => !('adminOnly' in item && item.adminOnly) || ADMIN_EMAILS.includes(user?.email ?? '')).map(({ label, icon: Icon, to }) => {
                   const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
                   return (
                     <NavLink

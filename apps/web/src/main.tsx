@@ -29,6 +29,7 @@ import { SimulatorPage } from '@/pages/SimulatorPage';
 import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
 import { MarketplacePage } from '@/pages/MarketplacePage';
 import { StrategyHubPage } from '@/pages/StrategyHubPage';
+import { AdminPage } from '@/pages/AdminPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -91,6 +92,7 @@ function App() {
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />
           <Route path="/app/strategy-hub" element={<StrategyHubPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

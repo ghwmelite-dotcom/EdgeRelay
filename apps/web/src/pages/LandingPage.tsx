@@ -56,31 +56,31 @@ const ECOSYSTEM = [
   {
     icon: FlaskConical,
     title: 'Strategy Hub',
-    desc: 'Generate custom Expert Advisors from 5 battle-tested strategies. Configure parameters with sliders, get a production-ready EA with built-in risk management — no coding required.',
+    desc: '10 battle-tested strategies with AI optimization. Generate custom EAs with multi-asset trading, auto-adaptive market regime detection, GMT auto-offset, and one-click prop firm presets (FTMO, The5ers, FundedNext). AI analyzes your live trades and recommends parameter tweaks for re-generation.',
     badge: 'LIVE' as const,
   },
   {
     icon: Sparkles,
     title: 'AI Trade Insights',
-    desc: 'AI-powered analysis of your trading patterns. Identifies losing sessions, winning instruments, and hidden edge leaks — with actionable recommendations personalized to your data.',
+    desc: 'AI-powered analysis of your trading patterns. Identifies losing sessions, winning instruments, and hidden edge leaks. The AI Strategy Optimizer analyzes your results and recommends exact parameter changes — then re-generates your EA with one click.',
     badge: 'LIVE' as const,
   },
   {
     icon: ShieldCheck,
-    title: 'PropGuard',
-    desc: 'Built-in equity protection for prop firm accounts. Automatic drawdown monitoring, trade blocking, and emergency close.',
+    title: 'PropGuard + Prop Firm Controls',
+    desc: 'Built-in equity protection with prop firm presets — FTMO, The5ers, FundedNext, MyFundedFX, Apex. Auto daily loss limits, max drawdown caps, Friday close before weekend, and emergency trade blocking. Never breach a funded account again.',
     badge: 'LIVE' as const,
   },
   {
     icon: BrainCircuit,
     title: 'AI Trade Journal',
-    desc: 'Zero-drop MT5 trade journal with native sync. Automatic trade logging, session analysis, equity curve tracking, and performance insights.',
+    desc: 'Zero-drop MT5 trade journal with native sync. Automatic trade logging, session analysis, equity curve tracking, and performance insights. Every trade is tagged for AI attribution analysis.',
     badge: 'LIVE' as const,
   },
   {
     icon: BarChart3,
     title: 'Advanced Analytics',
-    desc: 'Institutional-grade analytics — equity curve health, edge validation with Monte Carlo simulation, performance attribution by session, day, and instrument. Know if your edge is real or luck.',
+    desc: 'Institutional-grade analytics — equity curve health (R\u00B2, Sharpe, recovery factor), edge validation with Monte Carlo simulation and bootstrap confidence intervals, performance attribution by session, day, and instrument. Statistical proof your edge is real.',
     badge: 'LIVE' as const,
   },
   {
@@ -93,34 +93,34 @@ const ECOSYSTEM = [
 
 const FEATURES = [
   {
-    icon: CloudOff,
-    title: 'Zero VPS Required',
-    desc: 'No servers to manage. Runs on Cloudflare\'s edge network — always on, globally distributed.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'PropGuard Protection',
-    desc: 'Built-in equity guard for prop firm accounts. Monitors drawdown and blocks dangerous trades.',
-  },
-  {
-    icon: Store,
-    title: 'Copy Top Traders',
-    desc: 'Browse a marketplace of verified signal providers. One-click copy — their trades execute on your account automatically.',
-  },
-  {
     icon: FlaskConical,
-    title: 'Generate Custom EAs',
-    desc: 'Pick a strategy, configure parameters with sliders, download a production-ready Expert Advisor. No coding required.',
+    title: '10 Strategies, One Click',
+    desc: 'MA Crossover, RSI Reversion, Bollinger Squeeze, Supply & Demand, Grid Recovery, and 5 more. Generate a production EA in 30 seconds — no coding.',
   },
   {
     icon: Sparkles,
-    title: 'AI-Powered Insights',
-    desc: 'AI analyzes your trades and tells you exactly what\'s working, what\'s bleeding money, and what to change. Personalized to your data.',
+    title: 'AI Optimizes Your EA',
+    desc: 'Trade for a week, click Optimize. AI analyzes your results, recommends exact parameter changes, and re-generates a better EA. Your robot evolves.',
   },
   {
-    icon: Monitor,
-    title: 'Real-time Dashboard',
-    desc: 'Live signal log, latency stats, account monitoring. See every trade as it copies.',
+    icon: ShieldCheck,
+    title: 'Prop Firm Presets',
+    desc: 'One-click FTMO, The5ers, FundedNext, Apex rules. Auto daily loss caps, drawdown limits, Friday close. Never breach a funded account.',
+  },
+  {
+    icon: Store,
+    title: 'Copy Verified Traders',
+    desc: 'Browse a marketplace of signal providers ranked by real, verified performance. One-click copy — their trades execute on your account automatically.',
+  },
+  {
+    icon: BarChart3,
+    title: 'Know If Your Edge Is Real',
+    desc: 'Monte Carlo simulation, bootstrap confidence intervals, and statistical edge validation. Not gut feeling — math.',
+  },
+  {
+    icon: CloudOff,
+    title: 'Multi-Asset, One Chart',
+    desc: 'Trade EURUSD, GBPUSD, and XAUUSD simultaneously from a single EA on any chart. Auto-adaptive mode adjusts to trending, ranging, or volatile markets.',
   },
 ];
 
@@ -128,22 +128,22 @@ const BENEFITS = [
   {
     icon: ShieldAlert,
     title: 'Built for Prop Firms',
-    desc: 'PropGuard monitors your drawdown in real-time and blocks trades that would breach your funded account rules.',
+    desc: 'One-click presets for FTMO, The5ers, FundedNext, Apex. Auto daily loss limits, max drawdown caps, and Friday close before weekend. PropGuard blocks trades that would breach your rules.',
   },
   {
     icon: Zap,
-    title: 'Edge Speed, Not Server Speed',
-    desc: "Your signals travel through Cloudflare's 300+ PoPs, not a single VPS in Virginia. Closest edge = fastest copy.",
+    title: 'AI That Makes You Better',
+    desc: 'Generate an EA, trade it, then let AI analyze your results and recommend improvements. One click to re-generate a smarter version. Your robot evolves with every trade.',
   },
   {
     icon: PackageOpen,
     title: 'Zero Infrastructure',
-    desc: 'No VPS to rent, no MT5 to keep running, no port forwarding. Install the EA, connect, done.',
+    desc: 'No VPS to rent, no coding skills needed, no port forwarding. Generate an EA in 30 seconds, install it, and start trading. Everything runs on Cloudflare\'s edge.',
   },
   {
     icon: HardDriveDownload,
-    title: 'Crash-Proof Delivery',
-    desc: 'Signals queue on the edge when your follower is offline. Reconnect and they execute in order. Nothing lost.',
+    title: 'Adapts to Any Market',
+    desc: 'Auto-adaptive mode detects trending, ranging, or volatile conditions and adjusts SL, TP, and lot size automatically. Auto GMT offset handles any broker timezone.',
   },
 ];
 

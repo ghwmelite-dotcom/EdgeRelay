@@ -643,6 +643,15 @@ export function LandingPage() {
             ))}
           </div>
 
+          {/* Referral CTA — highlighted */}
+          <a
+            href="/referral"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border border-neon-green/30 bg-neon-green/[0.08] px-3 py-1.5 text-[11px] font-semibold text-neon-green tracking-wide uppercase transition-all hover:bg-neon-green/15 hover:border-neon-green/50 hover:shadow-[0_0_12px_rgba(0,255,157,0.15)]"
+          >
+            <span className="text-[13px]">💰</span>
+            Earn Rewards
+          </a>
+
           {/* Right side — latency badge + auth */}
           <div className="flex items-center gap-3">
             {/* Live latency badge */}

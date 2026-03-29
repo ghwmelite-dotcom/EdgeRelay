@@ -29,6 +29,7 @@ import { SimulatorPage } from '@/pages/SimulatorPage';
 import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
 import { MarketplacePage } from '@/pages/MarketplacePage';
 import { StrategyHubPage } from '@/pages/StrategyHubPage';
+import { DisciplinePage } from '@/pages/DisciplinePage';
 import { AdminPage } from '@/pages/AdminPage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
@@ -92,6 +93,7 @@ function App() {
           <Route path="/app/firms/:firmName" element={<FirmDetailPage />} />
           <Route path="/downloads" element={<DownloadsPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
+          <Route path="/discipline" element={<DisciplinePage />} />
           <Route path="/usage" element={<UsagePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/billing" element={<BillingPage />} />

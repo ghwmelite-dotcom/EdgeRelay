@@ -62,17 +62,59 @@ admin.delete('/users/:id', async (c) => {
     return c.json<ApiResponse>({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Cannot delete your own account' } }, 400);
   }
 
-  // Deactivate all user's accounts
-  await c.env.DB.prepare('UPDATE accounts SET is_active = false WHERE user_id = ?').bind(userId).run();
+  try {
+    const db = c.env.DB;
 
-  // Delete the user
-  const result = await c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+    // Get user's account IDs for cascading cleanup
+    const { results: accounts } = await db.prepare('SELECT id FROM accounts WHERE user_id = ?').bind(userId).all<{ id: string }>();
+    const accountIds = accounts?.map((a) => a.id) ?? [];
 
-  if (result.meta.changes === 0) {
-    return c.json<ApiResponse>({ data: null, error: { code: 'NOT_FOUND', message: 'User not found' } }, 404);
+    // Clean up all related records (order matters — children before parents)
+    if (accountIds.length > 0) {
+      const ph = accountIds.map(() => '?').join(',');
+      await db.prepare(`DELETE FROM follower_config WHERE account_id IN (${ph})`).bind(...accountIds).run();
+      await db.prepare(`DELETE FROM symbol_mappings WHERE account_id IN (${ph})`).bind(...accountIds).run();
+      await db.prepare(`DELETE FROM executions WHERE follower_account_id IN (${ph})`).bind(...accountIds).run();
+      await db.prepare(`DELETE FROM signals WHERE master_account_id IN (${ph})`).bind(...accountIds).run();
+      await db.prepare(`DELETE FROM journal_trades WHERE account_id IN (${ph})`).bind(...accountIds).run();
+      await db.prepare(`DELETE FROM marketplace_subscriptions WHERE follower_account_id IN (${ph})`).bind(...accountIds).run();
+    }
+
+    // Clean up user-level records
+    await db.prepare('DELETE FROM marketplace_subscriptions WHERE subscriber_user_id = ?').bind(userId).run();
+    await db.prepare('DELETE FROM ea_generations WHERE user_id = ?').bind(userId).run();
+    await db.prepare('DELETE FROM ea_generation_credits WHERE user_id = ?').bind(userId).run();
+    await db.prepare('DELETE FROM ai_insights_cache WHERE user_id = ?').bind(userId).run();
+    await db.prepare('DELETE FROM notification_preferences WHERE user_id = ?').bind(userId).run();
+    await db.prepare('DELETE FROM referral_commissions WHERE referrer_user_id = ? OR referred_user_id = ?').bind(userId, userId).run();
+
+    // Delete provider profile + stats
+    const provider = await db.prepare('SELECT id FROM provider_profiles WHERE user_id = ?').bind(userId).first<{ id: string }>();
+    if (provider) {
+      await db.prepare('DELETE FROM provider_stats WHERE provider_id = ?').bind(provider.id).run();
+      await db.prepare('DELETE FROM provider_profiles WHERE id = ?').bind(provider.id).run();
+    }
+
+    // Delete accounts
+    await db.prepare('DELETE FROM accounts WHERE user_id = ?').bind(userId).run();
+
+    // Clear referred_by references from other users
+    await db.prepare('UPDATE users SET referred_by = NULL WHERE referred_by = ?').bind(userId).run();
+
+    // Finally delete the user
+    const result = await db.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+    if (result.meta.changes === 0) {
+      return c.json<ApiResponse>({ data: null, error: { code: 'NOT_FOUND', message: 'User not found' } }, 404);
+    }
+
+    return c.json<ApiResponse>({ data: { deleted: true }, error: null });
+  } catch (err) {
+    return c.json<ApiResponse>({
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: err instanceof Error ? err.message : 'Failed to delete user' },
+    }, 500);
   }
-
-  return c.json<ApiResponse>({ data: { deleted: true }, error: null });
 });
 
 // ── GET /admin/overview ──────────────────────────────────────────

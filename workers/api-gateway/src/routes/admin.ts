@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
+import { hashPassword } from '../middleware/auth.js';
 
 export const admin = new Hono<{ Bindings: Env }>();
 
@@ -25,6 +26,54 @@ async function requireAdmin(c: Context<{ Bindings: Env }>, next: Next) {
 }
 
 admin.use('*', requireAdmin);
+
+// ── POST /admin/users — Create a new user ────────────────────────
+
+admin.post('/users', async (c) => {
+  const body = await c.req.json<{ email: string; password: string; name?: string; plan?: string }>();
+
+  if (!body.email || !body.password) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Email and password are required' } }, 400);
+  }
+
+  const email = body.email.toLowerCase().trim();
+  const passwordHash = await hashPassword(body.password);
+  const name = body.name?.trim() || null;
+  const plan = body.plan || 'free';
+
+  try {
+    const user = await c.env.DB.prepare(
+      `INSERT INTO users (email, password_hash, name, plan) VALUES (?, ?, ?, ?) RETURNING id, email, name, plan, created_at`,
+    ).bind(email, passwordHash, name, plan).first();
+
+    return c.json<ApiResponse>({ data: user, error: null }, 201);
+  } catch (err) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'CONFLICT', message: 'Email already exists' } }, 409);
+  }
+});
+
+// ── DELETE /admin/users/:id — Delete a user ──────────────────────
+
+admin.delete('/users/:id', async (c) => {
+  const userId = c.req.param('id');
+
+  // Don't allow deleting yourself
+  if (userId === c.get('userId')) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Cannot delete your own account' } }, 400);
+  }
+
+  // Deactivate all user's accounts
+  await c.env.DB.prepare('UPDATE accounts SET is_active = false WHERE user_id = ?').bind(userId).run();
+
+  // Delete the user
+  const result = await c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+
+  if (result.meta.changes === 0) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NOT_FOUND', message: 'User not found' } }, 404);
+  }
+
+  return c.json<ApiResponse>({ data: { deleted: true }, error: null });
+});
 
 // ── GET /admin/overview ──────────────────────────────────────────
 

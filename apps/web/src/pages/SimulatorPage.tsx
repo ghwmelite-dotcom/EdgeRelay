@@ -10,6 +10,7 @@ import {
   Play,
   Download,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
@@ -426,6 +427,12 @@ export function SimulatorPage() {
     worst_dd: number;
   }> | null>(null);
 
+  // What If Sliders
+  const [whatIfWR, setWhatIfWR] = useState<number | null>(null);
+  const [whatIfWin, setWhatIfWin] = useState<number | null>(null);
+  const [whatIfTPD, setWhatIfTPD] = useState<number | null>(null);
+  const [whatIfResult, setWhatIfResult] = useState<MonteCarloResult | null>(null);
+
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === selectedTemplateId) ?? null,
     [templates, selectedTemplateId],
@@ -498,6 +505,8 @@ export function SimulatorPage() {
       const result = runMonteCarlo(params, 1000);
       setMcResult(result);
       setIsSimulating(false);
+      // Reset what-if state
+      setWhatIfWR(null); setWhatIfWin(null); setWhatIfTPD(null); setWhatIfResult(null);
     });
   }, [selectedTemplate, winRate, avgWin, avgLoss, tradesPerDay]);
 
@@ -570,6 +579,32 @@ export function SimulatorPage() {
       setComparing(false);
     });
   }, [selectedTemplate, winRate, avgWin, avgLoss, tradesPerDay]);
+
+  // ── What If debounced re-simulation ──
+  useEffect(() => {
+    if (!mcResult || !selectedTemplate) return;
+    if (whatIfWR === null && whatIfWin === null && whatIfTPD === null) {
+      setWhatIfResult(null);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const result = runMonteCarlo({
+        initialBalance: selectedTemplate.initial_balance,
+        profitTargetPct: selectedTemplate.profit_target_percent ?? 10,
+        dailyLossPct: selectedTemplate.daily_loss_percent,
+        maxDrawdownPct: selectedTemplate.max_drawdown_percent,
+        maxDays: selectedTemplate.max_calendar_days ?? 60,
+        winRate: whatIfWR ?? winRate,
+        avgWin: whatIfWin ?? avgWin,
+        avgLoss: avgLoss,
+        tradesPerDay: whatIfTPD ?? tradesPerDay,
+      });
+      setWhatIfResult(result);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [whatIfWR, whatIfWin, whatIfTPD, mcResult, selectedTemplate, winRate, avgWin, avgLoss, tradesPerDay]);
 
   // ── Derived ──
   const passColor =
@@ -992,6 +1027,93 @@ export function SimulatorPage() {
               </div>
             )}
           </div>
+
+          {/* What If Sliders */}
+          {selectedTemplate && (
+            <div className="glass-premium rounded-2xl p-6 space-y-5 animate-fade-in-up">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-300 flex items-center gap-2">
+                <Sparkles size={14} className="text-neon-amber" />
+                What If Analysis
+              </h3>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {/* Win Rate slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-terminal-muted">
+                    <span>Win Rate</span>
+                    <span className="font-mono-nums font-bold text-neon-cyan">{whatIfWR ?? winRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={Math.max(1, winRate - 15)}
+                    max={Math.min(99, winRate + 15)}
+                    value={whatIfWR ?? winRate}
+                    onChange={(e) => setWhatIfWR(Number(e.target.value))}
+                    className="w-full accent-neon-cyan"
+                  />
+                </div>
+
+                {/* Avg Winner slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-terminal-muted">
+                    <span>Avg Winner</span>
+                    <span className="font-mono-nums font-bold text-neon-green">${whatIfWin ?? avgWin}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={Math.max(1, Math.round(avgWin * 0.5))}
+                    max={Math.round(avgWin * 2)}
+                    value={whatIfWin ?? avgWin}
+                    onChange={(e) => setWhatIfWin(Number(e.target.value))}
+                    className="w-full accent-neon-green"
+                  />
+                </div>
+
+                {/* Trades Per Day slider */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-terminal-muted">
+                    <span>Trades/Day</span>
+                    <span className="font-mono-nums font-bold text-neon-amber">{whatIfTPD ?? tradesPerDay}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    value={whatIfTPD ?? tradesPerDay}
+                    onChange={(e) => setWhatIfTPD(Number(e.target.value))}
+                    className="w-full accent-neon-amber"
+                  />
+                </div>
+              </div>
+
+              {/* Delta display */}
+              {whatIfResult && (
+                <div className="flex items-center justify-center gap-6 pt-2">
+                  <div className="text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-terminal-muted">Original</p>
+                    <p className="font-mono-nums text-lg font-bold text-terminal-text">{mcResult!.passRate.toFixed(1)}%</p>
+                  </div>
+                  <div className="text-2xl text-terminal-muted">&rarr;</div>
+                  <div className="text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-terminal-muted">What If</p>
+                    <p className={`font-mono-nums text-lg font-bold ${
+                      whatIfResult.passRate > mcResult!.passRate ? 'text-neon-green' :
+                      whatIfResult.passRate < mcResult!.passRate ? 'text-neon-red' : 'text-terminal-text'
+                    }`}>
+                      {whatIfResult.passRate.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className={`font-mono-nums text-sm font-bold ${
+                    whatIfResult.passRate > mcResult!.passRate ? 'text-neon-green' :
+                    whatIfResult.passRate < mcResult!.passRate ? 'text-neon-red' : 'text-terminal-muted'
+                  }`}>
+                    {whatIfResult.passRate > mcResult!.passRate ? '+' : ''}
+                    {(whatIfResult.passRate - mcResult!.passRate).toFixed(1)}%
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Comparison Mode */}
           <div className="space-y-4 animate-fade-in-up">

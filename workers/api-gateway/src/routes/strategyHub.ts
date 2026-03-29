@@ -296,13 +296,19 @@ strategyHub.post('/generate', async (c) => {
   // 2. Replace strategy name
   output = output.replace(/\{\{STRATEGY_NAME\}\}/g, strategy.name);
 
-  // 3. Generate deterministic magic number
-  const magicNumber = magicFromSlug(strategy.slug);
+  // 3. Generate UNIQUE magic number per user + strategy (prevents conflicts)
+  const magicNumber = magicFromSlug(userId + ':' + strategy.slug);
   output = output.replace(/\{\{MAGIC_NUMBER\}\}/g, String(magicNumber));
 
   // 4. Auto-fill account credentials
   output = output.replace(/\{\{ACCOUNT_ID\}\}/g, masterAccount.id);
   output = output.replace(/\{\{API_KEY\}\}/g, masterAccount.api_key);
+
+  // 5. Add unique file header with generation metadata
+  const generationId = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+  const timestamp = new Date().toISOString();
+  const uniqueHeader = `//+------------------------------------------------------------------+\n//| Generated: ${timestamp}                       |\n//| User: ${userId.slice(0, 8)}...  Build: ${generationId}          |\n//+------------------------------------------------------------------+\n`;
+  output = uniqueHeader + output;
 
   // 5. Replace all parameter placeholders
   for (const [key, value] of Object.entries(validated)) {

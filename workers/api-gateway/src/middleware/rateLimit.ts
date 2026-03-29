@@ -3,10 +3,27 @@ import type { Env } from '../types.js';
 
 const API_RATE_LIMIT = 600; // requests per minute
 
+// Admin accounts exempt from rate limiting
+const RATE_LIMIT_EXEMPT_USERS = new Set<string>();
+
 export const rateLimitMiddleware: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
   const userId = c.get('userId');
   if (!userId) {
     // If no userId is set (unauthenticated route), skip rate limiting
+    await next();
+    return;
+  }
+
+  // Check exempt list (populated on first request)
+  if (RATE_LIMIT_EXEMPT_USERS.has(userId)) {
+    await next();
+    return;
+  }
+
+  // Check if user is admin — cache the result
+  const user = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first<{ email: string }>();
+  if (user?.email === 'oh84dev@gmail.com') {
+    RATE_LIMIT_EXEMPT_USERS.add(userId);
     await next();
     return;
   }

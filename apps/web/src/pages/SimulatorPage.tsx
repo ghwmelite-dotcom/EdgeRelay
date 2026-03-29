@@ -416,6 +416,16 @@ export function SimulatorPage() {
   const [importing, setImporting] = useState(false);
   const { isAuthenticated } = useAuthStore();
 
+  // Comparison Mode
+  const [comparing, setComparing] = useState(false);
+  const [comparisonResults, setComparisonResults] = useState<Array<{
+    firm_name: string;
+    plan_name: string;
+    pass_rate: number;
+    avg_days: number;
+    worst_dd: number;
+  }> | null>(null);
+
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === selectedTemplateId) ?? null,
     [templates, selectedTemplateId],
@@ -519,6 +529,47 @@ export function SimulatorPage() {
       setImporting(false);
     }
   };
+
+  // ── Compare Firms ──
+  const handleCompare = useCallback(() => {
+    if (!selectedTemplate) return;
+    setComparing(true);
+
+    requestAnimationFrame(() => {
+      const comparisons = [
+        { firm: 'FTMO', plan: '$100K Challenge', balance: 100000, target: 10, daily: 5, dd: 10, days: 30 },
+        { firm: 'The5ers', plan: '$100K Hyper', balance: 100000, target: 8, daily: 4, dd: 6, days: 30 },
+        { firm: 'FundedNext', plan: '$100K Stellar', balance: 100000, target: 10, daily: 5, dd: 10, days: 30 },
+        { firm: 'MyFundedFX', plan: '$100K', balance: 100000, target: 8, daily: 5, dd: 8, days: 30 },
+        { firm: 'Apex', plan: '$100K', balance: 100000, target: 8, daily: 2.5, dd: 7, days: 30 },
+      ];
+
+      const results = comparisons.map((c) => {
+        const result = runMonteCarlo({
+          initialBalance: c.balance,
+          profitTargetPct: c.target,
+          dailyLossPct: c.daily,
+          maxDrawdownPct: c.dd,
+          maxDays: c.days,
+          winRate,
+          avgWin,
+          avgLoss,
+          tradesPerDay,
+        });
+        return {
+          firm_name: c.firm,
+          plan_name: c.plan,
+          pass_rate: Math.round(result.passRate * 10) / 10,
+          avg_days: Math.round(result.avgDaysToPass),
+          worst_dd: Math.round(result.worstDrawdown),
+        };
+      });
+
+      results.sort((a, b) => b.pass_rate - a.pass_rate);
+      setComparisonResults(results);
+      setComparing(false);
+    });
+  }, [selectedTemplate, winRate, avgWin, avgLoss, tradesPerDay]);
 
   // ── Derived ──
   const passColor =
@@ -938,6 +989,67 @@ export function SimulatorPage() {
                 <p className="text-xs text-terminal-muted mt-1">
                   Consider improving your win rate or risk-reward ratio before attempting.
                 </p>
+              </div>
+            )}
+          </div>
+
+          {/* Comparison Mode */}
+          <div className="space-y-4 animate-fade-in-up">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-300 flex items-center gap-2">
+                <Target size={14} className="text-neon-purple" />
+                Firm Comparison
+              </h3>
+              <button
+                onClick={handleCompare}
+                disabled={comparing}
+                className="flex items-center gap-1.5 rounded-lg border border-neon-purple/20 bg-neon-purple/5 px-3 py-1.5 text-[11px] font-semibold text-neon-purple hover:bg-neon-purple/10 transition-colors disabled:opacity-50"
+              >
+                {comparing ? 'Comparing...' : 'Compare 5 Firms'}
+              </button>
+            </div>
+
+            {comparisonResults && (
+              <div className="glass-premium rounded-2xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-terminal-border/50">
+                      <th className="px-4 py-3 text-left text-[10px] uppercase tracking-wider text-terminal-muted font-semibold">Firm</th>
+                      <th className="px-4 py-3 text-right text-[10px] uppercase tracking-wider text-terminal-muted font-semibold">Pass Rate</th>
+                      <th className="px-4 py-3 text-right text-[10px] uppercase tracking-wider text-terminal-muted font-semibold">Avg Days</th>
+                      <th className="px-4 py-3 text-right text-[10px] uppercase tracking-wider text-terminal-muted font-semibold">Worst DD</th>
+                      <th className="px-4 py-3 text-right text-[10px] uppercase tracking-wider text-terminal-muted font-semibold">Fit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonResults.map((r, i) => (
+                      <tr key={r.firm_name} className="border-b border-terminal-border/20 hover:bg-terminal-card/30">
+                        <td className="px-4 py-3 font-medium text-white">
+                          {r.firm_name}
+                          <span className="block text-[10px] text-terminal-muted">{r.plan_name}</span>
+                        </td>
+                        <td className={`px-4 py-3 text-right font-mono-nums font-bold ${
+                          r.pass_rate >= 60 ? 'text-neon-green' : r.pass_rate >= 40 ? 'text-neon-amber' : 'text-neon-red'
+                        }`}>
+                          {r.pass_rate}%
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono-nums text-terminal-text">
+                          {r.avg_days || '\u2014'}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono-nums text-neon-red">
+                          ${r.worst_dd.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {i === 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-neon-green/10 border border-neon-green/20 px-2 py-0.5 text-[10px] font-bold text-neon-green">
+                              BEST FIT
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

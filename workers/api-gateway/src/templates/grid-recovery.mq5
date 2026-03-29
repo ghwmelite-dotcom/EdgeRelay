@@ -335,6 +335,7 @@ void OnTick()
          double slDist = 0.0;
          if(UseATRStops && atrValue > 0) slDist = atrValue * ATRSLMultiplier;
          else if(StopLossPips > 0) slDist = StopLossPips * symPip;
+         double tpDist = TakeProfitGrid * symPip;
          double slPips = (slDist > 0) ? slDist / symPip : 0.0;
          double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 

@@ -8,7 +8,11 @@ import {
   DollarSign,
   BarChart3,
   Play,
+  Download,
+  Loader2,
 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth';
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -408,6 +412,10 @@ export function SimulatorPage() {
   const [mcResult, setMcResult] = useState<MonteCarloResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
 
+  // Import My Stats
+  const [importing, setImporting] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+
   const selectedTemplate = useMemo(
     () => templates.find((t) => t.id === selectedTemplateId) ?? null,
     [templates, selectedTemplateId],
@@ -483,6 +491,35 @@ export function SimulatorPage() {
     });
   }, [selectedTemplate, winRate, avgWin, avgLoss, tradesPerDay]);
 
+  // ── Import My Stats ──
+  const handleImportStats = async () => {
+    setImporting(true);
+    try {
+      const res = await api.get<{
+        win_rate: number;
+        avg_win: number;
+        avg_loss: number;
+        total_trades: number;
+        equity_curve: { date: string; balance: number }[];
+      }>('/analytics/equity-health');
+
+      if (res.data) {
+        setWinRate(Math.round(res.data.win_rate));
+        setAvgWin(Math.round(res.data.avg_win));
+        setAvgLoss(Math.round(res.data.avg_loss));
+
+        // Calculate trades per day from equity curve
+        const days = res.data.equity_curve?.length || 1;
+        const tpd = Math.max(1, Math.round(res.data.total_trades / Math.max(1, days)));
+        setTradesPerDay(Math.min(20, tpd));
+      }
+    } catch {
+      // Silent — fields stay at current values
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // ── Derived ──
   const passColor =
     mcResult === null
@@ -519,11 +556,27 @@ export function SimulatorPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Trading Stats Card */}
         <div className="glass-premium rounded-2xl p-6 space-y-5">
-          <div className="flex items-center gap-2 mb-1">
-            <BarChart3 size={16} className="text-neon-cyan" />
-            <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
-              Your Trading Stats
-            </h2>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} className="text-neon-cyan" />
+              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
+                Your Trading Stats
+              </h2>
+            </div>
+            {isAuthenticated && (
+              <button
+                onClick={handleImportStats}
+                disabled={importing}
+                className="flex items-center gap-1.5 rounded-lg border border-neon-cyan/20 bg-neon-cyan/5 px-3 py-1.5 text-[11px] font-semibold text-neon-cyan hover:bg-neon-cyan/10 transition-colors disabled:opacity-50"
+              >
+                {importing ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Download size={12} />
+                )}
+                Import My Stats
+              </button>
+            )}
           </div>
 
           {/* Win Rate */}

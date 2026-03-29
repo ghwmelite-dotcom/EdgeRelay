@@ -90,3 +90,17 @@ const persisted = useAuthStore.getState();
 if (persisted.token) {
   api.setToken(persisted.token);
 }
+
+// Wire auto-refresh callbacks
+api.onTokenRefreshed = (token, user) => {
+  api.setToken(token);
+  useAuthStore.setState({
+    token,
+    user: user as { id: string; email: string; name: string; plan: string },
+    isAuthenticated: true,
+  });
+};
+
+api.onAuthExpired = () => {
+  useAuthStore.getState().logout();
+};

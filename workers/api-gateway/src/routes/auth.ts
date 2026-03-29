@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
-import { generateToken, hashPassword, verifyPassword } from '../middleware/auth.js';
+import { generateToken, hashPassword, verifyPassword, verifyJwtIgnoreExpiry } from '../middleware/auth.js';
 import { notifyLogin } from '../lib/notifyLogin.js';
 
 const auth = new Hono<{ Bindings: Env }>();
@@ -162,6 +162,63 @@ auth.post('/logout', async (c) => {
   }
 
   return c.json<ApiResponse>({ data: { message: 'Logged out successfully' }, error: null });
+});
+
+// ── POST /auth/refresh ──────────────────────────────────────────
+auth.post('/refresh', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'UNAUTHORIZED', message: 'Missing token' } },
+      401,
+    );
+  }
+
+  const oldToken = authHeader.slice(7);
+
+  // Verify signature but allow expired tokens (up to 30 days)
+  const payload = await verifyJwtIgnoreExpiry(oldToken, c.env.JWT_SECRET);
+  if (!payload) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'UNAUTHORIZED', message: 'Token invalid or too old to refresh' } },
+      401,
+    );
+  }
+
+  // Verify user still exists
+  const user = await c.env.DB.prepare(
+    'SELECT id, email, name, plan FROM users WHERE id = ?',
+  )
+    .bind(payload.sub)
+    .first<{ id: string; email: string; name: string | null; plan: string }>();
+
+  if (!user) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'UNAUTHORIZED', message: 'User not found' } },
+      401,
+    );
+  }
+
+  // Delete old session
+  await c.env.SESSIONS.delete(`session:${payload.sub}:${oldToken}`).catch(() => {});
+
+  // Issue new token + session
+  const expiryHours = parseInt(c.env.JWT_EXPIRY_HOURS || '24', 10);
+  const newToken = await generateToken(user.id, c.env.JWT_SECRET, expiryHours);
+
+  await c.env.SESSIONS.put(
+    `session:${user.id}:${newToken}`,
+    JSON.stringify({ userId: user.id, createdAt: Date.now() }),
+    { expirationTtl: expiryHours * 3600 },
+  );
+
+  return c.json<ApiResponse>({
+    data: {
+      user: { id: user.id, email: user.email, name: user.name, plan: user.plan },
+      token: newToken,
+    },
+    error: null,
+  });
 });
 
 export { auth };

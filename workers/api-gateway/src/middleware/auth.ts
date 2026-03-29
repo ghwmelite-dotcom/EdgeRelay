@@ -71,6 +71,33 @@ async function verifyJwt(token: string, secret: string): Promise<JwtPayload | nu
   return payload;
 }
 
+/** Verify JWT signature but IGNORE expiration — for token refresh */
+export async function verifyJwtIgnoreExpiry(token: string, secret: string): Promise<JwtPayload | null> {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  const headerB64 = parts[0]!;
+  const payloadB64 = parts[1]!;
+  const signatureB64 = parts[2]!;
+  const signingInput = `${headerB64}.${payloadB64}`;
+  const signature = base64UrlDecode(signatureB64);
+
+  const key = await getSigningKey(secret);
+  const encoder = new TextEncoder();
+  const valid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(signingInput));
+
+  if (!valid) return null;
+
+  const payloadStr = new TextDecoder().decode(base64UrlDecode(payloadB64));
+  const payload = JSON.parse(payloadStr) as JwtPayload;
+
+  // Allow expired tokens up to 30 days old for refresh
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp && payload.exp < now - 30 * 24 * 3600) return null;
+
+  return payload;
+}
+
 // ── Token Generation ────────────────────────────────────────────
 
 export async function generateToken(

@@ -619,7 +619,7 @@ export function LandingPage() {
               </span>
             </div>
             <div>
-              <div className="text-[15px] font-bold text-white leading-none">TradeMetrics</div>
+              <div className="text-[15px] font-bold text-white leading-none">TradeMetrics <span className="text-[10px] font-semibold text-terminal-muted uppercase tracking-widest">Pro</span></div>
               <div className="font-mono text-[8px] tracking-[3px] uppercase text-neon-cyan/60">
                 Edge Network
               </div>

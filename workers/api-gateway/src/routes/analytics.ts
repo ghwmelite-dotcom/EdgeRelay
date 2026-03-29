@@ -666,3 +666,474 @@ function generateFallbackInsights(stats: {
 
   return insights.slice(0, 5);
 }
+
+// ── GET /analytics/discipline ──────────────────────────────────
+
+interface DisciplineTrade {
+  time: number;
+  profit: number;
+  volume: number;
+  symbol: string;
+}
+
+interface DailyTradeCount {
+  day: string;
+  trade_count: number;
+}
+
+interface SessionStat {
+  session_tag: string;
+  trades: number;
+  pnl: number;
+  win_rate: number;
+}
+
+function getGrade(score: number): string {
+  if (score >= 90) return 'A+';
+  if (score >= 80) return 'A';
+  if (score >= 70) return 'B+';
+  if (score >= 60) return 'B';
+  if (score >= 50) return 'C';
+  return 'D';
+}
+
+function getISOWeek(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+}
+
+analytics.get('/discipline', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const accountIds = await getUserAccountIds(c.env.DB, userId);
+
+    if (accountIds.length === 0) {
+      return c.json<ApiResponse>({
+        data: {
+          score: 100, grade: 'A+', total_trades: 0,
+          revenge_trades: { count: 0, pnl: 0, pct_of_total: 0 },
+          tilt_events: { count: 0, description: '' },
+          overtrade_days: { count: 0, avg_daily_trades: 0, worst_day: null },
+          session_discipline: { best_session: null, worst_session: null, off_session_pnl: 0 },
+          streaks: { current_disciplined_days: 0, best_streak: 0 },
+          weekly_trend: [],
+        },
+        error: null,
+      });
+    }
+
+    const { placeholders, values } = inClause(accountIds);
+    const baseWhere = `account_id IN (${placeholders}) AND deal_entry = 'out'`;
+
+    // (a) Get all trades ordered by time
+    const { results: allTrades } = await c.env.DB.prepare(
+      `SELECT time, profit, volume, symbol FROM journal_trades
+       WHERE ${baseWhere} ORDER BY time ASC`,
+    ).bind(...values).all<DisciplineTrade>();
+
+    const trades = allTrades ?? [];
+    const totalTrades = trades.length;
+
+    if (totalTrades === 0) {
+      return c.json<ApiResponse>({
+        data: {
+          score: 100, grade: 'A+', total_trades: 0,
+          revenge_trades: { count: 0, pnl: 0, pct_of_total: 0 },
+          tilt_events: { count: 0, description: '' },
+          overtrade_days: { count: 0, avg_daily_trades: 0, worst_day: null },
+          session_discipline: { best_session: null, worst_session: null, off_session_pnl: 0 },
+          streaks: { current_disciplined_days: 0, best_streak: 0 },
+          weekly_trend: [],
+        },
+        error: null,
+      });
+    }
+
+    // ── Revenge Trade Detection ──
+    let revengeCount = 0;
+    let revengePnl = 0;
+    for (let i = 1; i < trades.length; i++) {
+      const prev = trades[i - 1]!;
+      const curr = trades[i]!;
+      if (prev.profit < 0 && (curr.time - prev.time) <= 300) {
+        revengeCount++;
+        revengePnl += curr.profit;
+      }
+    }
+
+    // ── Tilt Detection (Lot Escalation after 2+ consecutive losses) ──
+    let tiltCount = 0;
+    let tiltDescription = '';
+    let consecutiveLosses = 0;
+    for (let i = 0; i < trades.length; i++) {
+      const t = trades[i]!;
+      if (t.profit < 0) {
+        consecutiveLosses++;
+      } else {
+        consecutiveLosses = 0;
+      }
+      // Check if volume increased >50% after 2+ consecutive losses
+      if (consecutiveLosses >= 2 && i + 1 < trades.length) {
+        const next = trades[i + 1]!;
+        if (next.volume > t.volume * 1.5) {
+          tiltCount++;
+          const date = new Date(next.time * 1000).toISOString().slice(0, 10);
+          const lossMult = Math.round((next.volume / t.volume) * 100) / 100;
+          tiltDescription = `Lot size ${lossMult}x after ${consecutiveLosses} losses on ${date}`;
+        }
+      }
+    }
+
+    // ── Overtrade Detection ──
+    const { results: dailyCounts } = await c.env.DB.prepare(
+      `SELECT DATE(datetime(time, 'unixepoch')) as day, COUNT(*) as trade_count
+       FROM journal_trades WHERE ${baseWhere}
+       GROUP BY day ORDER BY day`,
+    ).bind(...values).all<DailyTradeCount>();
+
+    const days = dailyCounts ?? [];
+    const avgDailyTrades = days.length > 0
+      ? days.reduce((s, d) => s + d.trade_count, 0) / days.length
+      : 0;
+    const overtradeThreshold = avgDailyTrades * 2;
+    const overtradeDays = days.filter((d) => d.trade_count > overtradeThreshold);
+    const worstDay = overtradeDays.length > 0
+      ? overtradeDays.reduce((w, d) => d.trade_count > w.trade_count ? d : w, overtradeDays[0]!)
+      : null;
+
+    // ── Session Discipline ──
+    const { results: sessionRows } = await c.env.DB.prepare(
+      `SELECT session_tag, COUNT(*) as trades, COALESCE(SUM(profit), 0) as pnl,
+              ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+       FROM journal_trades WHERE ${baseWhere}
+       GROUP BY session_tag`,
+    ).bind(...values).all<SessionStat>();
+
+    const sessions = (sessionRows ?? []) as SessionStat[];
+    const bestSession = sessions.length > 0
+      ? sessions.reduce((b, s) => s.pnl > b.pnl ? s : b, sessions[0]!)
+      : null;
+    const worstSession = sessions.length > 0
+      ? sessions.reduce((w, s) => s.pnl < w.pnl ? s : w, sessions[0]!)
+      : null;
+
+    // Off-session loss = sum of PnL from worst session (if negative)
+    const offSessionPnl = worstSession && worstSession.pnl < 0 ? worstSession.pnl : 0;
+    const totalPnl = sessions.reduce((s, sess) => s + Math.abs(sess.pnl), 0);
+    const offSessionLossPct = totalPnl > 0 ? (Math.abs(offSessionPnl) / totalPnl) * 100 : 0;
+
+    // ── Discipline Streaks ──
+    // A "disciplined day" has no revenge trades, no tilt, and no overtrading
+    // Build a set of bad days
+    const badDays = new Set<string>();
+    // Mark revenge trade days
+    for (let i = 1; i < trades.length; i++) {
+      const prev = trades[i - 1]!;
+      const curr = trades[i]!;
+      if (prev.profit < 0 && (curr.time - prev.time) <= 300) {
+        badDays.add(new Date(curr.time * 1000).toISOString().slice(0, 10));
+      }
+    }
+    // Mark tilt days
+    let cLosses = 0;
+    for (let i = 0; i < trades.length; i++) {
+      const t = trades[i]!;
+      if (t.profit < 0) { cLosses++; } else { cLosses = 0; }
+      if (cLosses >= 2 && i + 1 < trades.length) {
+        const next = trades[i + 1]!;
+        if (next.volume > t.volume * 1.5) {
+          badDays.add(new Date(next.time * 1000).toISOString().slice(0, 10));
+        }
+      }
+    }
+    // Mark overtrade days
+    for (const d of overtradeDays) {
+      badDays.add(d.day);
+    }
+
+    const allDays = days.map((d) => d.day).sort();
+    let currentStreak = 0;
+    let bestStreak = 0;
+    for (const day of allDays) {
+      if (!badDays.has(day)) {
+        currentStreak++;
+        if (currentStreak > bestStreak) bestStreak = currentStreak;
+      } else {
+        currentStreak = 0;
+      }
+    }
+
+    // ── Weekly Trend ──
+    // Calculate score per week
+    const weeklyMap = new Map<string, {
+      revenge: number; tilt: number; overtrade: number; disciplinedDays: number; totalDays: number;
+    }>();
+
+    for (const day of days) {
+      const week = getISOWeek(day.day);
+      if (!weeklyMap.has(week)) {
+        weeklyMap.set(week, { revenge: 0, tilt: 0, overtrade: 0, disciplinedDays: 0, totalDays: 0 });
+      }
+      const w = weeklyMap.get(week)!;
+      w.totalDays++;
+      if (!badDays.has(day.day)) w.disciplinedDays++;
+      if (day.trade_count > overtradeThreshold) w.overtrade++;
+    }
+
+    // Count revenge/tilt per week from trades
+    for (let i = 1; i < trades.length; i++) {
+      const prev = trades[i - 1]!;
+      const curr = trades[i]!;
+      const week = getISOWeek(new Date(curr.time * 1000).toISOString().slice(0, 10));
+      const w = weeklyMap.get(week);
+      if (w && prev.profit < 0 && (curr.time - prev.time) <= 300) {
+        w.revenge++;
+      }
+    }
+
+    const weeklyTrend = Array.from(weeklyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-8) // last 8 weeks
+      .map(([week, w]) => {
+        let s = 100;
+        s -= w.revenge * 5;
+        s -= w.tilt * 10;
+        s -= w.overtrade * 3;
+        s += Math.min(w.disciplinedDays * 2, 20);
+        return { week, score: Math.max(0, Math.min(100, Math.round(s))) };
+      });
+
+    // ── Discipline Score ──
+    let score = 100;
+    score -= revengeCount * 5;
+    score -= tiltCount * 10;
+    score -= overtradeDays.length * 3;
+    score -= offSessionLossPct * 0.5;
+    score += Math.min(currentStreak * 2, 20);
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    return c.json<ApiResponse>({
+      data: {
+        score,
+        grade: getGrade(score),
+        total_trades: totalTrades,
+        revenge_trades: {
+          count: revengeCount,
+          pnl: Math.round(revengePnl * 100) / 100,
+          pct_of_total: totalTrades > 0 ? Math.round((revengeCount / totalTrades) * 1000) / 10 : 0,
+        },
+        tilt_events: {
+          count: tiltCount,
+          description: tiltDescription,
+        },
+        overtrade_days: {
+          count: overtradeDays.length,
+          avg_daily_trades: Math.round(avgDailyTrades * 10) / 10,
+          worst_day: worstDay ? { date: worstDay.day, trades: worstDay.trade_count } : null,
+        },
+        session_discipline: {
+          best_session: bestSession?.session_tag ?? null,
+          worst_session: worstSession?.session_tag ?? null,
+          off_session_pnl: Math.round(offSessionPnl * 100) / 100,
+        },
+        streaks: {
+          current_disciplined_days: currentStreak,
+          best_streak: bestStreak,
+        },
+        weekly_trend: weeklyTrend,
+      },
+      error: null,
+    });
+  } catch (err) {
+    return c.json<ApiResponse>({
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: err instanceof Error ? err.message : 'Unknown error in discipline' },
+    }, 500);
+  }
+});
+
+// ── GET /analytics/discipline/coaching ─────────────────────────
+
+analytics.get('/discipline/coaching', async (c) => {
+  try {
+    const userId = c.get('userId');
+    const accountIds = await getUserAccountIds(c.env.DB, userId);
+
+    if (accountIds.length === 0) {
+      return c.json<ApiResponse>({
+        data: {
+          headline: 'Start trading to unlock coaching',
+          message: 'Connect an account and start trading to receive personalized AI coaching.',
+          action_items: ['Connect a trading account', 'Complete at least 10 trades'],
+          positive: 'You\'re taking the first step by being here!',
+          generated_at: null,
+          cached: false,
+        },
+        error: null,
+      });
+    }
+
+    const { placeholders, values } = inClause(accountIds);
+    const baseWhere = `account_id IN (${placeholders}) AND deal_entry = 'out'`;
+
+    // Stats hash for cache
+    const hashRow = await c.env.DB.prepare(
+      `SELECT COUNT(*) as cnt, COALESCE(SUM(profit), 0) as total, MAX(datetime(time, 'unixepoch')) as latest
+       FROM journal_trades WHERE ${baseWhere}`,
+    ).bind(...values).first<{ cnt: number; total: number; latest: string }>();
+
+    const statsHash = `discipline:${hashRow?.cnt ?? 0}:${Math.round((hashRow?.total ?? 0) * 100)}:${hashRow?.latest ?? ''}`;
+
+    // Check cache (7 day TTL)
+    const cached = await c.env.DB.prepare(
+      "SELECT insights_json, stats_hash, computed_at FROM ai_insights_cache WHERE user_id = ?",
+    ).bind(`discipline:${userId}`).first<{ insights_json: string; stats_hash: string; computed_at: string }>();
+
+    if (cached && cached.stats_hash === statsHash) {
+      const cacheAge = Date.now() - new Date(cached.computed_at).getTime();
+      if (cacheAge < 7 * 24 * 60 * 60 * 1000) {
+        return c.json<ApiResponse>({
+          data: {
+            ...JSON.parse(cached.insights_json),
+            generated_at: cached.computed_at,
+            cached: true,
+          },
+          error: null,
+        });
+      }
+    }
+
+    // Get discipline stats inline (lightweight version)
+    const { results: allTrades } = await c.env.DB.prepare(
+      `SELECT time, profit, volume, symbol FROM journal_trades
+       WHERE ${baseWhere} ORDER BY time ASC`,
+    ).bind(...values).all<DisciplineTrade>();
+
+    const trades = allTrades ?? [];
+
+    // Quick revenge count
+    let revengeCount = 0;
+    let revengePnl = 0;
+    for (let i = 1; i < trades.length; i++) {
+      const prev = trades[i - 1]!;
+      const curr = trades[i]!;
+      if (prev.profit < 0 && (curr.time - prev.time) <= 300) {
+        revengeCount++;
+        revengePnl += curr.profit;
+      }
+    }
+
+    // Tilt count
+    let tiltCount = 0;
+    let consecutiveLosses = 0;
+    for (let i = 0; i < trades.length; i++) {
+      if (trades[i]!.profit < 0) { consecutiveLosses++; } else { consecutiveLosses = 0; }
+      if (consecutiveLosses >= 2 && i + 1 < trades.length) {
+        if (trades[i + 1]!.volume > trades[i]!.volume * 1.5) tiltCount++;
+      }
+    }
+
+    // Session stats
+    const { results: sessionRows } = await c.env.DB.prepare(
+      `SELECT session_tag, COUNT(*) as trades, COALESCE(SUM(profit), 0) as pnl,
+              ROUND(SUM(CASE WHEN profit > 0 THEN 1.0 ELSE 0 END) / COUNT(*) * 100, 1) as win_rate
+       FROM journal_trades WHERE ${baseWhere} GROUP BY session_tag`,
+    ).bind(...values).all<SessionStat>();
+
+    const disciplinePayload = {
+      total_trades: trades.length,
+      revenge_trades: revengeCount,
+      revenge_pnl: Math.round(revengePnl * 100) / 100,
+      tilt_events: tiltCount,
+      sessions: sessionRows ?? [],
+    };
+
+    const systemPrompt = `You are an elite trading psychology coach. Analyze this trader's behavioral data and provide a personalized coaching message. Be specific, reference actual numbers from their data. Focus on:
+1. The #1 behavior costing them the most money
+2. A specific, actionable technique to fix it
+3. Positive reinforcement for what they're doing well
+
+Return a JSON object:
+{
+  "headline": "One-line summary (max 60 chars)",
+  "message": "2-3 paragraph coaching message with specific data references",
+  "action_items": ["Specific thing to do this week", "Another specific action"],
+  "positive": "What they're doing well"
+}
+
+Be empathetic but direct. Use their actual numbers. Don't be generic.`;
+
+    const userPrompt = `Analyze this trader's discipline data:\n\n${JSON.stringify(disciplinePayload, null, 2)}`;
+
+    let coaching: { headline: string; message: string; action_items: string[]; positive: string } | null = null;
+    let modelUsed = '';
+
+    for (const model of [
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/meta/llama-3.1-8b-instruct-fast',
+    ]) {
+      try {
+        const aiResponse = await c.env.AI.run(model as Parameters<typeof c.env.AI.run>[0], {
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          max_tokens: 1500,
+        });
+
+        const text = typeof aiResponse === 'string' ? aiResponse : (aiResponse as { response?: string }).response ?? '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          coaching = JSON.parse(jsonMatch[0]);
+          modelUsed = model;
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    // Fallback
+    if (!coaching) {
+      modelUsed = 'template-fallback';
+      coaching = {
+        headline: revengeCount > 0 ? 'Revenge trading is hurting your P&L' : 'Keep building discipline',
+        message: revengeCount > 0
+          ? `You have ${revengeCount} revenge trades totaling ${revengePnl.toFixed(2)} in losses. These impulsive trades taken within minutes of a loss are eroding your edge. The emotional response to losing is normal, but acting on it is costly.`
+          : `Your discipline metrics look solid with ${trades.length} total trades analyzed. Continue focusing on process over outcome.`,
+        action_items: [
+          'Wait 15 minutes after any losing trade before entering a new position',
+          'Set a daily trade cap and stick to it',
+        ],
+        positive: tiltCount === 0 ? 'Great job keeping your lot sizes consistent!' : 'You\'re tracking your data — that\'s the first step to improvement.',
+      };
+    }
+
+    // Cache
+    const now = new Date().toISOString();
+    const coachingJson = JSON.stringify(coaching);
+    await c.env.DB.prepare(
+      `INSERT INTO ai_insights_cache (user_id, insights_json, stats_hash, computed_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET insights_json = excluded.insights_json, stats_hash = excluded.stats_hash, computed_at = excluded.computed_at`,
+    ).bind(`discipline:${userId}`, coachingJson, statsHash, now).run();
+
+    return c.json<ApiResponse>({
+      data: {
+        ...coaching,
+        generated_at: now,
+        cached: false,
+        model: modelUsed,
+      },
+      error: null,
+    });
+  } catch (err) {
+    return c.json<ApiResponse>({
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: err instanceof Error ? err.message : 'Unknown error in coaching' },
+    }, 500);
+  }
+})

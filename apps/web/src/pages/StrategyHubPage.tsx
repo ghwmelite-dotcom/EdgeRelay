@@ -11,6 +11,9 @@ import {
   Shield,
   Target,
   AlertTriangle,
+  Sparkles,
+  X,
+  ArrowRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -59,6 +62,26 @@ interface Generation {
   strategy_slug: string;
   generated_at: string;
   parameters_json: string;
+}
+
+interface OptimizeRecommendation {
+  param_key: string;
+  current_value: number | string | boolean;
+  recommended_value: number | string | boolean;
+  reason: string;
+}
+
+interface OptimizeResult {
+  summary: string;
+  recommendations: OptimizeRecommendation[];
+  projected_improvement: {
+    estimated_win_rate_change: string;
+    estimated_pf_change: string;
+    confidence: string;
+  };
+  current_params: Record<string, number | string | boolean>;
+  stats: Record<string, unknown>;
+  model: string;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -722,6 +745,140 @@ function GeneratorModal({
   );
 }
 
+// ── Optimize Results Modal ──────────────────────────────────────────
+
+function OptimizeResultsModal({
+  open,
+  onClose,
+  result,
+  onApplyAndRegenerate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  result: OptimizeResult | null;
+  onApplyAndRegenerate: (recommendedParams: Record<string, number | string | boolean>) => void;
+}) {
+  if (!result) return null;
+
+  const handleApply = () => {
+    const merged = { ...result.current_params };
+    for (const rec of result.recommendations) {
+      merged[rec.param_key] = rec.recommended_value;
+    }
+    onApplyAndRegenerate(merged);
+    onClose();
+  };
+
+  const confidenceColor =
+    result.projected_improvement.confidence === 'high'
+      ? 'text-neon-green'
+      : result.projected_improvement.confidence === 'medium'
+        ? 'text-neon-amber'
+        : 'text-terminal-muted';
+
+  return (
+    <Modal open={open} onClose={onClose} title="AI Optimization Results" className="max-w-3xl">
+      <div className="space-y-6">
+        {/* Summary */}
+        <div className="glass-premium rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <Sparkles size={18} className="text-neon-cyan shrink-0 mt-0.5" />
+            <p className="text-sm text-terminal-text leading-relaxed">{result.summary}</p>
+          </div>
+        </div>
+
+        {/* Recommendations Table */}
+        {result.recommendations.length > 0 && (
+          <div className="glass-premium rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-terminal-border/30">
+              <h4 className="text-[11px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
+                Parameter Recommendations
+              </h4>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-terminal-border/30">
+                    <th className="px-5 py-2.5 text-left text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
+                      Parameter
+                    </th>
+                    <th className="px-5 py-2.5 text-left text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
+                      Current
+                    </th>
+                    <th className="px-5 py-2.5 text-left text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
+                      Recommended
+                    </th>
+                    <th className="px-5 py-2.5 text-left text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
+                      Reason
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.recommendations.map((rec, i) => (
+                    <tr
+                      key={rec.param_key}
+                      className={`${i < result.recommendations.length - 1 ? 'border-b border-terminal-border/20' : ''} hover:bg-terminal-card/30 transition-colors`}
+                    >
+                      <td className="px-5 py-3 text-slate-200 font-medium font-mono-nums text-xs">
+                        {rec.param_key}
+                      </td>
+                      <td className="px-5 py-3 text-terminal-muted line-through font-mono-nums text-xs">
+                        {String(rec.current_value)}
+                      </td>
+                      <td className="px-5 py-3 text-neon-green font-bold font-mono-nums text-xs">
+                        {String(rec.recommended_value)}
+                      </td>
+                      <td className="px-5 py-3 text-terminal-muted text-xs max-w-xs">
+                        {rec.reason}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Projected Improvement */}
+        <div className="glass-premium rounded-2xl p-4">
+          <h4 className="text-[11px] uppercase tracking-[0.15em] text-terminal-muted font-semibold mb-3">
+            Projected Improvement
+          </h4>
+          <div className="flex flex-wrap gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-neon-green/10 border border-neon-green/20 px-3 py-1.5 text-xs font-semibold text-neon-green">
+              Win Rate: {result.projected_improvement.estimated_win_rate_change}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-neon-green/10 border border-neon-green/20 px-3 py-1.5 text-xs font-semibold text-neon-green">
+              Profit Factor: {result.projected_improvement.estimated_pf_change}
+            </span>
+            <span className={`inline-flex items-center gap-1.5 rounded-lg bg-terminal-surface/30 border border-terminal-border/30 px-3 py-1.5 text-xs font-semibold ${confidenceColor}`}>
+              Confidence: {result.projected_improvement.confidence}
+            </span>
+          </div>
+        </div>
+
+        {/* Model info */}
+        {result.model === 'template-fallback' && (
+          <p className="text-[10px] text-terminal-muted/60 text-center italic">
+            AI was unavailable — showing template-based recommendations
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-3 justify-end">
+          <Button variant="secondary" onClick={onClose}>
+            Dismiss
+          </Button>
+          <Button variant="primary" onClick={handleApply}>
+            <ArrowRight size={14} />
+            Apply &amp; Re-generate
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ── My Generations ─────────────────────────────────────────────────
 
 function MyGenerations({
@@ -738,6 +895,9 @@ function MyGenerations({
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [optimizingId, setOptimizingId] = useState<string | null>(null);
+  const [optimizeResult, setOptimizeResult] = useState<OptimizeResult | null>(null);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -761,6 +921,50 @@ function MyGenerations({
     };
   }, [isAuthenticated]);
 
+  const handleOptimize = async (gen: Generation) => {
+    setOptimizingId(gen.id);
+    setOptimizeError(null);
+    try {
+      const res = await api.post<OptimizeResult>('/strategy-hub/optimize', {
+        generation_id: gen.id,
+      });
+      if (res.error) {
+        setOptimizeError(res.error.message ?? 'Optimization failed');
+      } else if (res.data) {
+        setOptimizeResult(res.data);
+      }
+    } catch {
+      setOptimizeError('Optimization failed. Please try again.');
+    } finally {
+      setOptimizingId(null);
+    }
+  };
+
+  const handleApplyAndRegenerate = (recommendedParams: Record<string, number | string | boolean>) => {
+    // Find the strategy for the current optimize result
+    // We need to match against a generation — use the first generation that matches
+    const gen = generations.find((g) => {
+      try {
+        const params = JSON.parse(g.parameters_json);
+        // Check if current_params from result matches this generation's params
+        return optimizeResult && JSON.stringify(params) === JSON.stringify(optimizeResult.current_params);
+      } catch {
+        return false;
+      }
+    });
+
+    const strategyId = gen?.strategy_id;
+    const strategy = strategies.find((s) => s.id === strategyId);
+
+    if (strategy) {
+      setSelectedStrategy(strategy);
+      setParamValues(recommendedParams as Record<string, unknown>);
+      setGeneratorOpen(true);
+    }
+
+    setOptimizeResult(null);
+  };
+
   if (!isAuthenticated || (!loading && generations.length === 0)) return null;
 
   return (
@@ -768,6 +972,16 @@ function MyGenerations({
       <h2 className="text-lg font-semibold text-slate-100 font-display mb-4">
         My Generations
       </h2>
+
+      {/* Optimize error banner */}
+      {optimizeError && (
+        <div className="rounded-xl border border-neon-red/30 bg-neon-red/5 px-4 py-3 mb-4 flex items-center justify-between">
+          <p className="text-sm text-neon-red">{optimizeError}</p>
+          <button onClick={() => setOptimizeError(null)} className="text-neon-red/60 hover:text-neon-red">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-terminal-muted py-8 justify-center">
@@ -787,7 +1001,7 @@ function MyGenerations({
                     Generated
                   </th>
                   <th className="px-5 py-3 text-right text-[10px] uppercase tracking-[0.15em] text-terminal-muted font-semibold">
-                    Action
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -810,28 +1024,47 @@ function MyGenerations({
                       })}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Find the strategy and open generator with saved params
-                          const strategy = strategies.find((s) => s.id === gen.strategy_id);
-                          if (strategy) {
-                            try {
-                              const savedParams = JSON.parse(gen.parameters_json);
-                              setSelectedStrategy(strategy);
-                              setParamValues(savedParams);
-                              setGeneratorOpen(true);
-                            } catch {
-                              setSelectedStrategy(strategy);
-                              setGeneratorOpen(true);
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={optimizingId === gen.id}
+                          onClick={() => handleOptimize(gen)}
+                        >
+                          {optimizingId === gen.id ? (
+                            <>
+                              <Loader2 size={12} className="animate-spin" />
+                              Analyzing...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles size={12} />
+                              Optimize
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const strategy = strategies.find((s) => s.id === gen.strategy_id);
+                            if (strategy) {
+                              try {
+                                const savedParams = JSON.parse(gen.parameters_json);
+                                setSelectedStrategy(strategy);
+                                setParamValues(savedParams);
+                                setGeneratorOpen(true);
+                              } catch {
+                                setSelectedStrategy(strategy);
+                                setGeneratorOpen(true);
+                              }
                             }
-                          }
-                        }}
-                      >
-                        <RotateCcw size={12} />
-                        Re-generate
-                      </Button>
+                          }}
+                        >
+                          <RotateCcw size={12} />
+                          Re-generate
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -840,6 +1073,14 @@ function MyGenerations({
           </div>
         </div>
       )}
+
+      {/* Optimize Results Modal */}
+      <OptimizeResultsModal
+        open={optimizeResult !== null}
+        onClose={() => setOptimizeResult(null)}
+        result={optimizeResult}
+        onApplyAndRegenerate={handleApplyAndRegenerate}
+      />
     </div>
   );
 }

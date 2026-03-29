@@ -41,6 +41,7 @@ input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pi
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
+input int    GMTOffset           = {{GMT_OFFSET}};            // Broker GMT Offset (99=auto-detect)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -121,6 +122,10 @@ struct SZone
    bool   tested;
   };
 
+// ── Adaptive Mode ───────────────────────────────────────────────
+enum ENUM_MARKET_REGIME { REGIME_TRENDING, REGIME_RANGING, REGIME_VOLATILE, REGIME_NORMAL };
+ENUM_MARKET_REGIME g_regimes[];
+
 int      g_adxHandles[];
 int      g_atrHandles[];
 CTrade   g_trade;
@@ -150,14 +155,16 @@ int OnInit()
 
    ArrayResize(g_adxHandles, g_symbolCount);
    ArrayResize(g_atrHandles, g_symbolCount);
+   ArrayResize(g_regimes, g_symbolCount);
 
    for(int i = 0; i < g_symbolCount; i++)
      {
       g_adxHandles[i] = INVALID_HANDLE;
+      g_regimes[i] = REGIME_NORMAL;
 
-      if(ADXPeriod > 0)
+      if(ADXPeriod > 0 || UseAdaptiveMode)
         {
-         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod);
+         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, (ADXPeriod > 0 ? ADXPeriod : 14));
          if(g_adxHandles[i] == INVALID_HANDLE)
            { PrintFormat("[SDZones] Failed to create ADX handle for %s. Error: %d", g_symbols[i], GetLastError()); return INIT_FAILED; }
         }
@@ -238,6 +245,54 @@ void OnTick()
          else adxOK = false;
         }
 
+
+      //--- Detect market regime for adaptive mode
+      double adaptiveSLMult  = 1.0;
+      double adaptiveTPMult  = 1.0;
+      double adaptiveLotMult = 1.0;
+
+      if(UseAdaptiveMode)
+        {
+         double adxAdapt = 0.0;
+         if(g_adxHandles[si] != INVALID_HANDLE)
+           {
+            double adxAdaptArr[];
+            ArraySetAsSeries(adxAdaptArr, true);
+            if(CopyBuffer(g_adxHandles[si], 0, 0, 2, adxAdaptArr) >= 2)
+               adxAdapt = adxAdaptArr[1];
+           }
+
+         int adaptATRH = g_atrHandles[si];
+         if(adaptATRH != INVALID_HANDLE)
+           {
+            double adaptATR[];
+            ArraySetAsSeries(adaptATR, true);
+            if(CopyBuffer(adaptATRH, 0, 1, 20, adaptATR) >= 20)
+              {
+               double currentATR = adaptATR[0];
+               double avgATR = 0;
+               for(int ai = 1; ai < 20; ai++) avgATR += adaptATR[ai];
+               avgATR /= 19.0;
+
+               if(currentATR > avgATR * VolatileATRMult)
+                  g_regimes[si] = REGIME_VOLATILE;
+               else if(adxAdapt > TrendADXThreshold)
+                  g_regimes[si] = REGIME_TRENDING;
+               else if(adxAdapt < RangeADXThreshold)
+                  g_regimes[si] = REGIME_RANGING;
+               else
+                  g_regimes[si] = REGIME_NORMAL;
+              }
+           }
+
+         switch(g_regimes[si])
+           {
+            case REGIME_TRENDING:  adaptiveSLMult = 0.8; adaptiveTPMult = 1.5; adaptiveLotMult = 1.0; break;
+            case REGIME_RANGING:   adaptiveSLMult = 1.2; adaptiveTPMult = 0.7; adaptiveLotMult = 0.8; break;
+            case REGIME_VOLATILE:  adaptiveSLMult = 1.5; adaptiveTPMult = 1.3; adaptiveLotMult = 0.5; break;
+            default: break;
+           }
+        }
       //--- BUY: demand zone retest
       for(int i = 0; i < demandCount; i++)
         {
@@ -255,10 +310,13 @@ void OnTick()
                else
                  { slDist = (StopLossPips > 0) ? StopLossPips * symPip : riskDist + tolerance; tpDist = (TakeProfitPips > 0) ? TakeProfitPips * symPip : riskDist * 2.0; }
 
-               double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
+               slDist *= adaptiveSLMult;
+            tpDist *= adaptiveTPMult;
+
+            double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
                double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
                double slPips = (slDist > 0) ? slDist / symPip : 0.0;
-               double lot = CalculateLotSize(slPips, sym, symPip);
+               double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
                g_trade.SetExpertMagicNumber(magic);
                if(g_trade.Buy(lot, sym, symAsk, sl, tp, StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "BUY_DEMAND", demandZones[i].strength)))
@@ -285,10 +343,13 @@ void OnTick()
                else
                  { slDist = (StopLossPips > 0) ? StopLossPips * symPip : riskDist + tolerance; tpDist = (TakeProfitPips > 0) ? TakeProfitPips * symPip : riskDist * 2.0; }
 
-               double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
+               slDist *= adaptiveSLMult;
+            tpDist *= adaptiveTPMult;
+
+            double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
                double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
                double slPips = (slDist > 0) ? slDist / symPip : 0.0;
-               double lot = CalculateLotSize(slPips, sym, symPip);
+               double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
                g_trade.SetExpertMagicNumber(magic);
                if(g_trade.Sell(lot, sym, symBid, sl, tp, StringFormat("TM:%s|SIG:%s|STR:%.1f", "SD_Zone", "SELL_SUPPLY", supplyZones[i].strength)))

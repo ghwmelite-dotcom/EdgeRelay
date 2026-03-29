@@ -51,6 +51,7 @@ input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pi
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
+input int    GMTOffset           = {{GMT_OFFSET}};            // Broker GMT Offset (99=auto-detect)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -173,6 +174,10 @@ bool IsNewBarForSymbol(int symIdx, string symbol)
    return true;
 }
 
+// ── Adaptive Mode ───────────────────────────────────────────────
+enum ENUM_MARKET_REGIME { REGIME_TRENDING, REGIME_RANGING, REGIME_VOLATILE, REGIME_NORMAL };
+ENUM_MARKET_REGIME g_regimes[];
+
 // ── Strategy Variables ──────────────────────────────────────────
 int      g_emaHandles[];
 int      g_rsiHandles[];
@@ -218,12 +223,13 @@ void CalculateAsianRange(string sym, double &asianHigh, double &asianLow)
 
       MqlDateTime dt;
       TimeToStruct(barTime, dt);
+      int utcH = BrokerHourToUTC(dt.hour);
 
       bool inAsian = false;
       if(AsianStartHour < AsianEndHour)
-         inAsian = (dt.hour >= AsianStartHour && dt.hour < AsianEndHour);
+         inAsian = (utcH >= AsianStartHour && utcH < AsianEndHour);
       else
-         inAsian = (dt.hour >= AsianStartHour || dt.hour < AsianEndHour);
+         inAsian = (utcH >= AsianStartHour || utcH < AsianEndHour);
 
       if(inAsian)
         {
@@ -251,6 +257,7 @@ int OnInit()
    ArrayResize(g_atrHandles, g_symbolCount);
    ArrayResize(g_avgSpread, g_symbolCount);
    ArrayResize(g_spreadSamples, g_symbolCount);
+   ArrayResize(g_regimes, g_symbolCount);
 
    for(int i = 0; i < g_symbolCount; i++)
      {
@@ -258,6 +265,7 @@ int OnInit()
       g_atrHandles[i] = INVALID_HANDLE;
       g_avgSpread[i] = 0.0;
       g_spreadSamples[i] = 0;
+      g_regimes[i] = REGIME_NORMAL;
 
       g_emaHandles[i] = iMA(g_symbols[i], Timeframe, EMAPeriod, 0, MODE_EMA, PRICE_CLOSE);
       g_rsiHandles[i] = iRSI(g_symbols[i], Timeframe, RSIFilterPeriod, PRICE_CLOSE);
@@ -268,9 +276,9 @@ int OnInit()
          return INIT_FAILED;
         }
 
-      if(ADXPeriod > 0)
+      if(ADXPeriod > 0 || UseAdaptiveMode)
         {
-         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod);
+         g_adxHandles[i] = iADX(g_symbols[i], Timeframe, (ADXPeriod > 0 ? ADXPeriod : 14));
          if(g_adxHandles[i] == INVALID_HANDLE)
            {
             PrintFormat("[LondonScalper] Failed to create ADX handle for %s. Error: %d", g_symbols[i], GetLastError());
@@ -278,9 +286,9 @@ int OnInit()
            }
         }
 
-      if(UseATRStops)
+      if(UseATRStops || UseAdaptiveMode)
         {
-         g_atrHandles[i] = iATR(g_symbols[i], Timeframe, ATRStopPeriod);
+         g_atrHandles[i] = iATR(g_symbols[i], Timeframe, (UseATRStops ? ATRStopPeriod : 14));
          if(g_atrHandles[i] == INVALID_HANDLE)
            {
             PrintFormat("[LondonScalper] Failed to create ATR handle for %s. Error: %d", g_symbols[i], GetLastError());
@@ -424,6 +432,54 @@ void OnTick()
             atrValue = atrArr[1];
         }
 
+
+      //--- Detect market regime for adaptive mode
+      double adaptiveSLMult  = 1.0;
+      double adaptiveTPMult  = 1.0;
+      double adaptiveLotMult = 1.0;
+
+      if(UseAdaptiveMode)
+        {
+         double adxAdapt = 0.0;
+         if(g_adxHandles[si] != INVALID_HANDLE)
+           {
+            double adxAdaptArr[];
+            ArraySetAsSeries(adxAdaptArr, true);
+            if(CopyBuffer(g_adxHandles[si], 0, 0, 2, adxAdaptArr) >= 2)
+               adxAdapt = adxAdaptArr[1];
+           }
+
+         int adaptATRH = g_atrHandles[si];
+         if(adaptATRH != INVALID_HANDLE)
+           {
+            double adaptATR[];
+            ArraySetAsSeries(adaptATR, true);
+            if(CopyBuffer(adaptATRH, 0, 1, 20, adaptATR) >= 20)
+              {
+               double currentATR = adaptATR[0];
+               double avgATR = 0;
+               for(int ai = 1; ai < 20; ai++) avgATR += adaptATR[ai];
+               avgATR /= 19.0;
+
+               if(currentATR > avgATR * VolatileATRMult)
+                  g_regimes[si] = REGIME_VOLATILE;
+               else if(adxAdapt > TrendADXThreshold)
+                  g_regimes[si] = REGIME_TRENDING;
+               else if(adxAdapt < RangeADXThreshold)
+                  g_regimes[si] = REGIME_RANGING;
+               else
+                  g_regimes[si] = REGIME_NORMAL;
+              }
+           }
+
+         switch(g_regimes[si])
+           {
+            case REGIME_TRENDING:  adaptiveSLMult = 0.8; adaptiveTPMult = 1.5; adaptiveLotMult = 1.0; break;
+            case REGIME_RANGING:   adaptiveSLMult = 1.2; adaptiveTPMult = 0.7; adaptiveLotMult = 0.8; break;
+            case REGIME_VOLATILE:  adaptiveSLMult = 1.5; adaptiveTPMult = 1.3; adaptiveLotMult = 0.5; break;
+            default: break;
+           }
+        }
       //--- BUY signal
       if(buySignal)
         {
@@ -445,11 +501,14 @@ void OnTick()
                if(asianTPDist > tpDist) tpDist = asianTPDist;
               }
 
+            slDist *= adaptiveSLMult;
+            tpDist *= adaptiveTPMult;
+
             double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
             double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
 
             double slPips = (slDist > 0) ? slDist / symPip : 0.0;
-            double lot = CalculateLotSize(slPips, sym, symPip);
+            double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
             string comment = StringFormat("TM:%s|SIG:%s", "London_Scalp", "BUY_MOMENTUM");
 
@@ -484,11 +543,14 @@ void OnTick()
                if(asianTPDist > tpDist) tpDist = asianTPDist;
               }
 
+            slDist *= adaptiveSLMult;
+            tpDist *= adaptiveTPMult;
+
             double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
             double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
 
             double slPips = (slDist > 0) ? slDist / symPip : 0.0;
-            double lot = CalculateLotSize(slPips, sym, symPip);
+            double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
             string comment = StringFormat("TM:%s|SIG:%s", "London_Scalp", "SELL_MOMENTUM");
 

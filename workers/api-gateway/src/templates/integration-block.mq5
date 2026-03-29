@@ -4,6 +4,34 @@
 //| All globals: g_tm_*   All functions: TM_*                         |
 //+------------------------------------------------------------------+
 
+// ── Auto GMT Offset Detection ───────────────────────────────────
+int  g_detectedGMTOffset = 0;
+bool g_gmtDetected       = false;
+
+int GetGMTOffset()
+{
+   if(GMTOffset != 99) return GMTOffset;  // Manual override
+
+   if(!g_gmtDetected)
+   {
+      datetime brokerTime = TimeCurrent();
+      datetime gmtTime    = TimeGMT();
+      g_detectedGMTOffset = (int)((brokerTime - gmtTime) / 3600);
+      g_gmtDetected       = true;
+      PrintFormat("[TradeMetrics] Auto-detected GMT offset: %+d hours", g_detectedGMTOffset);
+   }
+   return g_detectedGMTOffset;
+}
+
+int BrokerHourToUTC(int brokerHour)
+{
+   int offset  = GetGMTOffset();
+   int utcHour = brokerHour - offset;
+   if(utcHour < 0)   utcHour += 24;
+   if(utcHour >= 24)  utcHour -= 24;
+   return utcHour;
+}
+
 //--- TradeMetrics global state
 CSignalQueue     g_tm_queue;
 CJournalQueue    g_tm_journalQueue;
@@ -178,23 +206,23 @@ bool TM_CanTrade()
         }
      }
 
-   //--- Session filter
+   //--- Session filter (convert broker hour to UTC for comparison)
    if(UseSessionFilter)
      {
       MqlDateTime dt;
       TimeToStruct(TimeCurrent(), dt);
-      int hour = dt.hour;
+      int utcHour = BrokerHourToUTC(dt.hour);
 
       if(SessionStartHour < SessionEndHour)
         {
          //--- Normal range: e.g. 8-17
-         if(hour < SessionStartHour || hour >= SessionEndHour)
+         if(utcHour < SessionStartHour || utcHour >= SessionEndHour)
             return false;
         }
       else
         {
          //--- Overnight range: e.g. 22-6
-         if(hour < SessionStartHour && hour >= SessionEndHour)
+         if(utcHour < SessionStartHour && utcHour >= SessionEndHour)
             return false;
         }
      }

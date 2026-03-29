@@ -43,6 +43,7 @@ input int    TakeProfitPips      = {{TP_PIPS}};               // Take Profit (pi
 input int    MaxSpreadPoints     = {{MAX_SPREAD}};            // Max Spread (points)
 input int    MagicNumber         = {{MAGIC_NUMBER}};          // Magic Number
 input string MultiSymbols        = "{{MULTI_SYMBOLS}}";       // Multi-Asset Symbols (comma-separated, empty=chart symbol only)
+input int    GMTOffset           = {{GMT_OFFSET}};            // Broker GMT Offset (99=auto-detect)
 
 // ── Risk Management ─────────────────────────────────────────────
 input double MaxDailyLossPercent   = {{MAX_DAILY_LOSS}};      // Max Daily Loss %
@@ -112,6 +113,10 @@ void ClosePositionsFor(string symbol, ENUM_POSITION_TYPE direction, int magic)
 bool IsNewBarForSymbol(int symIdx, string symbol)
 { datetime currentBar = iTime(symbol, Timeframe, 0); if(currentBar == g_lastBarTime[symIdx]) return false; g_lastBarTime[symIdx] = currentBar; return true; }
 
+// ── Adaptive Mode ───────────────────────────────────────────────
+enum ENUM_MARKET_REGIME { REGIME_TRENDING, REGIME_RANGING, REGIME_VOLATILE, REGIME_NORMAL };
+ENUM_MARKET_REGIME g_regimes[];
+
 // ── Strategy Variables ──────────────────────────────────────────
 int      g_atrHandles[];
 int      g_atrStopHandles[];
@@ -143,20 +148,22 @@ int OnInit()
    InitSymbols();
    ArrayResize(g_atrHandles, g_symbolCount); ArrayResize(g_atrStopHandles, g_symbolCount);
    ArrayResize(g_adxHandles, g_symbolCount); ArrayResize(g_cooldownBars, g_symbolCount);
+   ArrayResize(g_regimes, g_symbolCount);
 
    for(int i = 0; i < g_symbolCount; i++)
      {
       g_adxHandles[i] = INVALID_HANDLE; g_atrStopHandles[i] = INVALID_HANDLE;
       g_cooldownBars[i] = 0;
+      g_regimes[i] = REGIME_NORMAL;
 
       g_atrHandles[i] = iATR(g_symbols[i], Timeframe, ATRPeriod);
       if(g_atrHandles[i] == INVALID_HANDLE)
         { PrintFormat("[NewsSpike] Failed ATR for %s. Error: %d", g_symbols[i], GetLastError()); return INIT_FAILED; }
 
-      if(ADXPeriod > 0)
-        { g_adxHandles[i] = iADX(g_symbols[i], Timeframe, ADXPeriod); if(g_adxHandles[i] == INVALID_HANDLE) { PrintFormat("[NewsSpike] Failed ADX for %s", g_symbols[i]); return INIT_FAILED; } }
+      if(ADXPeriod > 0 || UseAdaptiveMode)
+        { g_adxHandles[i] = iADX(g_symbols[i], Timeframe, (ADXPeriod > 0 ? ADXPeriod : 14)); if(g_adxHandles[i] == INVALID_HANDLE) { PrintFormat("[NewsSpike] Failed ADX for %s", g_symbols[i]); return INIT_FAILED; } }
 
-      if(UseATRStops)
+      if(UseATRStops || UseAdaptiveMode)
         {
          if(ATRStopPeriod == ATRPeriod) g_atrStopHandles[i] = g_atrHandles[i];
          else { g_atrStopHandles[i] = iATR(g_symbols[i], Timeframe, ATRStopPeriod); if(g_atrStopHandles[i] == INVALID_HANDLE) { PrintFormat("[NewsSpike] Failed ATR stop for %s", g_symbols[i]); return INIT_FAILED; } }
@@ -243,6 +250,54 @@ void OnTick()
       if(UseATRStops && g_atrStopHandles[si] != INVALID_HANDLE)
         { double atrArr[]; ArraySetAsSeries(atrArr, true); if(CopyBuffer(g_atrStopHandles[si], 0, 0, 2, atrArr) >= 2) atrStopValue = atrArr[1]; }
 
+
+      //--- Detect market regime for adaptive mode
+      double adaptiveSLMult  = 1.0;
+      double adaptiveTPMult  = 1.0;
+      double adaptiveLotMult = 1.0;
+
+      if(UseAdaptiveMode)
+        {
+         double adxAdapt = 0.0;
+         if(g_adxHandles[si] != INVALID_HANDLE)
+           {
+            double adxAdaptArr[];
+            ArraySetAsSeries(adxAdaptArr, true);
+            if(CopyBuffer(g_adxHandles[si], 0, 0, 2, adxAdaptArr) >= 2)
+               adxAdapt = adxAdaptArr[1];
+           }
+
+         int adaptATRH = g_atrHandles[si];
+         if(adaptATRH != INVALID_HANDLE)
+           {
+            double adaptATR[];
+            ArraySetAsSeries(adaptATR, true);
+            if(CopyBuffer(adaptATRH, 0, 1, 20, adaptATR) >= 20)
+              {
+               double currentATR = adaptATR[0];
+               double avgATR = 0;
+               for(int ai = 1; ai < 20; ai++) avgATR += adaptATR[ai];
+               avgATR /= 19.0;
+
+               if(currentATR > avgATR * VolatileATRMult)
+                  g_regimes[si] = REGIME_VOLATILE;
+               else if(adxAdapt > TrendADXThreshold)
+                  g_regimes[si] = REGIME_TRENDING;
+               else if(adxAdapt < RangeADXThreshold)
+                  g_regimes[si] = REGIME_RANGING;
+               else
+                  g_regimes[si] = REGIME_NORMAL;
+              }
+           }
+
+         switch(g_regimes[si])
+           {
+            case REGIME_TRENDING:  adaptiveSLMult = 0.8; adaptiveTPMult = 1.5; adaptiveLotMult = 1.0; break;
+            case REGIME_RANGING:   adaptiveSLMult = 1.2; adaptiveTPMult = 0.7; adaptiveLotMult = 0.8; break;
+            case REGIME_VOLATILE:  adaptiveSLMult = 1.5; adaptiveTPMult = 1.3; adaptiveLotMult = 0.5; break;
+            default: break;
+           }
+        }
       double spikeSLDist = range1 / 2.0;
 
       g_trade.SetExpertMagicNumber(magic);
@@ -257,10 +312,13 @@ void OnTick()
             else { slDist = spikeSLDist; tpDist = (TakeProfitPips > 0) ? TakeProfitPips * symPip : spikeSLDist * 2.0;
                    if(StopLossPips > 0) { double userSlDist = StopLossPips * symPip; if(userSlDist < slDist) slDist = userSlDist; } }
 
+            slDist *= adaptiveSLMult;
+            tpDist *= adaptiveTPMult;
+
             double sl = (slDist > 0) ? NormalizeDouble(symAsk - slDist, symDigits) : 0.0;
             double tp = (tpDist > 0) ? NormalizeDouble(symAsk + tpDist, symDigits) : 0.0;
             double slPips = (slDist > 0) ? slDist / symPip : 0.0;
-            double lot = CalculateLotSize(slPips, sym, symPip);
+            double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
             if(g_trade.Buy(lot, sym, symAsk, sl, tp, StringFormat("TM:%s|SIG:%s", "NewsSpike", "BUY_SPIKE")))
               { ulong ticket = g_trade.ResultOrder(); if(ticket > 0) { TM_OnTradeOpened(ticket, sym, "buy", lot, symAsk, sl, tp); g_cooldownBars[si] = CooldownBars; } }
@@ -277,10 +335,13 @@ void OnTick()
             else { slDist = spikeSLDist; tpDist = (TakeProfitPips > 0) ? TakeProfitPips * symPip : spikeSLDist * 2.0;
                    if(StopLossPips > 0) { double userSlDist = StopLossPips * symPip; if(userSlDist < slDist) slDist = userSlDist; } }
 
+            slDist *= adaptiveSLMult;
+            tpDist *= adaptiveTPMult;
+
             double sl = (slDist > 0) ? NormalizeDouble(symBid + slDist, symDigits) : 0.0;
             double tp = (tpDist > 0) ? NormalizeDouble(symBid - tpDist, symDigits) : 0.0;
             double slPips = (slDist > 0) ? slDist / symPip : 0.0;
-            double lot = CalculateLotSize(slPips, sym, symPip);
+            double lot = CalculateLotSize(slPips, sym, symPip) * adaptiveLotMult;
 
             if(g_trade.Sell(lot, sym, symBid, sl, tp, StringFormat("TM:%s|SIG:%s", "NewsSpike", "SELL_SPIKE")))
               { ulong ticket = g_trade.ResultOrder(); if(ticket > 0) { TM_OnTradeOpened(ticket, sym, "sell", lot, symBid, sl, tp); g_cooldownBars[si] = CooldownBars; } }

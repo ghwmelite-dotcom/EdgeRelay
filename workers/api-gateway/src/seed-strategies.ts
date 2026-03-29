@@ -28,6 +28,11 @@ const COMMON_PARAMS = [
   {"key":"USE_SESSION_FILTER","label":"Session Filter","type":"bool","default":false,"tooltip":"Restrict trading to specific hours."},
   {"key":"SESSION_START","label":"Session Start (UTC)","type":"int","default":7,"min":0,"max":23,"step":1,"tooltip":"Trading starts at this hour."},
   {"key":"SESSION_END","label":"Session End (UTC)","type":"int","default":20,"min":0,"max":23,"step":1,"tooltip":"Trading stops at this hour."},
+  {"key":"GMT_OFFSET","label":"Broker GMT Offset","type":"int","default":99,"min":-12,"max":99,"step":1,"tooltip":"Broker GMT offset. 99 = auto-detect."},
+  {"key":"USE_ADAPTIVE","label":"Adaptive Mode","type":"bool","default":false,"tooltip":"Auto-adjust SL/TP/lot based on market regime (trending/ranging/volatile)."},
+  {"key":"TREND_ADX_THRESH","label":"Trend ADX Threshold","type":"double","default":25.0,"min":15.0,"max":40.0,"step":1.0,"tooltip":"ADX above this = trending market (tighter SL, wider TP)."},
+  {"key":"RANGE_ADX_THRESH","label":"Range ADX Threshold","type":"double","default":18.0,"min":10.0,"max":25.0,"step":1.0,"tooltip":"ADX below this = ranging market (wider SL, tighter TP)."},
+  {"key":"VOLATILE_ATR_MULT","label":"Volatile ATR Multiplier","type":"double","default":1.8,"min":1.2,"max":3.0,"step":0.1,"tooltip":"ATR spike above this x average = volatile (wider SL, half lot)."},
 ];
 
 // ── Strategy definitions ────────────────────────────────────────

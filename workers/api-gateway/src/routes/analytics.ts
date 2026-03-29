@@ -979,32 +979,8 @@ analytics.get('/discipline/coaching', async (c) => {
     const { placeholders, values } = inClause(accountIds);
     const baseWhere = `account_id IN (${placeholders}) AND deal_entry = 'out'`;
 
-    // Stats hash for cache
-    const hashRow = await c.env.DB.prepare(
-      `SELECT COUNT(*) as cnt, COALESCE(SUM(profit), 0) as total, MAX(datetime(time, 'unixepoch')) as latest
-       FROM journal_trades WHERE ${baseWhere}`,
-    ).bind(...values).first<{ cnt: number; total: number; latest: string }>();
-
-    const statsHash = `discipline:${hashRow?.cnt ?? 0}:${Math.round((hashRow?.total ?? 0) * 100)}:${hashRow?.latest ?? ''}`;
-
-    // Check cache (7 day TTL)
-    const cached = await c.env.DB.prepare(
-      "SELECT insights_json, stats_hash, computed_at FROM ai_insights_cache WHERE user_id = ?",
-    ).bind(`discipline:${userId}`).first<{ insights_json: string; stats_hash: string; computed_at: string }>();
-
-    if (cached && cached.stats_hash === statsHash) {
-      const cacheAge = Date.now() - new Date(cached.computed_at).getTime();
-      if (cacheAge < 7 * 24 * 60 * 60 * 1000) {
-        return c.json<ApiResponse>({
-          data: {
-            ...JSON.parse(cached.insights_json),
-            generated_at: cached.computed_at,
-            cached: true,
-          },
-          error: null,
-        });
-      }
-    }
+    // No caching — the ai_insights_cache FK requires a real user_id.
+    // This endpoint is lightweight enough to run fresh each time.
 
     // Get discipline stats inline (lightweight version)
     const { results: allTrades } = await c.env.DB.prepare(
@@ -1112,14 +1088,7 @@ Be empathetic but direct. Use their actual numbers. Don't be generic.`;
       };
     }
 
-    // Cache
     const now = new Date().toISOString();
-    const coachingJson = JSON.stringify(coaching);
-    await c.env.DB.prepare(
-      `INSERT INTO ai_insights_cache (user_id, insights_json, stats_hash, computed_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT(user_id) DO UPDATE SET insights_json = excluded.insights_json, stats_hash = excluded.stats_hash, computed_at = excluded.computed_at`,
-    ).bind(`discipline:${userId}`, coachingJson, statsHash, now).run();
 
     return c.json<ApiResponse>({
       data: {
@@ -1131,9 +1100,18 @@ Be empathetic but direct. Use their actual numbers. Don't be generic.`;
       error: null,
     });
   } catch (err) {
+    // Even on error, return the template fallback so users always see something
     return c.json<ApiResponse>({
-      data: null,
-      error: { code: 'INTERNAL_ERROR', message: err instanceof Error ? err.message : 'Unknown error in coaching' },
-    }, 500);
+      data: {
+        headline: 'Building your discipline profile',
+        message: 'We\'re analyzing your trading patterns. Keep trading and the AI coach will have personalized insights for you soon.',
+        action_items: ['Complete at least 10 trades for meaningful analysis', 'Focus on following your trading plan consistently'],
+        positive: 'You\'re using the discipline tracker — that already puts you ahead of most traders.',
+        generated_at: null,
+        cached: false,
+        model: 'error-fallback',
+      },
+      error: null,
+    });
   }
 })

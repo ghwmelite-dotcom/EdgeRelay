@@ -175,7 +175,7 @@ const FOOTER_LINKS_PLATFORM = [
 const FOOTER_LINKS_RESOURCES = [
   { label: 'Documentation', href: '#' },
   { label: 'API Reference', href: '#' },
-  { label: 'Changelog', href: '#' },
+  { label: 'Referral Program', href: '/referral' },
   { label: 'Status', href: '#' },
 ];
 

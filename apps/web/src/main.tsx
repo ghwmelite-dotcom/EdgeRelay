@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './app.css';
@@ -34,6 +34,8 @@ import { AdminPage } from '@/pages/AdminPage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
+import { ReferralPage } from '@/pages/ReferralPage';
+import { ReferralLandingPage } from '@/pages/ReferralLandingPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -58,9 +60,26 @@ function PublicOrAppRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Capture ?ref= query param from URL and store in localStorage for registration. */
+function ReferralCapture() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('referral_code', ref);
+      // Clean URL without losing the page
+      const url = new URL(window.location.href);
+      url.searchParams.delete('ref');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <ReferralCapture />
       <Routes>
         <Route path="/" element={<LandingPage />} />
 
@@ -73,6 +92,7 @@ function App() {
         <Route path="/firms/:firmName" element={<PublicOrAppRoute><FirmDetailPage /></PublicOrAppRoute>} />
         <Route path="/marketplace" element={<PublicOrAppRoute><MarketplacePage /></PublicOrAppRoute>} />
         <Route path="/strategy-hub" element={<PublicOrAppRoute><StrategyHubPage /></PublicOrAppRoute>} />
+        <Route path="/referral" element={<ReferralLandingPage />} />
 
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
@@ -103,6 +123,7 @@ function App() {
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />
           <Route path="/app/strategy-hub" element={<StrategyHubPage />} />
+          <Route path="/referrals" element={<ReferralPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Route>
 

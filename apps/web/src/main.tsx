@@ -30,6 +30,7 @@ import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
 import { MarketplacePage } from '@/pages/MarketplacePage';
 import { StrategyHubPage } from '@/pages/StrategyHubPage';
 import { AdminPage } from '@/pages/AdminPage';
+import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -65,6 +66,8 @@ function App() {
         <Route path="/firms/:firmName" element={<PublicOrAppRoute><FirmDetailPage /></PublicOrAppRoute>} />
         <Route path="/marketplace" element={<PublicOrAppRoute><MarketplacePage /></PublicOrAppRoute>} />
         <Route path="/strategy-hub" element={<PublicOrAppRoute><StrategyHubPage /></PublicOrAppRoute>} />
+
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

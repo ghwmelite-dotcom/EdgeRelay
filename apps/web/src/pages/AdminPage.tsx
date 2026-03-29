@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type FormEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   Crown,
@@ -12,6 +12,9 @@ import {
   FlaskConical,
   Store,
   Zap,
+  Plus,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
@@ -249,6 +252,115 @@ function OverviewTab() {
 /*  Tab: Users                                                         */
 /* ================================================================== */
 
+function AddUserModal({ isOpen, onClose, onCreated }: { isOpen: boolean; onClose: () => void; onCreated: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [plan, setPlan] = useState('free');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    const res = await api.post<unknown>('/admin/users', { email, password, name: name || undefined, plan });
+    if (res.error) {
+      setError(res.error.message);
+      setSaving(false);
+      return;
+    }
+
+    setEmail('');
+    setPassword('');
+    setName('');
+    setPlan('free');
+    setSaving(false);
+    onCreated();
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md animate-fade-in-scale">
+        <div className="glass-premium border-gradient rounded-2xl p-8 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
+          <button onClick={onClose} className="absolute top-4 right-4 z-20 rounded-xl p-1.5 text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all">
+            <X size={18} />
+          </button>
+
+          <h3 className="text-xl font-black text-white font-display mb-6">Add User</h3>
+
+          {error && (
+            <div className="glass rounded-xl border border-neon-red/30 bg-neon-red/5 px-4 py-3 text-sm text-neon-red mb-4">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs text-terminal-muted uppercase tracking-wider mb-1.5">Email *</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="user@example.com"
+                className="w-full rounded-xl glass pl-4 pr-4 py-2.5 text-sm text-white placeholder:text-terminal-muted outline-none focus:ring-1 focus:ring-neon-cyan/40 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-terminal-muted uppercase tracking-wider mb-1.5">Password *</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="At least 8 characters"
+                className="w-full rounded-xl glass pl-4 pr-4 py-2.5 text-sm text-white placeholder:text-terminal-muted outline-none focus:ring-1 focus:ring-neon-cyan/40 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-terminal-muted uppercase tracking-wider mb-1.5">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Optional"
+                className="w-full rounded-xl glass pl-4 pr-4 py-2.5 text-sm text-white placeholder:text-terminal-muted outline-none focus:ring-1 focus:ring-neon-cyan/40 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-terminal-muted uppercase tracking-wider mb-1.5">Plan</label>
+              <select
+                value={plan}
+                onChange={(e) => setPlan(e.target.value)}
+                className="w-full rounded-xl glass pl-4 pr-4 py-2.5 text-sm text-white outline-none focus:ring-1 focus:ring-neon-cyan/40 transition-all bg-transparent"
+              >
+                <option value="free">Free</option>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full py-3 rounded-xl bg-neon-cyan/10 text-neon-cyan font-semibold text-sm hover:bg-neon-cyan/20 transition-all disabled:opacity-50 shadow-[0_0_20px_#00e5ff15]"
+            >
+              {saving ? 'Creating...' : 'Create User'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UsersTab() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -256,6 +368,7 @@ function UsersTab() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [offset, setOffset] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const fetchUsers = useCallback((searchTerm: string, off: number, append = false) => {
@@ -294,6 +407,18 @@ function UsersTab() {
     fetchUsers(search, newOffset, true);
   };
 
+  const handleDelete = async (userId: string, userEmail: string) => {
+    if (!window.confirm(`Delete user ${userEmail}? This will deactivate all their accounts.`)) return;
+    const res = await api.del<{ deleted: boolean }>(`/admin/users/${userId}`);
+    if (res.error) {
+      alert(res.error.message);
+      return;
+    }
+    // Refresh the list
+    setOffset(0);
+    fetchUsers(search, 0);
+  };
+
   const planVariant = (plan: string) => {
     switch (plan.toLowerCase()) {
       case 'pro': return 'cyan' as const;
@@ -305,16 +430,25 @@ function UsersTab() {
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      {/* Search */}
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-terminal-muted" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => handleSearch(e.target.value)}
-          placeholder="Search by email or name..."
-          className="w-full rounded-xl glass-premium pl-10 pr-4 py-3 text-sm text-white placeholder:text-terminal-muted outline-none focus:ring-1 focus:ring-neon-cyan/40 transition-all"
-        />
+      {/* Search + Add User */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-terminal-muted" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search by email or name..."
+            className="w-full rounded-xl glass-premium pl-10 pr-4 py-3 text-sm text-white placeholder:text-terminal-muted outline-none focus:ring-1 focus:ring-neon-cyan/40 transition-all"
+          />
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 px-4 py-3 rounded-xl bg-neon-cyan/10 text-neon-cyan text-sm font-semibold hover:bg-neon-cyan/20 transition-all whitespace-nowrap shadow-[0_0_15px_#00e5ff10]"
+        >
+          <Plus size={16} />
+          Add User
+        </button>
       </div>
 
       {error && <ErrorState message={error} />}
@@ -331,6 +465,7 @@ function UsersTab() {
                 <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-terminal-muted font-medium">Accounts</th>
                 <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-terminal-muted font-medium">EAs</th>
                 <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-terminal-muted font-medium">Joined</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-wider text-terminal-muted font-medium w-12"></th>
               </tr>
             </thead>
             <tbody>
@@ -342,11 +477,20 @@ function UsersTab() {
                   <td className="px-4 py-3 font-mono-nums text-terminal-text">{u.account_count}</td>
                   <td className="px-4 py-3 font-mono-nums text-terminal-text">{u.ea_count}</td>
                   <td className="px-4 py-3 text-terminal-muted text-xs">{fmtDate(u.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => handleDelete(u.id, u.email)}
+                      className="rounded-lg p-1.5 text-terminal-muted hover:text-neon-red hover:bg-neon-red/10 transition-all"
+                      title="Delete user"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-terminal-muted">No users found</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-terminal-muted">No users found</td>
                 </tr>
               )}
             </tbody>
@@ -366,6 +510,12 @@ function UsersTab() {
           </button>
         </div>
       )}
+
+      <AddUserModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onCreated={() => { setOffset(0); fetchUsers(search, 0); }}
+      />
     </div>
   );
 }

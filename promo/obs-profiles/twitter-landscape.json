@@ -1,0 +1,32 @@
+{
+  "name": "TradeMetrics - Twitter/X",
+  "description": "Twitter/X short-form landscape recording profile. 1920x1080 at 30fps, moderate bitrate.",
+  "output": {
+    "mode": "Advanced",
+    "type": "Standard",
+    "format": "mkv",
+    "encoder": "x264 (or NVENC if NVIDIA GPU available)",
+    "rate_control": "CBR",
+    "bitrate_kbps": 6000,
+    "keyframe_interval": 2,
+    "preset": "veryfast",
+    "profile": "high"
+  },
+  "video": {
+    "base_resolution": "1920x1080",
+    "output_resolution": "1920x1080",
+    "fps": 30,
+    "downscale_filter": "Lanczos"
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "channels": "Stereo",
+    "bitrate_kbps": 128
+  },
+  "recording_notes": [
+    "Same resolution as YouTube but lower bitrate",
+    "Target duration: 2 minutes 20 seconds maximum",
+    "Max upload size: 512MB",
+    "Estimated file size: ~110MB per 2 minutes"
+  ]
+}

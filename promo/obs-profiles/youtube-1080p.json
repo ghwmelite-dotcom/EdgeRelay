@@ -1,0 +1,31 @@
+{
+  "name": "TradeMetrics - YouTube 1080p",
+  "description": "YouTube tutorial recording profile. 1920x1080 at 30fps, high bitrate for crisp screen recordings.",
+  "output": {
+    "mode": "Advanced",
+    "type": "Standard",
+    "format": "mkv",
+    "encoder": "x264 (or NVENC if NVIDIA GPU available)",
+    "rate_control": "CBR",
+    "bitrate_kbps": 8000,
+    "keyframe_interval": 2,
+    "preset": "veryfast",
+    "profile": "high"
+  },
+  "video": {
+    "base_resolution": "1920x1080",
+    "output_resolution": "1920x1080",
+    "fps": 30,
+    "downscale_filter": "Lanczos"
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "channels": "Stereo",
+    "bitrate_kbps": 192
+  },
+  "recording_notes": [
+    "Record in MKV format — remux to MP4 after recording via File > Remux Recordings",
+    "Target duration: 5-8 minutes for tutorials",
+    "Estimated file size: ~600MB per 10 minutes"
+  ]
+}

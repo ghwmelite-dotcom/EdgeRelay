@@ -1,0 +1,32 @@
+{
+  "name": "TradeMetrics - TikTok Vertical",
+  "description": "TikTok short-form vertical recording profile. 1080x1920 (9:16) at 30fps.",
+  "output": {
+    "mode": "Advanced",
+    "type": "Standard",
+    "format": "mkv",
+    "encoder": "x264 (or NVENC if NVIDIA GPU available)",
+    "rate_control": "CBR",
+    "bitrate_kbps": 6000,
+    "keyframe_interval": 2,
+    "preset": "veryfast",
+    "profile": "high"
+  },
+  "video": {
+    "base_resolution": "1080x1920",
+    "output_resolution": "1080x1920",
+    "fps": 30,
+    "downscale_filter": "Lanczos"
+  },
+  "audio": {
+    "sample_rate": 48000,
+    "channels": "Stereo",
+    "bitrate_kbps": 128
+  },
+  "recording_notes": [
+    "Alternative approach: Record in landscape (1920x1080) and crop to vertical in post — see guides/editing-workflow.md",
+    "Target duration: 60 seconds maximum",
+    "Estimated file size: ~45MB per 60 seconds",
+    "Max upload size: 287MB"
+  ]
+}

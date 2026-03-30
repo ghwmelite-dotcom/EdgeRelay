@@ -170,6 +170,14 @@ app.get('/v1/poll/:followerAccountId', async (c) => {
       return errorResponse('ACCOUNT_NOT_FOUND', 'Follower account not found or not linked to master', 404);
     }
 
+    // Update follower's heartbeat on every poll (keeps dashboard status accurate)
+    const now = Math.floor(Date.now() / 1000);
+    c.executionCtx.waitUntil(
+      c.env.DB.prepare('UPDATE accounts SET last_heartbeat = ? WHERE id = ?')
+        .bind(String(now) + '.0', followerAccountId)
+        .run()
+    );
+
     // Route to the master's DO for long-poll
     const doId = c.env.ACCOUNT_RELAY.idFromName(follower.master_account_id);
     const stub = c.env.ACCOUNT_RELAY.get(doId);

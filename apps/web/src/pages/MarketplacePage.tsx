@@ -23,11 +23,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth';
-
-const API_BASE = import.meta.env.PROD
-  ? 'https://edgerelay-api.ghwmelite.workers.dev/v1'
-  : '/v1';
 
 // ── Types ──────────────────────────────────────────────────────────
 interface Provider {

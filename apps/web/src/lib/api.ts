@@ -1,8 +1,5 @@
 import type { ApiResponse } from '@edgerelay/shared';
-
-const API_BASE = import.meta.env.PROD
-  ? 'https://edgerelay-api.ghwmelite.workers.dev/v1'
-  : '/v1';
+import { API_BASE } from '@/lib/constants';
 
 class ApiClient {
   private token: string | null = null;

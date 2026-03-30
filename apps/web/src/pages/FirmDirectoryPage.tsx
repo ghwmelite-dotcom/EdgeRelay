@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, Building2, ArrowRight } from 'lucide-react';
+import { API_BASE } from '@/lib/constants';
 
 interface Firm {
   firm_name: string;
@@ -26,7 +27,7 @@ export function FirmDirectoryPage() {
   useEffect(() => {
     async function fetchFirms() {
       try {
-        const res = await fetch('https://edgerelay-api.ghwmelite.workers.dev/v1/firms');
+        const res = await fetch(`${API_BASE}/firms`);
         const json = await res.json();
         setFirms(json.data?.firms ?? []);
       } catch {

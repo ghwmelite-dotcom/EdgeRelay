@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/constants';
 import { useAuthStore } from '@/stores/auth';
 
 // ── Types ───────────────────────────────────────────────────────
@@ -443,7 +444,7 @@ export function SimulatorPage() {
     async function fetchFirms() {
       try {
         const res = await fetch(
-          'https://edgerelay-api.ghwmelite.workers.dev/v1/firms',
+          `${API_BASE}/firms`,
         );
         const json = await res.json();
         setFirms(json.data?.firms ?? []);
@@ -468,7 +469,7 @@ export function SimulatorPage() {
     async function fetchTemplates() {
       try {
         const res = await fetch(
-          `https://edgerelay-api.ghwmelite.workers.dev/v1/firms/${encodeURIComponent(selectedFirm)}/templates`,
+          `${API_BASE}/firms/${encodeURIComponent(selectedFirm)}/templates`,
         );
         const json = await res.json();
         setTemplates(json.data?.templates ?? []);

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ExternalLink, Check, X } from 'lucide-react';
+import { API_BASE } from '@/lib/constants';
 
 interface FirmTemplate {
   id: string;
@@ -63,7 +64,7 @@ export function FirmDetailPage() {
     async function fetchTemplates() {
       try {
         const res = await fetch(
-          `https://edgerelay-api.ghwmelite.workers.dev/v1/firms/${encodeURIComponent(firmName!)}/templates`,
+          `${API_BASE}/firms/${encodeURIComponent(firmName!)}/templates`,
         );
         const json = await res.json();
         setTemplates(json.data?.templates ?? []);

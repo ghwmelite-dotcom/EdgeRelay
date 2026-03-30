@@ -23,7 +23,7 @@
 //+------------------------------------------------------------------+
 input string API_Key             = "";                                  // API Key
 input string API_Secret          = "";                                  // API Secret
-input string API_Endpoint        = "https://signal.edgerelay.io";       // API Endpoint URL
+input string API_Endpoint        = "https://edgerelay-signal-ingestion.ghwmelite.workers.dev";  // API Endpoint URL
 input string AccountID           = "";                                  // Account ID
 input int    HeartbeatIntervalMs = 5000;                                // Heartbeat interval (ms)
 input bool   CopyBuys            = true;                                // Copy BUY trades

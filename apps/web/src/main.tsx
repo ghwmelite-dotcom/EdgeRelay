@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './app.css';
@@ -6,36 +6,38 @@ import './app.css';
 import { useAuthStore } from '@/stores/auth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
-import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { AccountsPage } from '@/pages/AccountsPage';
-import { SignalLogPage } from '@/pages/SignalLogPage';
-import { BillingPage } from '@/pages/BillingPage';
-import { BillingCallbackPage } from '@/pages/BillingCallbackPage';
-import { DownloadsPage } from '@/pages/DownloadsPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { UsagePage } from '@/pages/UsagePage';
-import { LandingPage } from '@/pages/LandingPage';
-import { PropGuardSetupPage } from '@/pages/PropGuardSetupPage';
-import { JournalPage } from '@/pages/JournalPage';
-import { JournalTradeDetailPage } from '@/pages/JournalTradeDetailPage';
-import { CommandCenterPage } from '@/pages/CommandCenterPage';
-import { FirmDirectoryPage } from '@/pages/FirmDirectoryPage';
-import { FirmDetailPage } from '@/pages/FirmDetailPage';
-import { RiskDashboardPage } from '@/pages/RiskDashboardPage';
-import { SimulatorPage } from '@/pages/SimulatorPage';
-import { ProviderSetupPage } from '@/pages/ProviderSetupPage';
-import { MarketplacePage } from '@/pages/MarketplacePage';
-import { StrategyHubPage } from '@/pages/StrategyHubPage';
-import { DisciplinePage } from '@/pages/DisciplinePage';
-import { AdminPage } from '@/pages/AdminPage';
-import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
-import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
-import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
-import { ReferralPage } from '@/pages/ReferralPage';
-import { ReferralLandingPage } from '@/pages/ReferralLandingPage';
+
+// Lazy-load ALL pages — reduces initial bundle from one monolithic chunk to per-route chunks
+const LandingPage = React.lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })));
+const DashboardPage = React.lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const AccountsPage = React.lazy(() => import('@/pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
+const SignalLogPage = React.lazy(() => import('@/pages/SignalLogPage').then(m => ({ default: m.SignalLogPage })));
+const BillingPage = React.lazy(() => import('@/pages/BillingPage').then(m => ({ default: m.BillingPage })));
+const BillingCallbackPage = React.lazy(() => import('@/pages/BillingCallbackPage').then(m => ({ default: m.BillingCallbackPage })));
+const DownloadsPage = React.lazy(() => import('@/pages/DownloadsPage').then(m => ({ default: m.DownloadsPage })));
+const AnalyticsPage = React.lazy(() => import('@/pages/AnalyticsPage').then(m => ({ default: m.AnalyticsPage })));
+const SettingsPage = React.lazy(() => import('@/pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const UsagePage = React.lazy(() => import('@/pages/UsagePage').then(m => ({ default: m.UsagePage })));
+const LoginPage = React.lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = React.lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const PropGuardSetupPage = React.lazy(() => import('@/pages/PropGuardSetupPage').then(m => ({ default: m.PropGuardSetupPage })));
+const JournalPage = React.lazy(() => import('@/pages/JournalPage').then(m => ({ default: m.JournalPage })));
+const JournalTradeDetailPage = React.lazy(() => import('@/pages/JournalTradeDetailPage').then(m => ({ default: m.JournalTradeDetailPage })));
+const CommandCenterPage = React.lazy(() => import('@/pages/CommandCenterPage').then(m => ({ default: m.CommandCenterPage })));
+const FirmDirectoryPage = React.lazy(() => import('@/pages/FirmDirectoryPage').then(m => ({ default: m.FirmDirectoryPage })));
+const FirmDetailPage = React.lazy(() => import('@/pages/FirmDetailPage').then(m => ({ default: m.FirmDetailPage })));
+const RiskDashboardPage = React.lazy(() => import('@/pages/RiskDashboardPage').then(m => ({ default: m.RiskDashboardPage })));
+const SimulatorPage = React.lazy(() => import('@/pages/SimulatorPage').then(m => ({ default: m.SimulatorPage })));
+const ProviderSetupPage = React.lazy(() => import('@/pages/ProviderSetupPage').then(m => ({ default: m.ProviderSetupPage })));
+const MarketplacePage = React.lazy(() => import('@/pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
+const StrategyHubPage = React.lazy(() => import('@/pages/StrategyHubPage').then(m => ({ default: m.StrategyHubPage })));
+const PrivacyPolicyPage = React.lazy(() => import('@/pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage = React.lazy(() => import('@/pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
+const AuthCallbackPage = React.lazy(() => import('@/pages/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
+const DisciplinePage = React.lazy(() => import('@/pages/DisciplinePage').then(m => ({ default: m.DisciplinePage })));
+const AdminPage = React.lazy(() => import('@/pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const ReferralPage = React.lazy(() => import('@/pages/ReferralPage').then(m => ({ default: m.ReferralPage })));
+const ReferralLandingPage = React.lazy(() => import('@/pages/ReferralLandingPage').then(m => ({ default: m.ReferralLandingPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -80,6 +82,14 @@ function App() {
   return (
     <BrowserRouter>
       <ReferralCapture />
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen bg-terminal-bg">
+          <div className="flex items-center gap-3 text-terminal-muted">
+            <span className="h-2 w-2 rounded-full bg-neon-cyan animate-pulse shadow-[0_0_6px_#00e5ff]" />
+            Loading...
+          </div>
+        </div>
+      }>
       <Routes>
         <Route path="/" element={<LandingPage />} />
 
@@ -129,6 +139,7 @@ function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

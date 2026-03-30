@@ -894,8 +894,8 @@ function FollowerCard({
             {fuelLabel}
           </span>
         ) : (
-          <span className="text-[9px] uppercase tracking-[0.15em] font-mono-nums font-bold text-terminal-muted">
-            NOT LINKED
+          <span className={`text-[9px] uppercase tracking-[0.15em] font-mono-nums font-bold ${connected ? 'text-neon-green' : 'text-terminal-muted'}`}>
+            {connected ? 'ACTIVE' : 'OFFLINE'}
           </span>
         )}
       </div>

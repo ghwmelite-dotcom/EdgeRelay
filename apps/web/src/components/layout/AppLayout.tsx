@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Brain, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown, Gift } from 'lucide-react';
+import { LayoutDashboard, Shield, ShieldCheck, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Brain, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown, Gift } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
@@ -36,6 +36,7 @@ const NAV_GROUPS = [
   {
     label: 'Tools',
     items: [
+      { label: 'Prop Firm Hub', icon: ShieldCheck, to: '/app/prop-firms' },
       { label: 'Simulator', icon: Dice5, to: '/simulator' },
       { label: 'Strategy Hub', icon: FlaskConical, to: '/app/strategy-hub' },
       { label: 'Firm Directory', icon: Building2, to: '/app/firms' },

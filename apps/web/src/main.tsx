@@ -41,6 +41,7 @@ const ReferralLandingPage = React.lazy(() => import('@/pages/ReferralLandingPage
 const BlogListPage = React.lazy(() => import('@/pages/BlogListPage').then(m => ({ default: m.BlogListPage })));
 const BlogPostPage = React.lazy(() => import('@/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 const PropFirmChallengePage = React.lazy(() => import('@/pages/PropFirmChallengePage').then(m => ({ default: m.PropFirmChallengePage })));
+const PropFirmHubPage = React.lazy(() => import('@/pages/PropFirmHubPage').then(m => ({ default: m.PropFirmHubPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -135,6 +136,7 @@ function App() {
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/billing/callback" element={<BillingCallbackPage />} />
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
+          <Route path="/app/prop-firms" element={<PropFirmHubPage />} />
           <Route path="/simulator" element={<SimulatorPage />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />

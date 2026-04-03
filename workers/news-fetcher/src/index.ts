@@ -150,14 +150,7 @@ async function fetchFinnhubNews(env: Env): Promise<number> {
 
   let inserted = 0;
   for (const item of items) {
-    const hashBuffer = await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(item.headline),
-    );
-    const headlineHash = Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-
+    const headlineHash = await hashText(item.headline);
     const publishedAt = new Date(item.datetime * 1000).toISOString();
 
     const result = await env.DB.prepare(
@@ -183,6 +176,154 @@ async function fetchFinnhubNews(env: Env): Promise<number> {
   return inserted;
 }
 
+async function hashText(text: string): Promise<string> {
+  const hashBuffer = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(text),
+  );
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
+ * Fetches latest news from FinancialJuice RSS feed.
+ * Parses XML, deduplicates by headline hash, stores in market_news.
+ */
+async function fetchFinancialJuice(env: Env): Promise<number> {
+  let xml: string;
+  try {
+    const res = await fetch('https://www.financialjuice.com/feed.ashx?xy=rss', {
+      headers: { 'User-Agent': 'EdgeRelay/1.0' },
+    });
+    if (!res.ok) {
+      console.error(`FinancialJuice fetch failed: ${res.status}`);
+      return 0;
+    }
+    xml = await res.text();
+  } catch (err) {
+    console.error('FinancialJuice fetch error:', err);
+    return 0;
+  }
+
+  // Parse RSS XML items using regex (no DOM parser in Workers)
+  const items = parseRssItems(xml);
+  if (items.length === 0) {
+    console.log('FinancialJuice: no items parsed from RSS');
+    return 0;
+  }
+
+  let inserted = 0;
+  for (const item of items) {
+    const headlineHash = await hashText(item.title);
+
+    // Detect related currencies from headline keywords
+    const currencies = detectCurrencies(item.title);
+
+    const result = await env.DB.prepare(
+      `INSERT OR IGNORE INTO market_news (id, headline_hash, headline, summary, source, url, category, sentiment, related_currencies, published_at)
+       VALUES (lower(hex(randomblob(16))), ?, ?, ?, 'FinancialJuice', ?, 'breaking', NULL, ?, ?)`,
+    )
+      .bind(
+        headlineHash,
+        item.title,
+        item.description || null,
+        item.link || null,
+        currencies || null,
+        item.pubDate,
+      )
+      .run();
+
+    if (result.meta.changes > 0) inserted++;
+  }
+
+  return inserted;
+}
+
+interface RssItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
+  guid: string;
+}
+
+function parseRssItems(xml: string): RssItem[] {
+  const items: RssItem[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const block = match[1];
+    const title = extractTag(block, 'title');
+    const pubDateRaw = extractTag(block, 'pubDate');
+
+    if (!title || !pubDateRaw) continue;
+
+    // Parse and normalize the date
+    let pubDate: string;
+    try {
+      pubDate = new Date(pubDateRaw).toISOString();
+    } catch {
+      pubDate = new Date().toISOString();
+    }
+
+    items.push({
+      title: decodeHtmlEntities(title),
+      link: extractTag(block, 'link') || '',
+      pubDate,
+      description: decodeHtmlEntities(extractTag(block, 'description') || ''),
+      guid: extractTag(block, 'guid') || '',
+    });
+  }
+
+  return items;
+}
+
+function extractTag(xml: string, tag: string): string | null {
+  // Handle CDATA wrapped values
+  const cdataRegex = new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i');
+  const cdataMatch = cdataRegex.exec(xml);
+  if (cdataMatch) return cdataMatch[1].trim();
+
+  const regex = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const match = regex.exec(xml);
+  return match ? match[1].trim() : null;
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
+
+const CURRENCY_KEYWORDS: Record<string, string[]> = {
+  USD: ['USD', 'dollar', 'Fed', 'FOMC', 'NFP', 'CPI', 'US ', 'Trump', 'Treasury', 'GDP'],
+  EUR: ['EUR', 'euro', 'ECB', 'Lagarde', 'Eurozone'],
+  GBP: ['GBP', 'pound', 'sterling', 'BoE', 'BOE', 'UK '],
+  JPY: ['JPY', 'yen', 'BOJ', 'BoJ', 'Japan'],
+  CHF: ['CHF', 'franc', 'SNB', 'Swiss'],
+  AUD: ['AUD', 'aussie', 'RBA', 'Australia'],
+  NZD: ['NZD', 'kiwi', 'RBNZ', 'New Zealand'],
+  CAD: ['CAD', 'loonie', 'BOC', 'BoC', 'Canada'],
+  XAU: ['gold', 'Gold', 'XAU', 'XAUUSD'],
+  OIL: ['oil', 'Oil', 'crude', 'Crude', 'WTI', 'Brent', 'OPEC'],
+};
+
+function detectCurrencies(headline: string): string | null {
+  const found: string[] = [];
+  for (const [currency, keywords] of Object.entries(CURRENCY_KEYWORDS)) {
+    if (keywords.some((kw) => headline.includes(kw))) {
+      found.push(currency);
+    }
+  }
+  return found.length > 0 ? found.join(',') : null;
+}
+
 export default {
   async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext): Promise<void> {
     console.log('News fetcher cron triggered:', new Date().toISOString());
@@ -192,6 +333,9 @@ export default {
 
     const newsCount = await fetchFinnhubNews(env);
     console.log(`Finnhub: ${newsCount} new articles`);
+
+    const fjCount = await fetchFinancialJuice(env);
+    console.log(`FinancialJuice: ${fjCount} new articles`);
   },
 
   async fetch(_request: Request, _env: Env): Promise<Response> {

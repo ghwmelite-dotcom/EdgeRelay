@@ -36,15 +36,20 @@ const SESSION_TIMES = [
 
 export default {
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const now = new Date();
+
     // Pre-event alerts (every minute)
     await checkPreEventAlerts(env, ctx);
+
+    // Breaking news push (every minute — pushes new FinancialJuice headlines)
+    await checkBreakingNews(env, ctx);
 
     // Session alerts (every minute, fires only at exact session times)
     await checkSessionAlerts(env, ctx);
 
     // Daily/weekly/morning summaries (only at the top of each hour)
-    const now = new Date();
     if (now.getUTCMinutes() === 0) {
+      console.log(`[digest] Top-of-hour cron fired at ${now.toISOString()}`);
       await sendDigests(env, ctx, now);
     }
   },
@@ -110,6 +115,97 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
       }
     }
   }
+}
+
+/**
+ * Pushes new FinancialJuice headlines to users with news_alerts enabled.
+ * Runs every minute. Uses KV dedup to ensure each headline is sent only once per user.
+ * Batches up to 5 headlines per message to avoid spam.
+ */
+async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void> {
+  // Fetch news items from the last 20 minutes (covers 15-min cron + buffer)
+  const { results: newsItems } = await env.DB.prepare(
+    `SELECT id, headline, source, related_currencies, published_at, url
+     FROM market_news
+     WHERE source = 'FinancialJuice'
+       AND published_at >= datetime('now', '-20 minutes')
+     ORDER BY published_at DESC
+     LIMIT 10`,
+  ).all<{
+    id: string;
+    headline: string;
+    source: string;
+    related_currencies: string | null;
+    published_at: string;
+    url: string | null;
+  }>();
+
+  if (!newsItems || newsItems.length === 0) return;
+
+  // Get all users with news_alerts enabled
+  const { results: users } = await env.DB.prepare(
+    `SELECT user_id FROM notification_preferences WHERE news_alerts = 1`,
+  ).all<{ user_id: string }>();
+
+  if (!users || users.length === 0) return;
+
+  for (const user of users) {
+    const raw = await env.BOT_STATE.get(`user:${user.user_id}:tg`);
+    if (!raw) continue;
+
+    let chatId: string;
+    try {
+      chatId = String((JSON.parse(raw) as { chatId?: unknown }).chatId);
+    } catch {
+      chatId = raw;
+    }
+
+    // Filter to only unsent headlines for this user
+    const unsent: typeof newsItems = [];
+    for (const item of newsItems) {
+      const dedupKey = `news-push:${user.user_id}:${item.id}`;
+      const alreadySent = await env.BOT_STATE.get(dedupKey);
+      if (!alreadySent) unsent.push(item);
+    }
+
+    if (unsent.length === 0) continue;
+
+    // Build a batched message (max 5 headlines)
+    const batch = unsent.slice(0, 5);
+    const lines: string[] = ['📰 <b>Breaking News</b>', ''];
+
+    for (const item of batch) {
+      const time = item.published_at.slice(11, 16);
+      const currencies = item.related_currencies
+        ? ` [${item.related_currencies}]`
+        : '';
+      lines.push(`• <b>${escapeHtml(item.headline)}</b>${currencies}`);
+      lines.push(`  <i>${time} UTC — ${item.source}</i>`);
+      lines.push('');
+    }
+
+    if (unsent.length > 5) {
+      lines.push(`<i>+${unsent.length - 5} more headlines</i>`);
+    }
+
+    const msg = lines.join('\n').trim();
+    ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
+
+    // Mark all as sent (TTL 6 hours to prevent re-sending)
+    for (const item of batch) {
+      const dedupKey = `news-push:${user.user_id}:${item.id}`;
+      await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 21600 });
+    }
+
+    console.log(`[digest] Pushed ${batch.length} FinancialJuice headlines to user ${user.user_id}`);
+  }
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void> {
@@ -213,7 +309,7 @@ async function formatMorningBrief(db: D1Database, now: Date): Promise<string | n
   return lines.join('\n');
 }
 
-async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<void> {
+async function sendDigests(env: Env, _ctx: ExecutionContext, now: Date): Promise<void> {
   const utcHour = now.getUTCHours();
   // Send weekly on Friday OR Saturday (catches missed Friday digests)
   const dayOfWeek = now.getUTCDay();
@@ -226,16 +322,26 @@ async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<
      WHERE daily_summary = 1 OR weekly_digest = 1 OR morning_brief = 1 OR news_alerts = 1 OR session_alerts = 1`,
   ).all<PrefRow>();
 
-  if (!results || results.length === 0) return;
+  if (!results || results.length === 0) {
+    console.log('[digest] No users with digest prefs enabled');
+    return;
+  }
+
+  console.log(`[digest] Processing ${results.length} user(s) at UTC hour ${utcHour}`);
 
   for (const pref of results) {
     // Only send hourly digests when the user's local hour matches their preference
     const userHour = getUserHour(utcHour, pref.timezone);
     if (userHour !== pref.summary_hour) continue;
 
+    console.log(`[digest] User ${pref.user_id}: local hour ${userHour} matches summary_hour ${pref.summary_hour}`);
+
     // Get chatId
     const raw = await env.BOT_STATE.get(`user:${pref.user_id}:tg`);
-    if (!raw) continue;
+    if (!raw) {
+      console.log(`[digest] User ${pref.user_id}: no Telegram link found in KV`);
+      continue;
+    }
 
     let chatId: string;
     try {
@@ -245,16 +351,26 @@ async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<
       chatId = raw;
     }
 
+    // Resolve the user's local date for trade queries (may differ from UTC date)
+    const userDate = getUserLocalDate(now, pref.timezone);
+
     // Daily summary
     if (pref.daily_summary) {
-      const dedupKey = `digest-sent:${pref.user_id}:daily:${now.toISOString().slice(0, 10)}`;
+      const dedupKey = `digest-sent:${pref.user_id}:daily:${userDate}`;
       const alreadySent = await env.BOT_STATE.get(dedupKey);
       if (!alreadySent) {
-        const stats = await getDailyStats(env.DB, pref.user_id);
-        if (stats) {
+        try {
+          const stats = await getDailyStats(env.DB, pref.user_id, userDate);
           const msg = formatDailySummary(stats, now);
-          ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
-          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+          const sent = await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg);
+          if (sent) {
+            await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+            console.log(`[digest] Daily summary sent to user ${pref.user_id}`);
+          } else {
+            console.error(`[digest] Failed to send daily summary to user ${pref.user_id}, chatId ${chatId}`);
+          }
+        } catch (err) {
+          console.error(`[digest] Daily summary error for user ${pref.user_id}:`, err);
         }
       }
     }
@@ -265,28 +381,58 @@ async function sendDigests(env: Env, ctx: ExecutionContext, now: Date): Promise<
       const dedupKey = `digest-sent:${pref.user_id}:weekly:${weekKey}`;
       const alreadySent = await env.BOT_STATE.get(dedupKey);
       if (!alreadySent) {
-        const stats = await getWeeklyStats(env.DB, pref.user_id);
-        if (stats) {
+        try {
+          const stats = await getWeeklyStats(env.DB, pref.user_id);
           const activeAccounts = await getActiveAccountCount(env.DB, pref.user_id);
           const msg = formatWeeklyDigest(stats, activeAccounts, now);
-          ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
-          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 604800 });
+          const sent = await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg);
+          if (sent) {
+            await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 604800 });
+            console.log(`[digest] Weekly digest sent to user ${pref.user_id}`);
+          } else {
+            console.error(`[digest] Failed to send weekly digest to user ${pref.user_id}, chatId ${chatId}`);
+          }
+        } catch (err) {
+          console.error(`[digest] Weekly digest error for user ${pref.user_id}:`, err);
         }
       }
     }
 
     // Morning brief (independent from daily_summary — different content)
     if (pref.morning_brief) {
-      const dedupKey = `digest-sent:${pref.user_id}:morning:${now.toISOString().slice(0, 10)}`;
+      const dedupKey = `digest-sent:${pref.user_id}:morning:${userDate}`;
       const alreadySent = await env.BOT_STATE.get(dedupKey);
       if (!alreadySent) {
-        const brief = await formatMorningBrief(env.DB, now);
-        if (brief) {
-          ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, brief));
-          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+        try {
+          const brief = await formatMorningBrief(env.DB, now);
+          if (brief) {
+            const sent = await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, brief);
+            if (sent) {
+              await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+              console.log(`[digest] Morning brief sent to user ${pref.user_id}`);
+            } else {
+              console.error(`[digest] Failed to send morning brief to user ${pref.user_id}, chatId ${chatId}`);
+            }
+          }
+        } catch (err) {
+          console.error(`[digest] Morning brief error for user ${pref.user_id}:`, err);
         }
       }
     }
+  }
+}
+
+function getUserLocalDate(now: Date, timezone: string): string {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return formatter.format(now); // Returns YYYY-MM-DD in en-CA locale
+  } catch {
+    return now.toISOString().slice(0, 10);
   }
 }
 
@@ -313,8 +459,7 @@ function getWeekKey(date: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-async function getDailyStats(db: D1Database, userId: string): Promise<JournalStats | null> {
-  const today = new Date().toISOString().slice(0, 10);
+async function getDailyStats(db: D1Database, userId: string, dateStr: string): Promise<JournalStats> {
   const row = await db
     .prepare(
       `SELECT
@@ -325,7 +470,7 @@ async function getDailyStats(db: D1Database, userId: string): Promise<JournalSta
       JOIN accounts a ON jt.account_id = a.id
       WHERE a.user_id = ? AND DATE(jt.close_time) = ?`,
     )
-    .bind(userId, today)
+    .bind(userId, dateStr)
     .first<{ total_pnl: number; trade_count: number; win_count: number }>();
 
   if (!row || row.trade_count === 0) {
@@ -343,7 +488,7 @@ async function getDailyStats(db: D1Database, userId: string): Promise<JournalSta
       WHERE a.user_id = ? AND DATE(jt.close_time) = ?
       ORDER BY profit DESC LIMIT 1`,
     )
-    .bind(userId, today)
+    .bind(userId, dateStr)
     .first<{ symbol: string; profit: number }>();
 
   const worst = await db
@@ -353,7 +498,7 @@ async function getDailyStats(db: D1Database, userId: string): Promise<JournalSta
       WHERE a.user_id = ? AND DATE(jt.close_time) = ?
       ORDER BY profit ASC LIMIT 1`,
     )
-    .bind(userId, today)
+    .bind(userId, dateStr)
     .first<{ symbol: string; profit: number }>();
 
   return {
@@ -367,7 +512,7 @@ async function getDailyStats(db: D1Database, userId: string): Promise<JournalSta
   };
 }
 
-async function getWeeklyStats(db: D1Database, userId: string): Promise<JournalStats | null> {
+async function getWeeklyStats(db: D1Database, userId: string): Promise<JournalStats> {
   const now = new Date();
   const weekAgo = new Date(now);
   weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);

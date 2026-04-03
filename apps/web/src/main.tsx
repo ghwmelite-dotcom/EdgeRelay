@@ -38,6 +38,8 @@ const DisciplinePage = React.lazy(() => import('@/pages/DisciplinePage').then(m 
 const AdminPage = React.lazy(() => import('@/pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const ReferralPage = React.lazy(() => import('@/pages/ReferralPage').then(m => ({ default: m.ReferralPage })));
 const ReferralLandingPage = React.lazy(() => import('@/pages/ReferralLandingPage').then(m => ({ default: m.ReferralLandingPage })));
+const BlogListPage = React.lazy(() => import('@/pages/BlogListPage').then(m => ({ default: m.BlogListPage })));
+const BlogPostPage = React.lazy(() => import('@/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -103,6 +105,8 @@ function App() {
         <Route path="/marketplace" element={<PublicOrAppRoute><MarketplacePage /></PublicOrAppRoute>} />
         <Route path="/strategy-hub" element={<PublicOrAppRoute><StrategyHubPage /></PublicOrAppRoute>} />
         <Route path="/referral" element={<ReferralLandingPage />} />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
 
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 

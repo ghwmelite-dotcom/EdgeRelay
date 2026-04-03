@@ -188,7 +188,7 @@ const FOOTER_LINKS_PLATFORM = [
 const FOOTER_LINKS_RESOURCES = [
   { label: 'Documentation', href: '#' },
   { label: 'API Reference', href: '#' },
-  { label: 'Blog', href: '#blog' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Referral Program', href: '/referral' },
   { label: 'Status', href: '#' },
 ];
@@ -1553,7 +1553,8 @@ export function LandingPage() {
                 };
                 const accent = accentMap[post.accentColor] || '#00e5ff';
                 return (
-                  <article
+                  <Link
+                    to={`/blog/${post.id}`}
                     key={post.id}
                     className="glass-premium card-hover-premium animate-fade-in-up group relative flex flex-col overflow-hidden rounded-2xl"
                     style={{ animationDelay: `${i * 100}ms` }}
@@ -1626,7 +1627,7 @@ export function LandingPage() {
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 );
               })}
             </div>
@@ -1644,7 +1645,8 @@ export function LandingPage() {
               };
               const accent = accentMap[post.accentColor] || '#00e5ff';
               return (
-                <article
+                <Link
+                  to={`/blog/${post.id}`}
                   key={post.id}
                   className="glass-premium card-hover-premium animate-fade-in-up group flex items-start gap-4 overflow-hidden rounded-xl p-5"
                   style={{ animationDelay: `${i * 80}ms` }}
@@ -1689,18 +1691,18 @@ export function LandingPage() {
                       {post.excerpt}
                     </p>
                   </div>
-                </article>
+                </Link>
               );
             })}
           </div>
 
           {/* View all CTA */}
           <div className="animate-fade-in-up mt-10 flex justify-center" style={{ animationDelay: '200ms' }}>
-            <button className="group inline-flex items-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 px-8 py-3 text-sm font-semibold text-slate-300 backdrop-blur transition-all hover:border-neon-cyan/30 hover:bg-neon-cyan/[0.05] hover:text-neon-cyan hover:shadow-[0_0_20px_rgba(0,229,255,0.1)] cursor-pointer">
+            <Link to="/blog" className="group inline-flex items-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 px-8 py-3 text-sm font-semibold text-slate-300 backdrop-blur transition-all hover:border-neon-cyan/30 hover:bg-neon-cyan/[0.05] hover:text-neon-cyan hover:shadow-[0_0_20px_rgba(0,229,255,0.1)]">
               <BookOpen className="h-4 w-4" />
               View All Articles
               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </button>
+            </Link>
           </div>
         </div>
       </section>

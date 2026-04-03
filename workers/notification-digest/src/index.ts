@@ -53,6 +53,7 @@ export default {
       await sendDigests(env, ctx, now);
     }
   },
+
 };
 
 async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<void> {

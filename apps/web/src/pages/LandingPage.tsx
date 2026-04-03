@@ -43,7 +43,8 @@ const NAV_LINKS = [
   { label: 'Features', href: '#features', color: '#00ff9d' },
   { label: 'How It Works', href: '#how-it-works', color: '#00e5ff' },
   { label: 'Ecosystem', href: '#ecosystem', color: '#b18cff' },
-  { label: 'Blog', href: '#blog', color: '#ffb800' },
+  { label: 'Prop Firms', href: '/pass-prop-firm-challenge', color: '#ff3d57' },
+  { label: 'Blog', href: '/blog', color: '#ffb800' },
 ];
 
 const STATS = [
@@ -183,6 +184,7 @@ const FOOTER_LINKS_PLATFORM = [
   { label: 'PropGuard', href: '#ecosystem' },
   { label: 'AI Journal', href: '#ecosystem' },
   { label: 'Platform Bridge', href: '#ecosystem' },
+  { label: 'Pass Prop Firm Challenge', href: '/pass-prop-firm-challenge' },
 ];
 
 const FOOTER_LINKS_RESOURCES = [
@@ -768,19 +770,33 @@ export function LandingPage() {
 
           {/* Nav links — each with colored signal dot */}
           <div className="hidden items-center gap-7 sm:flex">
-            {NAV_LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                className="group flex items-center gap-2 text-[12px] font-medium text-terminal-muted transition-colors duration-200 hover:text-terminal-text"
-              >
-                <span
-                  className="nav-signal-dot shadow-[0_0_4px_currentColor]"
-                  style={{ backgroundColor: l.color, boxShadow: `0 0 5px ${l.color}` }}
-                />
-                {l.label}
-              </a>
-            ))}
+            {NAV_LINKS.map((l) =>
+              l.href.startsWith('/') ? (
+                <Link
+                  key={l.href}
+                  to={l.href}
+                  className="group flex items-center gap-2 text-[12px] font-medium text-terminal-muted transition-colors duration-200 hover:text-terminal-text"
+                >
+                  <span
+                    className="nav-signal-dot shadow-[0_0_4px_currentColor]"
+                    style={{ backgroundColor: l.color, boxShadow: `0 0 5px ${l.color}` }}
+                  />
+                  {l.label}
+                </Link>
+              ) : (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className="group flex items-center gap-2 text-[12px] font-medium text-terminal-muted transition-colors duration-200 hover:text-terminal-text"
+                >
+                  <span
+                    className="nav-signal-dot shadow-[0_0_4px_currentColor]"
+                    style={{ backgroundColor: l.color, boxShadow: `0 0 5px ${l.color}` }}
+                  />
+                  {l.label}
+                </a>
+              )
+            )}
           </div>
 
           {/* Referral CTA — highlighted */}
@@ -1111,6 +1127,64 @@ export function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          3b. PROP FIRM CHALLENGE CTA — High-visibility banner
+          ══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-10 md:py-14">
+        <div className="mx-auto max-w-5xl">
+          <Link
+            to="/pass-prop-firm-challenge"
+            className="group relative block overflow-hidden rounded-2xl border border-neon-green/20 transition-all duration-300 hover:border-neon-green/40 hover:shadow-[0_0_40px_rgba(0,255,157,0.08)]"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,255,157,0.06) 0%, rgba(0,229,255,0.03) 50%, rgba(177,140,255,0.04) 100%)',
+            }}
+          >
+            {/* Animated shimmer overlay */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+              style={{
+                background: 'linear-gradient(90deg, transparent, rgba(0,255,157,0.05), transparent)',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 3s ease-in-out infinite',
+              }}
+            />
+
+            <div className="relative flex flex-col items-center gap-6 p-8 md:flex-row md:justify-between md:p-10">
+              {/* Left — Content */}
+              <div className="flex items-center gap-5 text-center md:text-left">
+                <div className="hidden md:flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-neon-green/25 bg-neon-green/10 shadow-[0_0_20px_rgba(0,255,157,0.1)]">
+                  <ShieldCheck className="h-7 w-7 text-neon-green" />
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-center gap-2 md:justify-start">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-neon-red/30 bg-neon-red/10 px-2.5 py-0.5 font-mono-nums text-[9px] font-semibold uppercase tracking-wider text-neon-red">
+                      87% of traders fail
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl font-bold text-white md:text-2xl">
+                    Pass Your Prop Firm Challenge —{' '}
+                    <span className="text-neon-green">First Try</span>
+                  </h3>
+                  <p className="mt-1.5 max-w-lg text-sm text-slate-400">
+                    PropGuard enforces FTMO, The5ers, FundedNext & Apex rules in real-time.
+                    AI optimizes your EA. Signal Copier scales to unlimited accounts.{' '}
+                    <span className="text-white font-medium">100% free.</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right — CTA */}
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-xl bg-neon-green px-6 py-3 text-sm font-bold text-terminal-bg shadow-[0_0_20px_rgba(0,255,157,0.25)] transition-all group-hover:shadow-[0_0_32px_rgba(0,255,157,0.4)]">
+                  Learn How
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </div>
+          </Link>
         </div>
       </section>
 
@@ -1881,15 +1955,25 @@ export function LandingPage() {
                 Platform
               </p>
               <div className="flex flex-col gap-2">
-                {FOOTER_LINKS_PLATFORM.map((l) => (
-                  <a
-                    key={l.label}
-                    href={l.href}
-                    className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
-                  >
-                    {l.label}
-                  </a>
-                ))}
+                {FOOTER_LINKS_PLATFORM.map((l) =>
+                  l.href.startsWith('/') ? (
+                    <Link
+                      key={l.label}
+                      to={l.href}
+                      className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                    >
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={l.label}
+                      href={l.href}
+                      className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                    >
+                      {l.label}
+                    </a>
+                  )
+                )}
               </div>
             </div>
 
@@ -1899,15 +1983,25 @@ export function LandingPage() {
                 Resources
               </p>
               <div className="flex flex-col gap-2">
-                {FOOTER_LINKS_RESOURCES.map((l) => (
-                  <a
-                    key={l.label}
-                    href={l.href}
-                    className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
-                  >
-                    {l.label}
-                  </a>
-                ))}
+                {FOOTER_LINKS_RESOURCES.map((l) =>
+                  l.href.startsWith('/') ? (
+                    <Link
+                      key={l.label}
+                      to={l.href}
+                      className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                    >
+                      {l.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={l.label}
+                      href={l.href}
+                      className="text-[12px] text-terminal-muted/60 transition-colors hover:text-neon-cyan"
+                    >
+                      {l.label}
+                    </a>
+                  )
+                )}
               </div>
             </div>
 

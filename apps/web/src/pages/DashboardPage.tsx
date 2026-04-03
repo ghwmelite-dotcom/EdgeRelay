@@ -107,6 +107,137 @@ function normalizeAction(action: string): 'buy_open' | 'sell_open' | 'close' {
   return 'close';
 }
 
+// ── Trading Wisdom ────────────────────────────────────────────
+
+interface WisdomQuote {
+  text: string;
+  author: string;
+  session: 'morning' | 'afternoon' | 'evening' | 'late';
+}
+
+const WISDOM_QUOTES: WisdomQuote[] = [
+  // Morning — Preparation & Mindset
+  { text: 'The goal of a successful trader is to make the best trades. Money is secondary.', author: 'Alexander Elder', session: 'morning' },
+  { text: 'Plan your trade, trade your plan. Today\'s preparation determines tomorrow\'s achievement.', author: 'Trading Proverb', session: 'morning' },
+  { text: 'Every morning brings new potential, but if you dwell on the misfortunes of the day before, you tend to overlook tremendous opportunities.', author: 'Harvey Mackay', session: 'morning' },
+  { text: 'Discipline is choosing between what you want now and what you want most. Your journal knows the difference.', author: 'Abraham Lincoln (adapted)', session: 'morning' },
+  { text: 'The market is a device for transferring money from the impatient to the patient. Be patient today.', author: 'Warren Buffett', session: 'morning' },
+  { text: 'In trading, it\'s not about being right — it\'s about how much you make when you\'re right and how little you lose when you\'re wrong.', author: 'George Soros', session: 'morning' },
+  { text: 'The secret to being successful from a trading perspective is to have an indefatigable, undying, and unquenchable thirst for information and knowledge.', author: 'Paul Tudor Jones', session: 'morning' },
+  { text: 'Start each day with a clear mind. Yesterday\'s trades are closed. Today is a new edge.', author: 'TradeMetrics Pro', session: 'morning' },
+  { text: 'Risk comes from not knowing what you\'re doing. Before you trade today, know your setup, your stop, and your exit.', author: 'Warren Buffett (adapted)', session: 'morning' },
+  { text: 'The best trade you\'ll ever make is the one you don\'t take when conditions aren\'t right.', author: 'TradeMetrics Pro', session: 'morning' },
+  { text: 'Winners think in terms of probabilities, not certainties. Your edge plays out over 100 trades, not one.', author: 'Mark Douglas', session: 'morning' },
+  { text: 'There is a time to go long, a time to go short, and a time to go fishing. Know which one today is.', author: 'Jesse Livermore', session: 'morning' },
+
+  // Afternoon — Execution & Focus
+  { text: 'It\'s not whether you\'re right or wrong that matters, but how much money you make when you\'re right and how much you lose when you\'re wrong.', author: 'George Soros', session: 'afternoon' },
+  { text: 'The hard work in trading comes in the preparation. The actual execution should be effortless.', author: 'Jack Schwager', session: 'afternoon' },
+  { text: 'Amateurs focus on rewards. Professionals focus on risk. Which one are you being right now?', author: 'TradeMetrics Pro', session: 'afternoon' },
+  { text: 'Don\'t focus on making money; focus on protecting what you have.', author: 'Paul Tudor Jones', session: 'afternoon' },
+  { text: 'Throughout my financial career, I have continually witnessed examples of other people that I have known being ruined by a failure to respect risk.', author: 'Larry Hite', session: 'afternoon' },
+  { text: 'If you can learn to create a state of mind that is not affected by the market\'s behavior, the struggle will cease to exist.', author: 'Mark Douglas', session: 'afternoon' },
+  { text: 'The elements of good trading are: cutting losses, cutting losses, and cutting losses.', author: 'Ed Seykota', session: 'afternoon' },
+  { text: 'Overtrading is the silent account killer. If your edge gave you 2 signals today, don\'t invent a 3rd.', author: 'TradeMetrics Pro', session: 'afternoon' },
+  { text: 'One good trade is worth more than ten mediocre ones. Quality over quantity — always.', author: 'TradeMetrics Pro', session: 'afternoon' },
+  { text: 'The market doesn\'t know your position. Trade what you see, not what you hope.', author: 'Trading Proverb', session: 'afternoon' },
+  { text: 'Confidence is not "I will profit on this trade." Confidence is "I will be fine if I don\'t profit on this trade."', author: 'TradeMetrics Pro', session: 'afternoon' },
+  { text: 'Every battle is won before it is ever fought. Your pre-trade checklist is your battle plan.', author: 'Sun Tzu (adapted)', session: 'afternoon' },
+
+  // Evening — Reflection & Growth
+  { text: 'Profits take care of themselves, losses never do. Review what went wrong today — that\'s where growth lives.', author: 'Jesse Livermore (adapted)', session: 'evening' },
+  { text: 'The most important investment you can make is in yourself. Tonight, review your journal.', author: 'Warren Buffett (adapted)', session: 'evening' },
+  { text: 'You don\'t need to trade every day. You need to trade well on the days you choose.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'What did you learn today? If the answer is nothing, you weren\'t paying attention. The market always teaches.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'Successful traders are not born — they are made through the process of self-discovery. Keep refining.', author: 'Van Tharp', session: 'evening' },
+  { text: 'Win or lose, everybody gets what they want out of the market. The key is knowing what you want.', author: 'Ed Seykota', session: 'evening' },
+  { text: 'The market will be there tomorrow. Rest tonight, come back sharp.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'A losing day where you followed your rules is more valuable than a winning day where you didn\'t.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'Compound interest applies to skill too. Every day of disciplined trading makes the next one easier.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'Don\'t measure yourself by today\'s P&L. Measure yourself by today\'s discipline. The money follows.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'The trader who can sit with a loss without flinching has already won the biggest battle in this game.', author: 'TradeMetrics Pro', session: 'evening' },
+  { text: 'Sleep well. Tomorrow is another session, another edge, another opportunity. Consistency compounds.', author: 'TradeMetrics Pro', session: 'evening' },
+
+  // Late Session — Resilience & Patience
+  { text: 'Markets never sleep, but you should. The best traders know when to step away.', author: 'TradeMetrics Pro', session: 'late' },
+  { text: 'The stock market is filled with individuals who know the price of everything but the value of nothing.', author: 'Philip Fisher', session: 'late' },
+  { text: 'Late-night chart staring doesn\'t find setups — it finds excuses to trade. Trust your plan.', author: 'TradeMetrics Pro', session: 'late' },
+  { text: 'I just wait until there is money lying in the corner, and all I have to do is go over there and pick it up.', author: 'Jim Rogers', session: 'late' },
+  { text: 'The market rewards patience more than intelligence. Your edge doesn\'t expire overnight.', author: 'TradeMetrics Pro', session: 'late' },
+  { text: 'Rest is a trading strategy. The sharpest entries come from the freshest minds.', author: 'TradeMetrics Pro', session: 'late' },
+];
+
+function getSessionType(): 'morning' | 'afternoon' | 'evening' | 'late' {
+  const h = new Date().getHours();
+  if (h < 5) return 'late';
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  if (h < 21) return 'evening';
+  return 'late';
+}
+
+function getDailyQuote(): WisdomQuote {
+  const session = getSessionType();
+  const sessionQuotes = WISDOM_QUOTES.filter((q) => q.session === session);
+  // Deterministic daily rotation seeded by date + session
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  const sessionSeed = session === 'morning' ? 0 : session === 'afternoon' ? 1 : session === 'evening' ? 2 : 3;
+  const index = (seed + sessionSeed * 7) % sessionQuotes.length;
+  return sessionQuotes[index];
+}
+
+function WisdomBanner() {
+  const quote = getDailyQuote();
+  const session = getSessionType();
+
+  const sessionConfig = {
+    morning: { label: 'Morning Wisdom', color: '#ffb800', icon: '🌅' },
+    afternoon: { label: 'Afternoon Focus', color: '#00e5ff', icon: '⚡' },
+    evening: { label: 'Evening Reflection', color: '#b18cff', icon: '🌙' },
+    late: { label: 'Late Session', color: '#00ff9d', icon: '🌃' },
+  }[session];
+
+  return (
+    <div
+      className="animate-fade-in-up relative overflow-hidden rounded-xl border px-5 py-4"
+      style={{
+        animationDelay: '120ms',
+        borderColor: `${sessionConfig.color}15`,
+        background: `linear-gradient(135deg, ${sessionConfig.color}04 0%, transparent 60%)`,
+      }}
+    >
+      {/* Subtle accent line */}
+      <div
+        className="absolute left-0 top-0 h-full w-[2px]"
+        style={{ background: `linear-gradient(to bottom, ${sessionConfig.color}50, ${sessionConfig.color}10)` }}
+      />
+
+      <div className="flex items-start gap-4">
+        {/* Session icon */}
+        <span className="mt-0.5 text-lg leading-none">{sessionConfig.icon}</span>
+
+        <div className="flex-1 min-w-0">
+          {/* Session label */}
+          <p className="font-mono-nums text-[9px] uppercase tracking-[0.2em] mb-1.5" style={{ color: `${sessionConfig.color}90` }}>
+            {sessionConfig.label}
+          </p>
+
+          {/* Quote */}
+          <p className="text-[14px] leading-relaxed text-slate-300 italic">
+            &ldquo;{quote.text}&rdquo;
+          </p>
+
+          {/* Author */}
+          <p className="mt-2 font-mono-nums text-[11px] text-terminal-muted">
+            — {quote.author}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Sparkline Component ────────────────────────────────────────
 
 function MiniSparkline() {
@@ -409,6 +540,9 @@ export function DashboardPage() {
         </div>
         </div>
       </div>
+
+      {/* ── Trading Wisdom ─────────────────────────────────────── */}
+      <WisdomBanner />
 
       {/* ── Divider ──────────────────────────────────────────────── */}
       <div className="divider-diamond" />

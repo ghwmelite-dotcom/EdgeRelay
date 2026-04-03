@@ -36,7 +36,7 @@ const NAV_GROUPS = [
   {
     label: 'Tools',
     items: [
-      { label: 'Prop Firm Hub', icon: ShieldCheck, to: '/app/prop-firms' },
+      { label: 'Prop Firm Hub', icon: ShieldCheck, to: '/app/prop-firms', highlight: true },
       { label: 'Simulator', icon: Dice5, to: '/simulator' },
       { label: 'Strategy Hub', icon: FlaskConical, to: '/app/strategy-hub' },
       { label: 'Firm Directory', icon: Building2, to: '/app/firms' },
@@ -193,7 +193,9 @@ export function AppLayout() {
                 </div>
               )}
               <div className="space-y-0.5">
-                {group.items.filter((item) => !('adminOnly' in item && item.adminOnly) || ADMIN_EMAILS.includes(user?.email ?? '')).map(({ label, icon: Icon, to }) => {
+                {group.items.filter((item) => !('adminOnly' in item && item.adminOnly) || ADMIN_EMAILS.includes(user?.email ?? '')).map((item) => {
+                  const { label, icon: Icon, to } = item;
+                  const isHighlight = 'highlight' in item && !!(item as { highlight?: boolean }).highlight;
                   const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
                   return (
                     <NavLink
@@ -206,12 +208,20 @@ export function AppLayout() {
                         focus-ring
                         ${isActive
                           ? 'border-l-2 border-neon-cyan bg-neon-cyan/8 text-neon-cyan glow-text-cyan sidebar-active-glow'
-                          : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50 nav-glow-line'
+                          : isHighlight
+                            ? 'text-neon-green border border-neon-green/20 bg-neon-green/[0.06] hover:bg-neon-green/10 hover:border-neon-green/30 hover:shadow-[0_0_16px_rgba(0,255,157,0.08)]'
+                            : 'text-slate-500 hover:text-slate-300 hover:bg-terminal-card/50 nav-glow-line'
                         }
                       `}
                     >
-                      <Icon className="h-[18px] w-[18px] shrink-0" />
+                      <Icon className={`h-[18px] w-[18px] shrink-0 ${isHighlight && !isActive ? 'drop-shadow-[0_0_4px_rgba(0,255,157,0.5)]' : ''}`} />
                       {label}
+                      {isHighlight && !isActive && (
+                        <span className="ml-auto flex h-[6px] w-[6px]">
+                          <span className="absolute inline-flex h-[6px] w-[6px] animate-ping rounded-full bg-neon-green opacity-40" />
+                          <span className="relative inline-flex h-[6px] w-[6px] rounded-full bg-neon-green shadow-[0_0_6px_rgba(0,255,157,0.6)]" />
+                        </span>
+                      )}
                     </NavLink>
                   );
                 })}

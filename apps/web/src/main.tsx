@@ -40,6 +40,7 @@ const ReferralPage = React.lazy(() => import('@/pages/ReferralPage').then(m => (
 const ReferralLandingPage = React.lazy(() => import('@/pages/ReferralLandingPage').then(m => ({ default: m.ReferralLandingPage })));
 const BlogListPage = React.lazy(() => import('@/pages/BlogListPage').then(m => ({ default: m.BlogListPage })));
 const BlogPostPage = React.lazy(() => import('@/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
+const PropFirmChallengePage = React.lazy(() => import('@/pages/PropFirmChallengePage').then(m => ({ default: m.PropFirmChallengePage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -107,6 +108,7 @@ function App() {
         <Route path="/referral" element={<ReferralLandingPage />} />
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/pass-prop-firm-challenge" element={<PropFirmChallengePage />} />
 
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 

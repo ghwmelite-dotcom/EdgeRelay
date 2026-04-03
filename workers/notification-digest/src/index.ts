@@ -468,7 +468,7 @@ async function getDailyStats(db: D1Database, userId: string, dateStr: string): P
         SUM(CASE WHEN profit > 0 THEN 1 ELSE 0 END) as win_count
       FROM journal_trades jt
       JOIN accounts a ON jt.account_id = a.id
-      WHERE a.user_id = ? AND DATE(jt.close_time) = ?`,
+      WHERE a.user_id = ? AND DATE(jt.time, 'unixepoch') = ?`,
     )
     .bind(userId, dateStr)
     .first<{ total_pnl: number; trade_count: number; win_count: number }>();
@@ -485,7 +485,7 @@ async function getDailyStats(db: D1Database, userId: string, dateStr: string): P
     .prepare(
       `SELECT symbol, profit FROM journal_trades jt
       JOIN accounts a ON jt.account_id = a.id
-      WHERE a.user_id = ? AND DATE(jt.close_time) = ?
+      WHERE a.user_id = ? AND DATE(jt.time, 'unixepoch') = ?
       ORDER BY profit DESC LIMIT 1`,
     )
     .bind(userId, dateStr)
@@ -495,7 +495,7 @@ async function getDailyStats(db: D1Database, userId: string, dateStr: string): P
     .prepare(
       `SELECT symbol, profit FROM journal_trades jt
       JOIN accounts a ON jt.account_id = a.id
-      WHERE a.user_id = ? AND DATE(jt.close_time) = ?
+      WHERE a.user_id = ? AND DATE(jt.time, 'unixepoch') = ?
       ORDER BY profit ASC LIMIT 1`,
     )
     .bind(userId, dateStr)
@@ -527,7 +527,7 @@ async function getWeeklyStats(db: D1Database, userId: string): Promise<JournalSt
         SUM(CASE WHEN profit > 0 THEN 1 ELSE 0 END) as win_count
       FROM journal_trades jt
       JOIN accounts a ON jt.account_id = a.id
-      WHERE a.user_id = ? AND DATE(jt.close_time) BETWEEN ? AND ?`,
+      WHERE a.user_id = ? AND DATE(jt.time, 'unixepoch') BETWEEN ? AND ?`,
     )
     .bind(userId, startDate, endDate)
     .first<{ total_pnl: number; trade_count: number; win_count: number }>();
@@ -543,7 +543,7 @@ async function getWeeklyStats(db: D1Database, userId: string): Promise<JournalSt
     .prepare(
       `SELECT symbol, SUM(profit) as total FROM journal_trades jt
       JOIN accounts a ON jt.account_id = a.id
-      WHERE a.user_id = ? AND DATE(jt.close_time) BETWEEN ? AND ?
+      WHERE a.user_id = ? AND DATE(jt.time, 'unixepoch') BETWEEN ? AND ?
       GROUP BY symbol ORDER BY total DESC LIMIT 1`,
     )
     .bind(userId, startDate, endDate)

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, ChevronRight, BookOpen, Search } from 'lucide-react';
+import { ArrowRight, Clock, ChevronRight, BookOpen, Search, ShieldCheck, Sparkle } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { BLOG_POSTS_FULL } from '@/data/blog-posts';
 import type { BlogPost } from '@/data/blog-posts';
@@ -149,11 +149,65 @@ export function BlogListPage() {
         </nav>
       </div>
 
+      {/* ─── Flagship Spotlight ────────────────────────── */}
+      {showFeatured && BLOG_POSTS_FULL[0] && (
+        <section className="mx-auto max-w-6xl px-6 pt-12">
+          <Link
+            to={`/blog/${BLOG_POSTS_FULL[0].slug}`}
+            className="group relative block overflow-hidden rounded-2xl border border-neon-green/20 transition-all duration-300 hover:border-neon-green/40 hover:shadow-[0_0_40px_rgba(0,255,157,0.08)]"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,255,157,0.05) 0%, rgba(0,229,255,0.03) 50%, rgba(177,140,255,0.03) 100%)',
+            }}
+          >
+            {/* Top accent */}
+            <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #00ff9d80, #00e5ff40, transparent)' }} />
+
+            <div className="flex flex-col gap-6 p-8 md:flex-row md:items-center md:p-10">
+              {/* Left — Icon */}
+              <div className="hidden md:flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-neon-green/25 bg-neon-green/10 shadow-[0_0_30px_rgba(0,255,157,0.1)] transition-shadow duration-300 group-hover:shadow-[0_0_40px_rgba(0,255,157,0.2)]">
+                <ShieldCheck className="h-10 w-10 text-neon-green" />
+              </div>
+
+              {/* Center — Content */}
+              <div className="flex-1">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-neon-green/30 bg-neon-green/10 px-3 py-1 font-mono-nums text-[10px] font-semibold uppercase tracking-wider text-neon-green">
+                    <Sparkle className="h-3 w-3" />
+                    Flagship Guide
+                  </span>
+                  <span className="rounded-full border border-neon-red/25 bg-neon-red/10 px-2.5 py-0.5 font-mono-nums text-[9px] uppercase tracking-wider text-neon-red">
+                    87% fail rate
+                  </span>
+                  <span className="flex items-center gap-1 font-mono-nums text-[10px] text-terminal-muted">
+                    <Clock className="h-3 w-3" />
+                    {BLOG_POSTS_FULL[0].readTime}
+                  </span>
+                </div>
+                <h2 className="font-display text-xl font-bold leading-snug text-white group-hover:text-neon-green transition-colors duration-200 md:text-2xl">
+                  {BLOG_POSTS_FULL[0].title}
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">
+                  {BLOG_POSTS_FULL[0].excerpt}
+                </p>
+              </div>
+
+              {/* Right — CTA */}
+              <div className="flex shrink-0 items-center">
+                <span className="inline-flex items-center gap-2 rounded-xl bg-neon-green/15 border border-neon-green/25 px-5 py-2.5 text-sm font-semibold text-neon-green transition-all group-hover:bg-neon-green group-hover:text-terminal-bg group-hover:shadow-[0_0_20px_rgba(0,255,157,0.3)]">
+                  Read Now
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </div>
+          </Link>
+        </section>
+      )}
+
       {/* ─── Featured Posts ──────────────────────────────── */}
       {showFeatured && (
-        <section className="mx-auto max-w-6xl px-6 pt-12">
+        <section className="mx-auto max-w-6xl px-6 pt-8">
           <div className="grid gap-6 md:grid-cols-3">
-            {featured.map((post, i) => (
+            {featured.filter((_, i) => i > 0).map((post, i) => (
               <FeaturedCard key={post.slug} post={post} delay={i * 100} />
             ))}
           </div>

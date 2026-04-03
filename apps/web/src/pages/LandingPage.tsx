@@ -216,6 +216,18 @@ const BLOG_CATEGORIES = [
 
 const BLOG_POSTS = [
   {
+    id: 'pass-prop-firm-challenge-guide',
+    title: 'The Ultimate Guide to Passing Your Prop Firm Challenge on the First Attempt',
+    excerpt: 'Why 87% of traders fail prop firm challenges — and the exact system that gives you the best shot at passing on your first attempt. Strategy, risk management, and AI optimization.',
+    category: 'strategy',
+    tag: 'Prop Firm Mastery',
+    icon: ShieldCheck,
+    readTime: '18 min',
+    date: '2026-04-03',
+    featured: true,
+    accentColor: 'neon-green',
+  },
+  {
     id: 'backtesting-guide-2026',
     title: 'The Complete Guide to Backtesting Your Trading Strategy in 2026',
     excerpt: 'Learn how to properly backtest your forex strategies using historical data, avoid common pitfalls like curve fitting, and validate your edge with statistical confidence.',
@@ -248,7 +260,6 @@ const BLOG_POSTS = [
     icon: Brain,
     readTime: '8 min',
     date: '2026-03-22',
-    featured: true,
     accentColor: 'neon-purple',
   },
   {

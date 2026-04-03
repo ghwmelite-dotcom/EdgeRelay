@@ -37,6 +37,306 @@ export interface BlogPost {
 
 export const BLOG_POSTS_FULL: BlogPost[] = [
   // ─────────────────────────────────────────────────────────────
+  // 0. FLAGSHIP — Pass Your Prop Firm Challenge (First Try)
+  // ─────────────────────────────────────────────────────────────
+  {
+    id: 'pass-prop-firm-challenge-guide',
+    slug: 'pass-prop-firm-challenge-guide',
+    title: 'The Ultimate Guide to Passing Your Prop Firm Challenge on the First Attempt',
+    metaDescription: 'A complete, step-by-step guide to passing FTMO, The5ers, FundedNext, and Apex prop firm challenges on your first try. Covers risk management, strategy selection, PropGuard automation, AI optimization, and the psychology of funded trading.',
+    excerpt: 'Why 87% of traders fail prop firm challenges — and the exact system that gives you the best shot at passing on your first attempt. From strategy selection to automated equity protection, this is everything you need.',
+    category: 'strategy',
+    tag: 'Prop Firm Mastery',
+    icon: 'ShieldCheck',
+    readTime: '18 min',
+    date: '2026-04-03',
+    featured: true,
+    accentColor: 'neon-green',
+    author: 'TradeMetrics Pro',
+    keywords: ['prop firm challenge', 'FTMO challenge', 'pass prop firm', 'funded trader', 'prop firm rules', 'drawdown management', 'PropGuard', 'funded account', 'trading challenge', 'prop firm strategy', 'The5ers', 'FundedNext', 'Apex Trader Funding'],
+    keyTakeaways: [
+      'The #1 reason traders fail challenges is poor risk management, not bad strategy — automate your risk rules with PropGuard to remove human error',
+      'Never risk more than 0.5–1% per trade on a challenge account — this gives you 10–20 trades of runway before hitting drawdown limits',
+      'Choose your prop firm based on your trading style: static drawdown firms (FTMO) favor consistent traders, trailing drawdown firms (Apex) reward quick profitability',
+      'Use AI optimization after 30+ trades to identify edge leaks — session, instrument, and time-of-day analysis reveals exactly where you\'re bleeding P&L',
+      'The best challenge strategy is boring: trade less, risk less, be consistent — prop firms reward discipline, not heroics',
+    ],
+    sections: [
+      {
+        heading: 'The $2.4 Billion Problem: Why Most Traders Fail',
+        content: `<p>The prop firm industry generates an estimated <strong>$2.4 billion annually in challenge fees</strong> — and the vast majority of that money comes from traders who fail. Industry data consistently shows that <strong>87% of traders who attempt a prop firm challenge do not pass</strong>.</p>
+<p>That's not a typo. For every 100 traders who pay $84–$979 for a challenge attempt, only 13 walk away with a funded account. And of those 13, roughly half will lose that funded account within 90 days.</p>
+<p>The math is brutal: the average trader attempts 3–5 challenges before passing (if they ever do), spending $250–$5,000 on fees alone. Meanwhile, the prop firm keeps every dollar from failed challenges — it's their primary revenue model.</p>
+<p><strong>But here's what the data also shows:</strong> the traders who pass on their first or second attempt share specific, identifiable behaviors that distinguish them from the 87% who fail. This guide breaks down exactly what those behaviors are, and how to systematically replicate them.</p>`,
+      },
+      {
+        heading: 'Understanding the Rules: Every Firm Is Different',
+        content: `<p>The single biggest mistake traders make is treating all prop firm challenges as identical. They're not. The rule differences between firms are significant enough to determine whether the same strategy passes or fails.</p>
+<p><strong>The three critical rule variations:</strong></p>
+
+<p><strong>1. Drawdown Type — This Changes Everything</strong></p>
+<ul>
+<li><strong>Static drawdown (FTMO, FundedNext):</strong> Your max drawdown is calculated from your <em>starting balance</em>. If you start with $100,000 and have a 10% max DD, your equity floor is $90,000 — forever. If you grow to $108,000, your floor is still $90,000. This rewards consistency and gives you breathing room as profits accumulate.</li>
+<li><strong>Trailing drawdown (The5ers):</strong> Your drawdown limit <em>follows your highest equity</em>. Start at $100K with 6% trailing DD — floor is $94,000. Grow to $105,000 — floor moves up to $98,700. You can never give back more than 6% from your peak. This punishes traders who spike up then pull back.</li>
+<li><strong>EOD (End-of-Day) trailing (Apex, TopStep, MyFundedFutures):</strong> Like trailing, but the floor only updates at the end of each trading day, not in real-time. This gives you intraday flexibility — you can have a trade go +$3,000 and then close at +$500 without the drawdown locking at the peak.</li>
+</ul>
+
+<p><strong>2. Daily Loss Limit Calculation</strong></p>
+<ul>
+<li><strong>Balance-based (FundedNext):</strong> Your daily loss limit is calculated from your starting balance each day. If you start the day at $102,000 with a 5% daily limit, you can lose $5,000 (5% of $100K starting balance).</li>
+<li><strong>Equity-high-of-day (FTMO):</strong> Your daily limit is calculated from your highest equity point during that trading day. If your equity reaches $103,000 before pulling back, your 5% daily limit is $5,150 (5% of $103K). This is more forgiving but requires you to track intraday equity peaks.</li>
+</ul>
+
+<p><strong>3. Special Restrictions</strong></p>
+<ul>
+<li><strong>Consistency rules (FundedNext, MyFundedFutures):</strong> No single trading day can account for more than 30–35% of your total profits. This prevents "one big day" strategies and forces steady, distributed performance.</li>
+<li><strong>News trading blocks (FundedNext):</strong> No trades can be open within 5 minutes before or after high-impact news events. Violating this can void an otherwise successful challenge.</li>
+<li><strong>Weekend holding (Apex):</strong> All positions must be closed before the weekend. Holding over Saturday/Sunday is a rule violation regardless of P&L.</li>
+<li><strong>Minimum trading days (FTMO):</strong> You must trade on at least 4 separate calendar days. You can't pass a 10% target in one mega-day.</li>
+</ul>
+
+<p><strong>The takeaway:</strong> Before you place a single trade, you must understand your firm's exact rules. A strategy that passes FTMO's static drawdown might breach Apex's EOD trailing drawdown on the same trades. PropGuard loads these rules with one click — but you need to understand <em>why</em> they matter.</p>`,
+      },
+      {
+        heading: 'Choosing the Right Firm for Your Trading Style',
+        content: `<p>Not all firms suit all traders. Your trading style should dictate which firm you challenge, not the other way around.</p>
+
+<p><strong>If you're a consistent, mechanical trader</strong> (steady small wins, low drawdown):</p>
+<ul>
+<li><strong>Best fit: FTMO or FundedNext</strong> — Static drawdown rewards consistency. Your floor never moves up, so a bad week after a good month doesn't threaten your account. FundedNext's consistency rule actually works in your favor if you already trade consistently.</li>
+<li><strong>Avoid: Trailing drawdown firms</strong> — Your best days raise the floor, creating invisible risk that can bite during normal pullbacks.</li>
+</ul>
+
+<p><strong>If you're a momentum/swing trader</strong> (larger wins with bigger drawdowns):</p>
+<ul>
+<li><strong>Best fit: Apex or TopStep (EOD trailing)</strong> — EOD trailing only adjusts at market close, giving you intraday freedom. A trade that swings +$5K before closing at +$1K doesn't raise your floor to the peak. Lower profit targets (6%) are achievable with a few strong swings.</li>
+<li><strong>Avoid: FundedNext</strong> — The consistency rule penalizes concentrated profits, which is exactly how momentum trading works.</li>
+</ul>
+
+<p><strong>If you're a scalper</strong> (many small trades, tight stops):</p>
+<ul>
+<li><strong>Best fit: FTMO</strong> — The 4-day minimum is trivially easy for scalpers who trade daily. The 10% profit target gives ample room. Static drawdown means your high-frequency approach won't accidentally raise a trailing floor.</li>
+<li><strong>Avoid: Firms with news blocks</strong> — If you scalp around news events, FundedNext's 5-minute news block will force you to close positions during your most profitable windows.</li>
+</ul>
+
+<p><strong>Decision framework:</strong></p>
+<ul>
+<li>Calculate your average trade's R:R ratio and win rate from the last 50 trades</li>
+<li>Estimate how many trading days you need to reach the profit target at 1% risk per trade</li>
+<li>Compare that timeline against the firm's minimum days and maximum drawdown</li>
+<li>Choose the firm where your natural trading pattern fits within the rules — don't force your style to fit the firm</li>
+</ul>`,
+      },
+      {
+        heading: 'The Risk Management System That Prevents Breach',
+        content: `<p>This is the section that separates the 13% who pass from the 87% who don't. Every rule below is non-negotiable.</p>
+
+<p><strong>Rule 1: The 0.5–1% Per Trade Maximum</strong></p>
+<p>On a $100,000 account with 10% max drawdown, you have $10,000 of total risk budget. At 1% risk per trade, you can survive 10 consecutive losers. At 0.5%, you survive 20. The math:</p>
+<ul>
+<li>Risk per trade = Account Equity × Risk Percentage</li>
+<li>Position Size = Risk Amount ÷ (Stop Loss in Pips × Pip Value)</li>
+<li>At 1%: $1,000 risk, 25-pip stop on EURUSD = 4.0 lots</li>
+<li>At 0.5%: $500 risk, 25-pip stop on EURUSD = 2.0 lots</li>
+</ul>
+<p><strong>Start challenges at 0.5% risk.</strong> Once you've built a 3–4% profit cushion, you can scale to 1%. Never start at 1% — one bad day can put you in a psychological hole that leads to revenge trading.</p>
+
+<p><strong>Rule 2: The 50% Daily Loss Buffer</strong></p>
+<p>If your firm allows 5% daily loss, set your personal cutoff at 2.5%. When you're down 2.5% in a day, you stop. Period. No exceptions. No "one more trade."</p>
+<p>Why 50%? Because:</p>
+<ul>
+<li>Your final losing trade may have slippage that pushes past your intended stop</li>
+<li>Open positions have floating P&L that can suddenly worsen</li>
+<li>The 50% buffer turns an absolute limit into a generous safety margin</li>
+</ul>
+
+<p><strong>Rule 3: Maximum 3 Trades Per Day</strong></p>
+<p>Most traders overtrade during challenges because of performance anxiety. Limiting yourself to 3 trades per day forces selectivity. If your strategy doesn't produce 3 A+ setups today, you take fewer trades or sit out entirely.</p>
+<p>After 3 losses in a day — even if you haven't hit your daily limit — you stop. Three consecutive losses signals that either the market doesn't suit your strategy today, or you're not reading it correctly. Neither improves by taking a fourth trade.</p>
+
+<p><strong>Rule 4: The Friday Protocol</strong></p>
+<p>Close all positions by 2 PM EST on Fridays. Weekend gaps can blow through any stop loss. A 200-pip Monday gap against your position can single-handedly breach your max drawdown — even if you were profitable all week.</p>
+
+<p><strong>Rule 5: News Event Blackout</strong></p>
+<p>No positions open within 30 minutes of NFP, FOMC, CPI, or ECB decisions. These events create 50–200 pip moves in seconds. Your 25-pip stop is meaningless when the market gaps past it. Even if your firm doesn't explicitly block news trading, avoiding these events on a challenge account is common sense risk management.</p>
+
+<p><strong>Automating the rules:</strong> PropGuard in TradeMetrics Pro enforces every rule above automatically. One-click FTMO preset loads: 5% daily loss limit, 10% max drawdown (static), 4-lot max position, Friday close at 14:00 EST, and news blackout windows. The rules run on Cloudflare's edge — they execute even if your VPS goes offline.</p>`,
+      },
+      {
+        heading: 'Strategy Selection: What Actually Works on Challenges',
+        content: `<p>Here's a counterintuitive truth: <strong>the best challenge strategy is boring</strong>. Prop firms don't reward heroics — they reward discipline, consistency, and risk-adjusted returns.</p>
+
+<p><strong>Characteristics of winning challenge strategies:</strong></p>
+<ul>
+<li><strong>Win rate above 50%:</strong> You need consistent small wins, not occasional big ones. A 60% win rate with 1:1 R:R steadily compounds without large drawdowns.</li>
+<li><strong>Maximum 2–3 trades per day:</strong> Quality over quantity. Every unnecessary trade is a transaction cost and a risk event.</li>
+<li><strong>Session-specific:</strong> Trade only during your statistically best session (usually London or New York open). Your win rate in Asian session is probably 10–15% lower — cut it.</li>
+<li><strong>Single or dual instrument:</strong> Master one or two pairs. EURUSD + XAUUSD covers 80% of trading opportunities. Adding five more pairs adds complexity and dilutes your edge.</li>
+</ul>
+
+<p><strong>The Strategy Hub approach:</strong></p>
+<p>TradeMetrics Pro's Strategy Hub offers 10 pre-built strategies with automatic prop firm parameter configuration:</p>
+<ol>
+<li><strong>MA Crossover</strong> — Best for trending markets. Works exceptionally on EURUSD during London session. Set the prop firm preset and the AI configures daily loss caps, max drawdown, and session filters.</li>
+<li><strong>RSI Reversion</strong> — Best for ranging markets. Fades overbought/oversold extremes. Strong on GBPUSD and AUDUSD.</li>
+<li><strong>Bollinger Squeeze</strong> — Catches volatility breakouts after compression periods. Excellent for XAUUSD.</li>
+<li><strong>Supply & Demand</strong> — Trades institutional order blocks. Works on all pairs, best on H4 timeframe.</li>
+</ol>
+<p>Each strategy generates a production EA in 30 seconds — no coding required. The EA includes built-in prop firm protections: daily loss enforcement, max lot caps, and Friday close.</p>
+
+<p><strong>The iteration cycle:</strong></p>
+<ol>
+<li>Generate an EA with your chosen strategy + prop firm preset</li>
+<li>Trade it for 1–2 weeks (30+ trades)</li>
+<li>Review AI Insights — it identifies your losing sessions, bad instruments, and parameter weaknesses</li>
+<li>One-click Optimize — AI recommends specific parameter changes based on your live results</li>
+<li>Regenerate the EA with optimized settings</li>
+<li>Repeat until your edge is statistically validated</li>
+</ol>
+<p>Most traders reach optimal parameters within 2–3 optimization cycles. Your EA evolves from a generic template to a strategy calibrated to your specific trading patterns and market conditions.</p>`,
+      },
+      {
+        heading: 'The Psychology of Challenge Trading: Managing Yourself',
+        content: `<p>You can have the perfect strategy and flawless risk management — and still fail a challenge because of psychology. The mental pressure of a paid challenge creates unique emotional traps:</p>
+
+<p><strong>Trap 1: The "Sunk Cost" Spiral</strong></p>
+<p>You've spent $499 on this challenge. You're down 3% after two days. Your brain screams: "I can't waste this money — I need to make it back NOW." This leads to oversized positions, impulsive entries, and abandoning your strategy. The $499 is already spent regardless of whether you trade calmly or recklessly. Treat each trading day as independent — yesterday's loss doesn't change today's optimal strategy.</p>
+
+<p><strong>Trap 2: The "Almost There" Blowup</strong></p>
+<p>You're at 8% profit, needing 10% to pass. So close. The temptation to size up and "finish it today" is overwhelming. This is where more challenges are lost than any other point. The last 2% should be traded <em>more conservatively</em> than the first 8%, because a drawdown from 8% back to 4% is psychologically devastating and often triggers revenge behavior.</p>
+<p><strong>The fix:</strong> When you reach 70% of your profit target, <em>reduce</em> position sizes by 25%. Slow down. The remaining profit target should take 40% of your remaining time, not 10%. Patience is the weapon.</p>
+
+<p><strong>Trap 3: Calendar Pressure</strong></p>
+<p>Most challenges have a 30-day deadline. Around day 20, if you're not close to target, panic sets in. You start taking C-grade setups because "time is running out." The irony: most A+ setups that you'd normally wait for show up during this exact period — but you've already blown your drawdown on desperate trades.</p>
+<p><strong>The fix:</strong> Set a personal deadline of day 22. If you're not within 60% of target by day 22, accept that this attempt may not succeed and switch to capital preservation mode. It's better to fail slowly with minimal loss than to blow up spectacularly on day 25.</p>
+
+<p><strong>Trap 4: Multi-Account Emotional Leakage</strong></p>
+<p>If you're running 3 funded accounts, a loss on Account A bleeds into your decision-making on Accounts B and C. You try to "compensate" across accounts, taking larger risks on profitable accounts to offset losses elsewhere. Each account must be mentally isolated — what happened on Account A is irrelevant to Account B's next trade.</p>
+
+<p><strong>The Pre-Trade Ritual:</strong></p>
+<p>Before every trade during a challenge, ask:</p>
+<ol>
+<li>Does this setup match my written trading plan? (Name the exact setup type)</li>
+<li>Is my position size within my daily risk budget?</li>
+<li>Am I within my 3-trade daily limit?</li>
+<li>Is there high-impact news in the next 30 minutes?</li>
+<li>On a 1–10 scale, how calm am I? (Below 6 = no trade)</li>
+</ol>
+<p>This 30-second checklist has prevented more challenge breaches than any strategy optimization.</p>`,
+      },
+      {
+        heading: 'Scaling After You Pass: Managing Multiple Funded Accounts',
+        content: `<p>Passing your first challenge is the beginning, not the end. The real money in prop firm trading comes from scaling — running multiple funded accounts simultaneously with copied signals.</p>
+
+<p><strong>The Multi-Account Architecture:</strong></p>
+<p>TradeMetrics Pro's Edge Signal Copier enables a hub-and-spoke model:</p>
+<ul>
+<li><strong>Master EA</strong> runs on VPS 1 (your primary trading account)</li>
+<li><strong>Follower EAs</strong> run on VPS 2, 3, 4, etc. (your funded accounts at different firms)</li>
+<li>Signals travel through Cloudflare's edge network — sub-500ms latency, HMAC authenticated</li>
+<li>Each follower has <strong>independent PropGuard rules</strong> matching its specific firm</li>
+</ul>
+
+<p><strong>Why different VPSes matter:</strong></p>
+<p>Most prop firms monitor for copy trading between accounts on the same IP. By running followers on separate VPSes in different data centers (and even different countries), your accounts appear independent. The copier handles symbol normalization across brokers — EURUSD on one becomes EURUSDm on another, automatically.</p>
+
+<p><strong>Correlation risk management:</strong></p>
+<p>When copying to 4+ funded accounts, your biggest risk is correlated exposure. If all accounts go long EURUSD simultaneously and USD rallies, you lose everywhere at once.</p>
+<ul>
+<li>Track aggregate exposure by currency, not by pair</li>
+<li>Use different strategies on different accounts when possible</li>
+<li>Stagger signal execution by 1–5 minutes to get different fills</li>
+<li>Set per-account PropGuard rules so one account can be risk-off while others trade</li>
+</ul>
+
+<p><strong>The compound effect:</strong></p>
+<p>A single $100K funded account paying 80% profit split generates real income. Four $100K accounts with the same strategy quadruples your capacity with zero additional risk capital. At $5,000/month profit per account, four accounts generate $20,000/month — and the copier handles all the execution.</p>
+
+<p>This is the endgame: one strategy, validated by AI, protected by PropGuard, copied across unlimited accounts. The infrastructure scales; you don't have to.</p>`,
+      },
+      {
+        heading: 'The Complete Challenge Checklist: Day-by-Day Protocol',
+        content: `<p>Here's the exact protocol used by consistently successful challenge traders:</p>
+
+<p><strong>Before Day 1:</strong></p>
+<ul>
+<li>☐ Read your firm's full rule set — drawdown type, daily loss calculation, special restrictions</li>
+<li>☐ Apply the correct PropGuard preset (FTMO, FundedNext, The5ers, Apex, etc.)</li>
+<li>☐ Generate your EA in Strategy Hub with prop firm parameters</li>
+<li>☐ Set risk to 0.5% per trade for the first week</li>
+<li>☐ Define your trading session (London, New York, or both)</li>
+<li>☐ Set daily trade limit: maximum 3 trades per day</li>
+<li>☐ Identify your 1–2 instruments (e.g., EURUSD + XAUUSD)</li>
+</ul>
+
+<p><strong>Days 1–7 (Calibration Phase):</strong></p>
+<ul>
+<li>☐ Trade conservatively at 0.5% risk</li>
+<li>☐ Target 3–4% profit (30–40% of total target)</li>
+<li>☐ Journal every trade — setup type, emotional state, rule adherence</li>
+<li>☐ Review daily: did I follow all rules?</li>
+<li>☐ After 30 trades: run AI Insights analysis</li>
+</ul>
+
+<p><strong>Days 8–14 (Optimization Phase):</strong></p>
+<ul>
+<li>☐ Review AI recommendations — session performance, instrument analysis</li>
+<li>☐ Cut unprofitable sessions and instruments</li>
+<li>☐ If 3–4% up: scale risk to 0.75%</li>
+<li>☐ If flat or down: stay at 0.5%, focus on rule adherence</li>
+<li>☐ Target reaching 6–7% total profit</li>
+</ul>
+
+<p><strong>Days 15–25 (Execution Phase):</strong></p>
+<ul>
+<li>☐ If 6%+ up: scale to 1% risk (maximum)</li>
+<li>☐ If below 4%: stay conservative, focus on consistency</li>
+<li>☐ Reduce to 2 trades per day as you approach target</li>
+<li>☐ At 8% profit (80% of target): reduce risk back to 0.5%</li>
+<li>☐ Close the final 2% with minimum risk over several days</li>
+</ul>
+
+<p><strong>Days 26–30 (Closing Phase):</strong></p>
+<ul>
+<li>☐ If within 1% of target: take only A+ setups at 0.5% risk</li>
+<li>☐ If not close to target: accept the result, don't gamble</li>
+<li>☐ Final day: no new positions after 12 PM your time</li>
+<li>☐ Verify all positions closed, all rules met</li>
+</ul>
+
+<p><strong>The golden rule throughout:</strong> A day where you followed all rules but lost money is a <strong>successful</strong> day. A day where you broke rules but made money is a <strong>dangerous</strong> day — you got lucky, and that luck will run out.</p>`,
+      },
+    ],
+    faq: [
+      {
+        question: 'What is the best prop firm for beginners in 2026?',
+        answer: 'FTMO is generally the best starting point for beginners because of its static drawdown (your floor never moves up with profits), clear rules, and well-documented evaluation process. The 10% profit target with 10% max drawdown gives a 1:1 target-to-risk ratio, which is achievable for most consistent strategies. Start with a $10,000 account ($84 fee) to minimize financial risk while learning the challenge process.',
+      },
+      {
+        question: 'How much does it cost to keep retaking prop firm challenges?',
+        answer: 'Challenge fees range from $84 (10K account) to $979 (200K account) per attempt. The average trader takes 3–5 attempts to pass, meaning total costs of $252–$4,895 before getting funded. With TradeMetrics Pro, you can prepare with PropGuard protection, AI optimization, and statistical edge validation — all completely free until 2027 — dramatically increasing your odds of passing on the first attempt.',
+      },
+      {
+        question: 'What is the difference between static and trailing drawdown?',
+        answer: 'Static drawdown (FTMO, FundedNext) measures your maximum loss from your starting balance — it never changes. If you start at $100K with 10% max DD, your floor is always $90K even if equity grows to $110K. Trailing drawdown (The5ers) moves your floor up as equity increases — if equity hits $110K with 6% trailing DD, your floor rises to $103,400. EOD trailing (Apex, TopStep) is a hybrid that only updates the floor at end-of-day, giving intraday flexibility.',
+      },
+      {
+        question: 'Can I use an EA (Expert Advisor) on a prop firm challenge?',
+        answer: 'Yes, most prop firms allow EAs. FTMO, FundedNext, The5ers, and Apex all permit automated trading. TradeMetrics Pro\'s Strategy Hub generates production-ready EAs with built-in prop firm compliance — daily loss enforcement, max drawdown protection, lot size limits, and Friday close. The EA handles execution while PropGuard handles risk protection.',
+      },
+      {
+        question: 'How do I avoid breaching the daily loss limit?',
+        answer: 'Set your personal daily loss cutoff at 50% of the firm\'s limit (e.g., 2.5% if the firm allows 5%). Stop trading immediately when you hit your personal limit. Use PropGuard to automate this — it blocks new trades at your threshold and can close all positions if equity approaches the firm\'s actual limit. Additionally, limit yourself to 3 trades per day and take a mandatory 15-minute break after any loss.',
+      },
+      {
+        question: 'What win rate do I need to pass a prop firm challenge?',
+        answer: 'With proper risk management (1% risk per trade, 1.5:1 reward-to-risk ratio), a win rate of 45–50% is sufficient to reach a 10% profit target within 30 days. At 55–60% win rate with the same R:R, you\'ll reach target comfortably with room to spare. The key isn\'t maximizing win rate — it\'s maintaining consistency and avoiding large drawdowns that force you into recovery mode.',
+      },
+    ],
+    relatedSlugs: ['prop-firm-risk-management', 'trading-psychology-discipline', 'backtesting-guide-2026'],
+  },
+
+  // ─────────────────────────────────────────────────────────────
   // 1. Backtesting Guide 2026
   // ─────────────────────────────────────────────────────────────
   {

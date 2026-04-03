@@ -7,6 +7,9 @@ import {
   ArrowRight,
   BrainCircuit,
   Calculator,
+  ChevronDown,
+  ChevronRight,
+  Clock,
   CloudOff,
   FlaskConical,
   HardDriveDownload,
@@ -15,12 +18,21 @@ import {
   PackageOpen,
   ShieldAlert,
   ShieldCheck,
+  TriangleAlert,
   WifiOff,
   Radio,
   Zap,
   Store,
   Sparkles,
   BarChart3,
+  BookOpen,
+  TrendingUp,
+  Target,
+  Brain,
+  LineChart,
+  Shield,
+  Lightbulb,
+  GraduationCap,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────── */
@@ -31,6 +43,7 @@ const NAV_LINKS = [
   { label: 'Features', href: '#features', color: '#00ff9d' },
   { label: 'How It Works', href: '#how-it-works', color: '#00e5ff' },
   { label: 'Ecosystem', href: '#ecosystem', color: '#b18cff' },
+  { label: 'Blog', href: '#blog', color: '#ffb800' },
 ];
 
 const STATS = [
@@ -175,6 +188,7 @@ const FOOTER_LINKS_PLATFORM = [
 const FOOTER_LINKS_RESOURCES = [
   { label: 'Documentation', href: '#' },
   { label: 'API Reference', href: '#' },
+  { label: 'Blog', href: '#blog' },
   { label: 'Referral Program', href: '/referral' },
   { label: 'Status', href: '#' },
 ];
@@ -182,7 +196,125 @@ const FOOTER_LINKS_RESOURCES = [
 const FOOTER_LINKS_LEGAL = [
   { label: 'Privacy', href: '/privacy' },
   { label: 'Terms', href: '/terms' },
-  { label: 'Risk Disclosure', href: '#' },
+  { label: 'Risk Disclosure', href: '#risk-disclosure' },
+];
+
+/* ────────────────────────────────────────────────────────────── */
+/*  Blog articles data                                           */
+/* ────────────────────────────────────────────────────────────── */
+
+const BLOG_CATEGORIES = [
+  { label: 'All', value: 'all' },
+  { label: 'Strategy', value: 'strategy' },
+  { label: 'Risk Management', value: 'risk' },
+  { label: 'Psychology', value: 'psychology' },
+  { label: 'Education', value: 'education' },
+  { label: 'Analysis', value: 'analysis' },
+] as const;
+
+const BLOG_POSTS = [
+  {
+    id: 'backtesting-guide-2026',
+    title: 'The Complete Guide to Backtesting Your Trading Strategy in 2026',
+    excerpt: 'Learn how to properly backtest your forex strategies using historical data, avoid common pitfalls like curve fitting, and validate your edge with statistical confidence.',
+    category: 'strategy',
+    tag: 'Backtesting',
+    icon: LineChart,
+    readTime: '12 min',
+    date: '2026-03-28',
+    featured: true,
+    accentColor: 'neon-cyan',
+  },
+  {
+    id: 'prop-firm-risk-management',
+    title: 'Risk Management Rules Every Prop Firm Trader Must Follow',
+    excerpt: 'The #1 reason traders fail funded challenges isn\'t bad entries — it\'s poor risk management. Master daily drawdown limits, position sizing, and the 1% rule.',
+    category: 'risk',
+    tag: 'Prop Firms',
+    icon: Shield,
+    readTime: '9 min',
+    date: '2026-03-25',
+    featured: true,
+    accentColor: 'neon-green',
+  },
+  {
+    id: 'trading-psychology-discipline',
+    title: 'Trading Psychology: Why Discipline Beats Intelligence Every Time',
+    excerpt: 'Explore the mental frameworks used by consistently profitable traders. From revenge trading to FOMO, learn to master the emotions that sabotage your account.',
+    category: 'psychology',
+    tag: 'Mindset',
+    icon: Brain,
+    readTime: '8 min',
+    date: '2026-03-22',
+    featured: true,
+    accentColor: 'neon-purple',
+  },
+  {
+    id: 'supply-demand-zones',
+    title: 'How to Identify and Trade Supply & Demand Zones Like a Pro',
+    excerpt: 'Supply and demand zones are where institutional orders cluster. Learn to spot fresh zones, measure their strength, and time entries with confluence.',
+    category: 'strategy',
+    tag: 'Price Action',
+    icon: Target,
+    readTime: '11 min',
+    date: '2026-03-19',
+    accentColor: 'neon-cyan',
+  },
+  {
+    id: 'monte-carlo-edge-validation',
+    title: 'Monte Carlo Simulation: Proving Your Trading Edge Is Real',
+    excerpt: 'Gut feeling isn\'t proof. Use Monte Carlo simulation and bootstrap confidence intervals to statistically validate whether your strategy has a real, durable edge.',
+    category: 'analysis',
+    tag: 'Statistics',
+    icon: BarChart3,
+    readTime: '14 min',
+    date: '2026-03-15',
+    accentColor: 'neon-amber',
+  },
+  {
+    id: 'beginner-forex-mistakes',
+    title: '10 Forex Trading Mistakes That Blow Accounts (and How to Avoid Them)',
+    excerpt: 'From overleveraging to ignoring the spread, these are the most common mistakes that destroy new traders. Each one comes with a concrete fix you can apply today.',
+    category: 'education',
+    tag: 'Beginners',
+    icon: GraduationCap,
+    readTime: '7 min',
+    date: '2026-03-12',
+    accentColor: 'neon-red',
+  },
+  {
+    id: 'multi-timeframe-analysis',
+    title: 'Multi-Timeframe Analysis: The Framework Profitable Traders Use',
+    excerpt: 'Why single-timeframe trading leads to false signals. Learn the top-down approach: weekly for bias, daily for structure, H4 for entry — with real chart examples.',
+    category: 'strategy',
+    tag: 'Technical Analysis',
+    icon: TrendingUp,
+    readTime: '10 min',
+    date: '2026-03-08',
+    accentColor: 'neon-cyan',
+  },
+  {
+    id: 'trading-journal-guide',
+    title: 'How to Keep a Trading Journal That Actually Improves Your Results',
+    excerpt: 'Most traders journal wrong — they log entries but never analyze patterns. Build a journal that reveals your edge leaks, best sessions, and optimal instruments.',
+    category: 'education',
+    tag: 'Journaling',
+    icon: BookOpen,
+    readTime: '8 min',
+    date: '2026-03-05',
+    accentColor: 'neon-green',
+  },
+  {
+    id: 'ai-trading-strategies',
+    title: 'AI-Powered Trading: How Machine Learning Is Changing Retail Forex',
+    excerpt: 'From pattern recognition to adaptive parameter optimization, explore how AI tools are giving retail traders capabilities that were once reserved for hedge funds.',
+    category: 'analysis',
+    tag: 'AI & ML',
+    icon: Sparkles,
+    readTime: '13 min',
+    date: '2026-03-01',
+    accentColor: 'neon-purple',
+  },
 ];
 
 /* ────────────────────────────────────────────────────────────── */
@@ -549,6 +681,14 @@ const PRODUCT_VIZ: Record<string, () => JSX.Element> = {
 export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register' }>({ open: false, mode: 'register' });
+  const [disclaimerExpanded, setDisclaimerExpanded] = useState(false);
+  const [blogCategory, setBlogCategory] = useState<string>('all');
+
+  const filteredPosts = blogCategory === 'all'
+    ? BLOG_POSTS
+    : BLOG_POSTS.filter(p => p.category === blogCategory);
+
+  const featuredPosts = BLOG_POSTS.filter(p => p.featured);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -1328,7 +1468,245 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          9. FINAL CTA — Full-width, maximum breathing room
+          9. BLOG — AEO/SEO Optimized Trading Insights
+          ══════════════════════════════════════════════════════════ */}
+      <section id="blog" className="px-6 py-20 md:py-32">
+        {/* JSON-LD Structured Data for AEO/SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Blog',
+              name: 'TradeMetrics Pro Trading Insights',
+              description: 'Expert trading education, strategy guides, risk management tips, and market analysis for forex and CFD traders.',
+              url: 'https://trademetrics.pro/blog',
+              publisher: {
+                '@type': 'Organization',
+                name: 'TradeMetrics Pro',
+                url: 'https://trademetrics.pro',
+              },
+              blogPost: BLOG_POSTS.map(post => ({
+                '@type': 'BlogPosting',
+                headline: post.title,
+                description: post.excerpt,
+                datePublished: post.date,
+                author: { '@type': 'Organization', name: 'TradeMetrics Pro' },
+                articleSection: post.category,
+                keywords: post.tag,
+                timeRequired: `PT${parseInt(post.readTime)}M`,
+              })),
+            }),
+          }}
+        />
+
+        <div className="mx-auto max-w-6xl">
+          {/* Section header */}
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Knowledge Base
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
+          <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
+            Trading Insights & Education
+          </h2>
+          <p
+            className="animate-fade-in-up mx-auto mt-4 max-w-xl text-center text-slate-400"
+            style={{ animationDelay: '60ms' }}
+          >
+            Level up your trading with expert guides on strategy, risk management, psychology, and market analysis
+          </p>
+
+          {/* Category filter pills */}
+          <nav
+            className="animate-fade-in-up mt-10 flex flex-wrap items-center justify-center gap-2"
+            style={{ animationDelay: '120ms' }}
+            aria-label="Blog categories"
+          >
+            {BLOG_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => setBlogCategory(cat.value)}
+                className={`rounded-full px-4 py-1.5 font-mono-nums text-[11px] uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                  blogCategory === cat.value
+                    ? 'border border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan shadow-[0_0_12px_rgba(0,229,255,0.15)]'
+                    : 'border border-terminal-border/40 bg-terminal-card/30 text-terminal-muted hover:border-terminal-border-hover hover:text-terminal-text'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Featured posts — top row, 3 large cards */}
+          {blogCategory === 'all' && (
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {featuredPosts.map((post, i) => {
+                const accentMap: Record<string, string> = {
+                  'neon-cyan': '#00e5ff',
+                  'neon-green': '#00ff9d',
+                  'neon-purple': '#b18cff',
+                  'neon-amber': '#ffb800',
+                  'neon-red': '#ff3d57',
+                };
+                const accent = accentMap[post.accentColor] || '#00e5ff';
+                return (
+                  <article
+                    key={post.id}
+                    className="glass-premium card-hover-premium animate-fade-in-up group relative flex flex-col overflow-hidden rounded-2xl"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  >
+                    {/* Top accent bar */}
+                    <div
+                      className="h-[3px] w-full"
+                      style={{ background: `linear-gradient(90deg, ${accent}60, ${accent}20, transparent)` }}
+                    />
+
+                    {/* Featured badge */}
+                    <div className="absolute right-4 top-5">
+                      <span
+                        className="chip border text-[9px]"
+                        style={{
+                          borderColor: `${accent}30`,
+                          backgroundColor: `${accent}10`,
+                          color: accent,
+                        }}
+                      >
+                        Featured
+                      </span>
+                    </div>
+
+                    <div className="flex flex-1 flex-col p-6">
+                      {/* Icon + Category */}
+                      <div className="mb-4 flex items-center gap-3">
+                        <div
+                          className="flex h-10 w-10 items-center justify-center rounded-xl border transition-shadow duration-300 group-hover:shadow-[0_0_16px_var(--glow)]"
+                          style={{
+                            borderColor: `${accent}25`,
+                            backgroundColor: `${accent}10`,
+                            '--glow': `${accent}30`,
+                          } as React.CSSProperties}
+                        >
+                          <post.icon className="h-5 w-5" style={{ color: accent }} />
+                        </div>
+                        <span className="font-mono-nums text-[10px] uppercase tracking-widest text-terminal-muted">
+                          {post.tag}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="font-display text-lg font-semibold leading-snug text-white group-hover:text-neon-cyan transition-colors duration-200">
+                        {post.title}
+                      </h3>
+
+                      {/* Excerpt */}
+                      <p className="mt-3 flex-1 text-sm leading-relaxed text-slate-400">
+                        {post.excerpt}
+                      </p>
+
+                      {/* Footer meta */}
+                      <div className="mt-5 flex items-center justify-between border-t border-terminal-border/30 pt-4">
+                        <div className="flex items-center gap-3 font-mono-nums text-[10px] text-terminal-muted">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {post.readTime}
+                          </span>
+                          <span className="text-terminal-border">|</span>
+                          <time dateTime={post.date}>
+                            {new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </time>
+                        </div>
+                        <span
+                          className="flex items-center gap-1 font-mono-nums text-[10px] font-medium transition-all duration-200 group-hover:gap-2"
+                          style={{ color: accent }}
+                        >
+                          Read <ChevronRight className="h-3 w-3" />
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {/* All / filtered posts — compact list cards */}
+          <div className={`${blogCategory === 'all' ? 'mt-8' : 'mt-12'} grid gap-4 md:grid-cols-2`}>
+            {(blogCategory === 'all' ? BLOG_POSTS.filter(p => !p.featured) : filteredPosts).map((post, i) => {
+              const accentMap: Record<string, string> = {
+                'neon-cyan': '#00e5ff',
+                'neon-green': '#00ff9d',
+                'neon-purple': '#b18cff',
+                'neon-amber': '#ffb800',
+                'neon-red': '#ff3d57',
+              };
+              const accent = accentMap[post.accentColor] || '#00e5ff';
+              return (
+                <article
+                  key={post.id}
+                  className="glass-premium card-hover-premium animate-fade-in-up group flex items-start gap-4 overflow-hidden rounded-xl p-5"
+                  style={{ animationDelay: `${i * 80}ms` }}
+                >
+                  {/* Icon */}
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-shadow duration-300 group-hover:shadow-[0_0_14px_var(--glow)]"
+                    style={{
+                      borderColor: `${accent}20`,
+                      backgroundColor: `${accent}08`,
+                      '--glow': `${accent}25`,
+                    } as React.CSSProperties}
+                  >
+                    <post.icon className="h-5 w-5" style={{ color: accent }} />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    {/* Tag + Read time */}
+                    <div className="flex items-center gap-2 font-mono-nums text-[10px] text-terminal-muted">
+                      <span
+                        className="rounded-full border px-2 py-0.5"
+                        style={{
+                          borderColor: `${accent}20`,
+                          color: accent,
+                        }}
+                      >
+                        {post.tag}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-2.5 w-2.5" />
+                        {post.readTime}
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="mt-2 font-display text-[15px] font-semibold leading-snug text-white group-hover:text-neon-cyan transition-colors duration-200">
+                      {post.title}
+                    </h3>
+
+                    {/* Excerpt — truncated */}
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          {/* View all CTA */}
+          <div className="animate-fade-in-up mt-10 flex justify-center" style={{ animationDelay: '200ms' }}>
+            <button className="group inline-flex items-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 px-8 py-3 text-sm font-semibold text-slate-300 backdrop-blur transition-all hover:border-neon-cyan/30 hover:bg-neon-cyan/[0.05] hover:text-neon-cyan hover:shadow-[0_0_20px_rgba(0,229,255,0.1)] cursor-pointer">
+              <BookOpen className="h-4 w-4" />
+              View All Articles
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          10. FINAL CTA — Full-width, maximum breathing room
           ══════════════════════════════════════════════════════════ */}
       <section className="px-6 py-24 md:py-40">
         <div className="mx-auto max-w-2xl text-center">
@@ -1353,7 +1731,95 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-          10. FOOTER — Mission Control
+          11. RISK DISCLAIMER — Visible, compliant, non-intrusive
+          ══════════════════════════════════════════════════════════ */}
+      <section
+        id="risk-disclosure"
+        className="relative px-6 py-10"
+        role="contentinfo"
+        aria-label="Risk Disclosure"
+      >
+        <div className="mx-auto max-w-4xl">
+          <div
+            className="overflow-hidden rounded-2xl border border-neon-amber/15 bg-gradient-to-br from-neon-amber/[0.03] to-transparent backdrop-blur-sm"
+            style={{
+              boxShadow: '0 0 30px rgba(255,184,0,0.04), inset 0 1px 0 rgba(255,184,0,0.06)',
+            }}
+          >
+            {/* Header — always visible */}
+            <button
+              onClick={() => setDisclaimerExpanded(!disclaimerExpanded)}
+              className="flex w-full items-center justify-between px-6 py-4 cursor-pointer group"
+              aria-expanded={disclaimerExpanded}
+              aria-controls="risk-disclaimer-content"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-neon-amber/20 bg-neon-amber/10">
+                  <TriangleAlert className="h-4 w-4 text-neon-amber" />
+                </div>
+                <div className="text-left">
+                  <h3 className="font-display text-sm font-semibold text-neon-amber/90">
+                    Risk Disclosure
+                  </h3>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-slate-400">
+                    CFDs are complex instruments and come with a high risk of losing money rapidly due to leverage.
+                  </p>
+                </div>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-neon-amber/50 transition-transform duration-300 group-hover:text-neon-amber ${
+                  disclaimerExpanded ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* Expanded content */}
+            <div
+              id="risk-disclaimer-content"
+              className={`overflow-hidden transition-all duration-500 ease-out ${
+                disclaimerExpanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+              }`}
+            >
+              <div className="border-t border-neon-amber/10 px-6 pb-6 pt-4">
+                <div className="space-y-3 text-[13px] leading-relaxed text-slate-400">
+                  <p>
+                    <strong className="text-slate-300">High Risk Investment Warning:</strong>{' '}
+                    Trading foreign exchange (Forex) and Contracts for Difference (CFDs) on margin carries a high level
+                    of risk and may not be suitable for all investors. The high degree of leverage can work against you
+                    as well as for you. Before deciding to trade Forex or CFDs, you should carefully consider your
+                    investment objectives, level of experience, and risk appetite.
+                  </p>
+                  <p>
+                    The possibility exists that you could sustain a loss of some or all of your initial investment and
+                    therefore you should not invest money that you cannot afford to lose. You should be aware of all the
+                    risks associated with foreign exchange and CFD trading, and seek advice from an independent financial
+                    advisor if you have any doubts.
+                  </p>
+                  <p>
+                    <strong className="text-slate-300">No Financial Advice:</strong>{' '}
+                    TradeMetrics Pro provides tools for trade management, signal copying, and performance analytics.
+                    Nothing on this platform constitutes financial advice, a recommendation, or a solicitation to buy
+                    or sell any financial instrument. Past performance is not indicative of future results.
+                  </p>
+                  <p className="rounded-lg border border-neon-amber/10 bg-neon-amber/[0.04] px-4 py-3">
+                    <span className="font-mono-nums text-[11px] uppercase tracking-wider text-neon-amber">
+                      Between 74-89% of retail investor accounts lose money when trading CFDs.
+                    </span>
+                    <br />
+                    <span className="text-[12px] text-slate-500">
+                      You should consider whether you understand how CFDs work and whether you can afford to
+                      take the high risk of losing your money.
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          12. FOOTER — Mission Control
           ══════════════════════════════════════════════════════════ */}
       <footer className="relative z-10">
         {/* ── Telemetry Status Bar ─────────────────────────────── */}

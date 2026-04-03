@@ -82,6 +82,26 @@ function getGreeting(): string {
   return 'Late Session';
 }
 
+const TRADER_TITLES = [
+  'Commander', 'Strategist', 'Operator', 'Captain', 'Analyst',
+  'Tactician', 'Navigator', 'Architect', 'Sentinel', 'Pioneer',
+  'Vanguard', 'Maverick', 'Pathfinder', 'Ace', 'Phantom',
+  'Oracle', 'Warden', 'Titan', 'Catalyst', 'Cipher',
+  'Apex', 'Edge Runner', 'Signal Master', 'Alpha', 'Precision',
+  'Forge Master', 'Risk Lord', 'Chart Whisperer', 'Market Monk', 'Night Hawk',
+  'Shadow Trader',
+];
+
+function getTraderTitle(email: string | undefined): string {
+  if (!email) return 'Commander';
+  // Hash the email to get a stable per-user index
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = ((hash << 5) - hash + email.charCodeAt(i)) | 0;
+  }
+  return TRADER_TITLES[Math.abs(hash) % TRADER_TITLES.length];
+}
+
 function useRealtimeClock(): string {
   const [time, setTime] = useState(() => {
     const now = new Date();
@@ -508,7 +528,7 @@ export function DashboardPage() {
       <div className="animate-fade-in-up flex items-start justify-between" style={{ animationDelay: '60ms' }}>
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-terminal-muted font-semibold mb-1.5">
-            {getGreeting()}, Commander
+            {getGreeting()}, {getTraderTitle(user?.email)}
           </p>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             <span className="text-gradient-animated">{user?.name ?? 'Trader'}</span>

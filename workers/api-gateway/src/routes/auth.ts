@@ -70,6 +70,21 @@ auth.post('/register', async (c) => {
       await c.env.DB.prepare('UPDATE users SET referred_by = ? WHERE id = ?')
         .bind(referrer.id, result.id)
         .run();
+
+      // Notify referrer via Telegram (non-blocking)
+      try {
+        const tgRaw = await c.env.BOT_STATE.get(`user:${referrer.id}:tg`);
+        if (tgRaw) {
+          const chatId = String((JSON.parse(tgRaw) as { chatId?: unknown }).chatId);
+          const maskedEmail = body.email.slice(0, 3) + '***@' + body.email.split('@')[1];
+          const msg = `🎉 <b>New Referral Signup!</b>\n\n${maskedEmail} just joined TradeMetrics Pro using your referral link. Keep sharing — you earn $0.50 for every EA they purchase! 💰`;
+          fetch(`https://api.telegram.org/bot${c.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'HTML' }),
+          }).catch(() => {});
+        }
+      } catch {}
     }
   }
 

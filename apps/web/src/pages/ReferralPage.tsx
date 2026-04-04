@@ -150,9 +150,46 @@ export function ReferralPage() {
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-terminal-muted">
-            Share this link on social media, Telegram groups, or with trading friends
-          </p>
+          {/* Share buttons */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-terminal-muted mr-1">Share via:</span>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'TradeMetrics Pro', text: 'Free cross-VPS trade copier with PropGuard, AI analytics, and more. Join me:', url: info.referral_link });
+                } else {
+                  handleCopy();
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-neon-cyan/25 bg-neon-cyan/10 px-3 py-2 text-[11px] font-semibold text-neon-cyan hover:bg-neon-cyan/20 transition-all cursor-pointer"
+            >
+              <Share2 className="h-3 w-3" /> Share
+            </button>
+            <a
+              href={`https://t.me/share/url?url=${encodeURIComponent(info.referral_link)}&text=${encodeURIComponent('Free trading platform with AI analytics, PropGuard protection, and cross-VPS signal copier. Join me:')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#26A5E4]/25 bg-[#26A5E4]/10 px-3 py-2 text-[11px] font-semibold text-[#26A5E4] hover:bg-[#26A5E4]/20 transition-all"
+            >
+              Telegram
+            </a>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('Free trading platform with AI analytics, PropGuard protection, and cross-VPS signal copier. Check it out:')}&url=${encodeURIComponent(info.referral_link)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-terminal-border/30 bg-terminal-card/40 px-3 py-2 text-[11px] font-semibold text-slate-300 hover:bg-terminal-card/60 transition-all"
+            >
+              X / Twitter
+            </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent('Free trading platform with AI analytics, PropGuard, and cross-VPS copier. Join me: ' + info.referral_link)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#25D366]/25 bg-[#25D366]/10 px-3 py-2 text-[11px] font-semibold text-[#25D366] hover:bg-[#25D366]/20 transition-all"
+            >
+              WhatsApp
+            </a>
+          </div>
         </div>
       </div>
 

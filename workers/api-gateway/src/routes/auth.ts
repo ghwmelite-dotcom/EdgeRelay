@@ -362,4 +362,76 @@ auth.get('/google/callback', async (c) => {
   return c.redirect(`${frontendUrl}/auth/callback#token=${token}&user=${encodeURIComponent(JSON.stringify({ id: user.id, email: user.email, name: user.name, plan: user.plan }))}`);
 });
 
+// ── POST /auth/telegram — Authenticate via Telegram WebApp initData ──
+
+auth.post('/telegram', async (c) => {
+  const body = await c.req.json<{ initData: string }>();
+  if (!body.initData) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'BAD_REQUEST', message: 'initData required' } }, 400);
+  }
+
+  // Parse initData (URL-encoded params)
+  const params = new URLSearchParams(body.initData);
+  const hash = params.get('hash');
+  const authDate = params.get('auth_date');
+  const userStr = params.get('user');
+
+  if (!hash || !authDate || !userStr) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'INVALID_DATA', message: 'Invalid Telegram initData' } }, 400);
+  }
+
+  // Verify HMAC-SHA256 (Telegram Bot API verification)
+  const botToken = c.env.TELEGRAM_BOT_TOKEN;
+  const secretKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode('WebAppData'),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const secretHash = await crypto.subtle.sign('HMAC', secretKey, new TextEncoder().encode(botToken));
+  const verifyKey = await crypto.subtle.importKey(
+    'raw',
+    secretHash,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+
+  // Build data-check-string (sorted params excluding hash)
+  const checkParams = Array.from(params.entries())
+    .filter(([k]) => k !== 'hash')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join('\n');
+
+  const signature = await crypto.subtle.sign('HMAC', verifyKey, new TextEncoder().encode(checkParams));
+  const computedHash = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (computedHash !== hash) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'AUTH_FAILED', message: 'Invalid Telegram signature' } }, 401);
+  }
+
+  // Check auth_date is recent (within 1 hour)
+  const authTime = parseInt(authDate, 10);
+  if (Math.abs(Date.now() / 1000 - authTime) > 3600) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'EXPIRED', message: 'Telegram auth expired' } }, 401);
+  }
+
+  // Look up linked TradeMetrics user
+  const tgUser = JSON.parse(userStr) as { id: number };
+  const mapping = await c.env.BOT_STATE.get(`tg:${tgUser.id}`);
+  if (!mapping) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NOT_LINKED', message: 'Telegram account not linked. Use /start in @EdgeRelayBot first.' } }, 401);
+  }
+
+  const { user_id } = JSON.parse(mapping) as { user_id: string };
+
+  // Generate JWT
+  const expiryHours = parseInt(c.env.JWT_EXPIRY_HOURS || '24', 10);
+  const token = await generateToken(user_id, c.env.JWT_SECRET, expiryHours);
+
+  return c.json<ApiResponse>({ data: { token }, error: null });
+});
+
 export { auth };

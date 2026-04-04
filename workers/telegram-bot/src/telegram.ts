@@ -34,4 +34,15 @@ export class TelegramApi {
   async setWebhook(url: string, secret: string): Promise<unknown> {
     return this.call('setWebhook', { url, secret_token: secret });
   }
+
+  async setChatMenuButton(chatId: number, webAppUrl: string): Promise<unknown> {
+    return this.call('setChatMenuButton', {
+      chat_id: chatId,
+      menu_button: {
+        type: 'web_app',
+        text: 'Dashboard',
+        web_app: { url: webAppUrl },
+      },
+    });
+  }
 }

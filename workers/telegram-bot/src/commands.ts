@@ -52,6 +52,13 @@ export async function handleStart(
     // Delete one-time code
     await env.BOT_STATE.delete(`tg-link:${code}`);
 
+    // Set menu button to open Mini App dashboard
+    try {
+      const { TelegramApi } = await import('./telegram.js');
+      const botApi = new TelegramApi(env.TELEGRAM_BOT_TOKEN);
+      await botApi.setChatMenuButton(chatId, 'https://edgerelay-web.pages.dev/tg');
+    } catch {}
+
     return {
       text: [
         '✅ <b>Connected to TradeMetrics Pro!</b>',
@@ -61,6 +68,8 @@ export async function handleStart(
         '• 📊 Trade signal notifications',
         '• 🛡 Equity guard alerts',
         '• 📈 Daily &amp; weekly performance summaries',
+        '',
+        '💡 Tap the <b>Dashboard</b> button in the menu to open your mini dashboard!',
         '',
         'Manage your preferences at trademetricspro.com/settings',
       ].join('\n'),

@@ -46,6 +46,7 @@ const CounselorPage = React.lazy(() => import('@/pages/CounselorPage').then(m =>
 const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m => ({ default: m.TradeGoldPage })));
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
+const TelegramMiniAppPage = React.lazy(() => import('@/pages/TelegramMiniAppPage').then(m => ({ default: m.TelegramMiniAppPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -117,6 +118,7 @@ function App() {
         <Route path="/trade-gold" element={<TradeGoldPage />} />
         <Route path="/trade-indices" element={<TradeIndicesPage />} />
         <Route path="/trade-oil" element={<TradeOilPage />} />
+        <Route path="/tg" element={<TelegramMiniAppPage />} />
 
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 

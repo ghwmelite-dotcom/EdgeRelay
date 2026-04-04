@@ -9,6 +9,7 @@ import {
   Calculator,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Clock,
   CloudOff,
   FlaskConical,
@@ -693,6 +694,7 @@ const PRODUCT_VIZ: Record<string, () => JSX.Element> = {
 
 export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register' }>({ open: false, mode: 'register' });
   const [disclaimerExpanded, setDisclaimerExpanded] = useState(false);
   const [blogCategory, setBlogCategory] = useState<string>('all');
@@ -704,7 +706,10 @@ export function LandingPage() {
   const featuredPosts = BLOG_POSTS.filter(p => p.featured);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      setShowScrollTop(window.scrollY > 600);
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -2259,6 +2264,19 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Scroll to Top */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Scroll to top"
+        className={`fixed bottom-8 right-8 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-neon-cyan/25 bg-terminal-surface/90 text-neon-cyan shadow-[0_0_20px_rgba(0,229,255,0.15)] backdrop-blur-md transition-all duration-400 cursor-pointer hover:bg-neon-cyan/15 hover:border-neon-cyan/40 hover:shadow-[0_0_28px_rgba(0,229,255,0.3)] hover:scale-110 active:scale-95 ${
+          showScrollTop
+            ? 'translate-y-0 opacity-100'
+            : 'translate-y-4 opacity-0 pointer-events-none'
+        }`}
+      >
+        <ChevronUp className="h-5 w-5" />
+      </button>
 
       {/* Auth Modal */}
       <AuthModal

@@ -88,6 +88,7 @@ export async function handleStart(
       '/accounts — List trading accounts',
       '/signals — Recent signals',
       '/unlink — Disconnect Telegram',
+      '/app — Open Dashboard mini app',
       '/help — Show all commands',
     ].join('\n'),
   };
@@ -438,8 +439,35 @@ export async function routeCommand(
       return handleAccounts(env, user);
     case '/help':
       return handleHelp();
+    case '/app':
+      return handleApp(env, user, chatId);
     default:
       return handleUnknown();
+  }
+}
+
+// ── /app — Set Mini App menu button ──────────────────────────────
+async function handleApp(env: Env, user: TelegramUser, chatId: number): Promise<CommandResult> {
+  const mapping = await env.BOT_STATE.get(`tg:${user.id}`);
+  if (!mapping) {
+    return { text: '❌ Your account is not linked. Use /start to connect first.' };
+  }
+
+  try {
+    const { TelegramApi } = await import('./telegram.js');
+    const api = new TelegramApi(env.TELEGRAM_BOT_TOKEN);
+    await api.setChatMenuButton(chatId, 'https://edgerelay-web.pages.dev/tg');
+    return {
+      text: [
+        '✅ <b>Dashboard button activated!</b>',
+        '',
+        'Tap the <b>Dashboard</b> button in the menu bar (bottom-left, next to the text input) to open your TradeMetrics Pro mini dashboard.',
+        '',
+        'You can view your accounts, PropGuard status, and recent signals — all without leaving Telegram. 📊',
+      ].join('\n'),
+    };
+  } catch {
+    return { text: '❌ Failed to set menu button. Please try again.' };
   }
 }
 

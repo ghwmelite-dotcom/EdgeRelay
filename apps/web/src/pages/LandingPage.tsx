@@ -1671,6 +1671,72 @@ export function LandingPage() {
               </div>
             </div>
           </div>
+
+          {/* Feature 6: Sage AI Counselor — Full width hero card */}
+          <div
+            className="animate-fade-in-up mt-6 overflow-hidden rounded-2xl border border-neon-purple/20"
+            style={{
+              animationDelay: '520ms',
+              background: 'linear-gradient(135deg, rgba(177,140,255,0.05) 0%, rgba(255,61,87,0.02) 50%, rgba(0,229,255,0.02) 100%)',
+              boxShadow: '0 0 40px rgba(177,140,255,0.05)',
+            }}
+          >
+            <div className="flex flex-col gap-0 md:flex-row">
+              {/* Left — Content */}
+              <div className="flex-1 p-8 md:p-10">
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-neon-purple/25 bg-neon-purple/10 px-3 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-neon-purple animate-pulse" />
+                    <span className="font-mono-nums text-[9px] uppercase tracking-widest text-neon-purple">AI-Powered</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-neon-green/20 bg-neon-green/10 px-2.5 py-0.5 font-mono-nums text-[9px] text-neon-green">
+                    Free &amp; Unlimited
+                  </span>
+                </div>
+                <h3 className="font-display text-2xl font-bold text-white">
+                  Meet Sage — Your AI Trading Counselor
+                </h3>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+                  The first AI counselor built specifically for traders.
+                  Sage understands revenge trading, FOMO, the fear of pulling the trigger, overtrading addiction,
+                  and the emotional weight of blown accounts. It sees your real trading data and knows what you're going through — not generic advice, but personal, contextual support.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {['Trading Psychology', 'Context-Aware', 'Conversation Memory', 'Data-Driven Empathy'].map((tag) => (
+                    <span key={tag} className="chip border border-neon-purple/20 bg-neon-purple/10 text-neon-purple">{tag}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Right — Chat preview */}
+              <div className="flex-1 border-t border-neon-purple/10 bg-terminal-bg/50 p-6 md:border-l md:border-t-0">
+                <div className="space-y-3">
+                  {/* User message */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-neon-cyan/10 border border-neon-cyan/15 px-4 py-2.5 text-[11px] leading-relaxed text-slate-300">
+                      I turned a green day into a red one. I keep overtrading and I feel terrible about it.
+                    </div>
+                  </div>
+                  {/* Sage response */}
+                  <div className="flex gap-2">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-neon-purple/20 to-neon-cyan/20 border border-neon-purple/25 mt-0.5">
+                      <Brain className="h-3 w-3 text-neon-purple" />
+                    </div>
+                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-terminal-card/40 border border-terminal-border/20 px-4 py-2.5 text-[11px] leading-relaxed text-slate-400">
+                      <span className="text-slate-300">😔 I hear you. That cycle of giving back profits is one of the most frustrating patterns in trading.</span> I can see you've had 8 trades today — that's above your average. 💙 The skill is clearly there. Let's talk about what pulled you back in after you knew you should stop...
+                    </div>
+                  </div>
+                  {/* Conversation starters */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {['😔 Rough day', '🔄 Overtrading', '😰 Fear to trade', '🎉 Big win'].map((s) => (
+                      <span key={s} className="rounded-full border border-terminal-border/30 bg-terminal-card/30 px-2.5 py-1 font-mono-nums text-[9px] text-terminal-muted">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

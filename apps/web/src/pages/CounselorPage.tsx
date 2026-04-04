@@ -9,6 +9,8 @@ import {
   Brain,
   Clock,
   Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
@@ -25,6 +27,20 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   created_at?: string;
+}
+
+function formatTimeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr + 'Z').getTime(); // Assume UTC from server
+  const diffMs = now - then;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(then).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 const WELCOME_MESSAGE = `Hey there. I'm Sage — your trading counselor.
@@ -155,21 +171,34 @@ export function CounselorPage() {
     <div className="page-enter flex h-[calc(100vh-64px)] overflow-hidden rounded-2xl border border-terminal-border/30 bg-terminal-card/10">
 
       {/* ── Sidebar: Sessions ─────────────────────────── */}
-      <div className={`${sidebarOpen ? 'w-72' : 'w-0'} shrink-0 border-r border-terminal-border/20 bg-terminal-surface/50 transition-all duration-300 overflow-hidden`}>
-        <div className="flex h-full flex-col">
+      <div
+        className="shrink-0 border-r border-terminal-border/20 bg-terminal-surface/50 transition-all duration-300 overflow-hidden"
+        style={{ width: sidebarOpen ? '280px' : '0px' }}
+      >
+        <div className="flex h-full w-[280px] flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-terminal-border/20 px-4 py-3">
             <div className="flex items-center gap-2">
               <Heart size={16} className="text-neon-purple" />
               <span className="text-sm font-semibold text-white">Sessions</span>
+              <span className="font-mono-nums text-[10px] text-terminal-muted">({sessions.length})</span>
             </div>
-            <button
-              onClick={createSession}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-neon-cyan/20 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan/20 transition-all cursor-pointer"
-              title="New conversation"
-            >
-              <Plus size={14} />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={createSession}
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-neon-cyan/20 bg-neon-cyan/10 text-neon-cyan hover:bg-neon-cyan/20 transition-all cursor-pointer"
+                title="New conversation"
+              >
+                <Plus size={14} />
+              </button>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-terminal-border/30 text-terminal-muted hover:text-white hover:bg-terminal-card/50 transition-all cursor-pointer"
+                title="Collapse sidebar"
+              >
+                <PanelLeftClose size={14} />
+              </button>
+            </div>
           </div>
 
           {/* Session list */}
@@ -179,30 +208,45 @@ export function CounselorPage() {
                 <Loader2 size={16} className="animate-spin" />
               </div>
             )}
-            {sessions.map((s) => (
-              <div
-                key={s.id}
-                className={`group mx-2 mb-1 flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer transition-all ${
-                  activeSessionId === s.id
-                    ? 'bg-neon-purple/10 border border-neon-purple/20 text-white'
-                    : 'text-terminal-muted hover:bg-terminal-card/50 hover:text-slate-300'
-                }`}
-                onClick={() => loadMessages(s.id)}
-              >
-                <MessageCircle size={13} className="shrink-0" />
-                <span className="flex-1 truncate text-[12px]">{s.title}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
-                  className="hidden group-hover:flex h-5 w-5 items-center justify-center rounded text-terminal-muted hover:text-neon-red transition-colors cursor-pointer"
+            {sessions.map((s) => {
+              const isActive = activeSessionId === s.id;
+              const timeAgo = formatTimeAgo(s.updated_at);
+              return (
+                <div
+                  key={s.id}
+                  className={`group mx-2 mb-1 rounded-lg px-3 py-2.5 cursor-pointer transition-all ${
+                    isActive
+                      ? 'bg-neon-purple/10 border border-neon-purple/20'
+                      : 'hover:bg-terminal-card/50 border border-transparent'
+                  }`}
+                  onClick={() => loadMessages(s.id)}
                 >
-                  <Trash2 size={11} />
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-start gap-2.5">
+                    <MessageCircle size={13} className={`shrink-0 mt-0.5 ${isActive ? 'text-neon-purple' : 'text-terminal-muted/50'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[12px] leading-snug line-clamp-2 ${isActive ? 'text-white font-medium' : 'text-slate-400'}`}>
+                        {s.title}
+                      </p>
+                      <p className="font-mono-nums text-[9px] text-terminal-muted/50 mt-1">{timeAgo}</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
+                      className="hidden group-hover:flex h-5 w-5 shrink-0 items-center justify-center rounded text-terminal-muted/40 hover:text-neon-red transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
             {!loadingSessions && sessions.length === 0 && (
-              <p className="px-4 py-8 text-center text-[11px] text-terminal-muted">
-                No conversations yet.<br />Start one — Sage is ready.
-              </p>
+              <div className="px-4 py-10 text-center">
+                <MessageCircle size={24} className="mx-auto text-terminal-muted/20 mb-3" />
+                <p className="text-[11px] text-terminal-muted">
+                  No conversations yet.
+                </p>
+                <p className="text-[10px] text-terminal-muted/50 mt-1">Start one — Sage is ready.</p>
+              </div>
             )}
           </div>
         </div>
@@ -214,12 +258,15 @@ export function CounselorPage() {
         {/* Chat header */}
         <div className="flex items-center justify-between border-b border-terminal-border/20 px-6 py-3">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-terminal-border/30 text-terminal-muted hover:text-white transition-colors cursor-pointer lg:hidden"
-            >
-              <MessageCircle size={14} />
-            </button>
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-terminal-border/30 text-terminal-muted hover:text-neon-purple hover:border-neon-purple/30 transition-all cursor-pointer"
+                title="Show sessions"
+              >
+                <PanelLeftOpen size={14} />
+              </button>
+            )}
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-neon-purple/20 to-neon-cyan/20 border border-neon-purple/25">
               <Brain size={18} className="text-neon-purple" />
             </div>

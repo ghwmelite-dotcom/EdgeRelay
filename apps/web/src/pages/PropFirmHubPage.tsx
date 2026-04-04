@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAccountsStore } from '@/stores/accounts';
 import { usePropGuardStore } from '@/stores/propguard';
+import { FundedBlueprintWidget } from '@/components/propguard/FundedBlueprintWidget';
 import type { Account } from '@/stores/accounts';
 
 /* ────────────────────────────────────────────────────────────── */
@@ -489,6 +490,9 @@ export function PropFirmHubPage() {
               </div>
             </div>
           )}
+
+          {/* Funded Trader Blueprint */}
+          <FundedBlueprintWidget />
 
           {/* Quick links */}
           <div className="rounded-2xl border border-terminal-border/40 bg-terminal-card/20 overflow-hidden">

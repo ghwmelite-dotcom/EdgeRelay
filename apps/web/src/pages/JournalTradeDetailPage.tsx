@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { useJournalStore } from '@/stores/journal';
+import { TradeAutopsySection } from '@/components/journal/TradeAutopsySection';
 
 /* ------------------------------------------------------------------ */
 /*  Formatting helpers                                                 */
@@ -396,6 +397,9 @@ export function JournalTradeDetailPage() {
           </span>
         </DetailRow>
       </SectionCard>
+
+      {/* ── Trade Autopsy (losing trades only) ──────────── */}
+      <TradeAutopsySection trade={t} accountId={accountId!} />
     </div>
   );
 }

@@ -31,6 +31,9 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { TelegramBanner } from '@/components/dashboard/TelegramBanner';
 import { MarketHoursWidget } from '@/components/dashboard/MarketHoursWidget';
 import { MarketIntelWidget } from '@/components/dashboard/MarketIntelWidget';
+import { CommunityPulseWidget } from '@/components/dashboard/CommunityPulseWidget';
+import { FlightCheckWidget } from '@/components/dashboard/FlightCheckWidget';
+import { StrategyGenomeWidget } from '@/components/dashboard/StrategyGenomeWidget';
 
 // ── Signal type from API ─────────────────────────────────────────
 
@@ -702,6 +705,15 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
         <MarketHoursWidget />
         <MarketIntelWidget />
+      </div>
+
+      {/* ── Pre-Trade Flight Check ────────────────────────────── */}
+      <FlightCheckWidget />
+
+      {/* ── Community Trading Pulse + Strategy DNA ────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <CommunityPulseWidget />
+        <StrategyGenomeWidget />
       </div>
 
       {/* ── Master Accounts — Signal Sources ──────────────────────── */}

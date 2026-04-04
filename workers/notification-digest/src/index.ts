@@ -4,6 +4,7 @@ interface Env {
   DB: D1Database;
   BOT_STATE: KVNamespace;
   TELEGRAM_BOT_TOKEN: string;
+  TELEGRAM_CHANNEL_ID: string;
 }
 
 interface PrefRow {
@@ -82,7 +83,22 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
 
     if (!events || events.length === 0) continue;
 
-    // Get all users with news_alerts enabled
+    // ── Post to @edgerelay channel (once per event) ──
+    for (const event of events) {
+      const channelDedupKey = `channel-alert:${event.id}:${minutesBefore}`;
+      const channelSent = await env.BOT_STATE.get(channelDedupKey);
+      if (!channelSent && env.TELEGRAM_CHANNEL_ID) {
+        const emoji = minutesBefore === 30 ? '⚠️' : '🚨';
+        const label = minutesBefore === 30 ? 'Heads Up' : 'Imminent';
+        const forecastInfo = event.forecast ? ` (forecast: ${event.forecast})` : '';
+        const previousInfo = event.previous ? `\nPrevious: ${event.previous}` : '';
+        const msg = `${emoji} <b>${label}: ${event.event_name}</b> in ${minutesBefore} min${forecastInfo}${previousInfo}\n\n🏷 Currency: ${event.currency}\n🕐 Time: ${event.event_time}`;
+        ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg));
+        await env.BOT_STATE.put(channelDedupKey, '1', { expirationTtl: 3600 });
+      }
+    }
+
+    // ── Post to individual user DMs ──
     const { results: users } = await env.DB.prepare(
       `SELECT user_id FROM notification_preferences WHERE news_alerts = 1`,
     ).all<{ user_id: string }>();
@@ -143,7 +159,44 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
 
   if (!newsItems || newsItems.length === 0) return;
 
-  // Get all users with news_alerts enabled
+  // ── Post to @edgerelay channel (once per batch, deduped) ──
+  if (env.TELEGRAM_CHANNEL_ID) {
+    const unsentChannel: typeof newsItems = [];
+    for (const item of newsItems) {
+      const dedupKey = `news-channel:${item.id}`;
+      const alreadySent = await env.BOT_STATE.get(dedupKey);
+      if (!alreadySent) unsentChannel.push(item);
+    }
+
+    if (unsentChannel.length > 0) {
+      const batch = unsentChannel.slice(0, 5);
+      const lines: string[] = ['📰 <b>Breaking News</b>', ''];
+
+      for (const item of batch) {
+        const time = item.published_at.slice(11, 16);
+        const currencies = item.related_currencies ? ` [${item.related_currencies}]` : '';
+        lines.push(`• <b>${escapeHtml(item.headline)}</b>${currencies}`);
+        lines.push(`  <i>${time} UTC — ${item.source}</i>`);
+        lines.push('');
+      }
+
+      if (unsentChannel.length > 5) {
+        lines.push(`<i>+${unsentChannel.length - 5} more headlines</i>`);
+      }
+
+      lines.push('<i>via @edgerelay — TradeMetrics Pro</i>');
+
+      const msg = lines.join('\n').trim();
+      await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg);
+
+      for (const item of batch) {
+        await env.BOT_STATE.put(`news-channel:${item.id}`, '1', { expirationTtl: 21600 });
+      }
+      console.log(`[digest] Pushed ${batch.length} headlines to channel ${env.TELEGRAM_CHANNEL_ID}`);
+    }
+  }
+
+  // ── Post to individual user DMs ──
   const { results: users } = await env.DB.prepare(
     `SELECT user_id FROM notification_preferences WHERE news_alerts = 1`,
   ).all<{ user_id: string }>();
@@ -227,6 +280,19 @@ async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void
     if (utcHour === session.closeHour) type = 'close';
     if (!type) continue;
 
+    // ── Post to @edgerelay channel ──
+    if (env.TELEGRAM_CHANNEL_ID) {
+      const channelDedupKey = `session-channel:${session.name}:${type}:${today}`;
+      const channelSent = await env.BOT_STATE.get(channelDedupKey);
+      if (!channelSent) {
+        const emoji = type === 'open' ? '🟢' : '🔴';
+        const msg = `${emoji} <b>${session.name} Session ${type === 'open' ? 'Open' : 'Closed'}</b> (${String(utcHour).padStart(2, '0')}:00 UTC)`;
+        ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg));
+        await env.BOT_STATE.put(channelDedupKey, '1', { expirationTtl: 86400 });
+      }
+    }
+
+    // ── Post to individual user DMs ──
     const { results: users } = await env.DB.prepare(
       `SELECT user_id FROM notification_preferences WHERE session_alerts = 1`,
     ).all<{ user_id: string }>();

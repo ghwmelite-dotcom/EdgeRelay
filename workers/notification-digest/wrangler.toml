@@ -14,5 +14,8 @@ database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
 binding = "BOT_STATE"
 id = "cccd807ee9d64f3d84ace82529092566"
 
+[vars]
+TELEGRAM_CHANNEL_ID = "@edgerelay"
+
 # Set via wrangler secret:
 # TELEGRAM_BOT_TOKEN

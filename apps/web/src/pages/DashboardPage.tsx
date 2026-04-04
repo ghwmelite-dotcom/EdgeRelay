@@ -35,6 +35,7 @@ import { CommunityPulseWidget } from '@/components/dashboard/CommunityPulseWidge
 import { FlightCheckWidget } from '@/components/dashboard/FlightCheckWidget';
 import { StrategyGenomeWidget } from '@/components/dashboard/StrategyGenomeWidget';
 import { useJournalStore } from '@/stores/journal';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
 // ── Signal type from API ─────────────────────────────────────────
 
@@ -504,6 +505,10 @@ export function DashboardPage() {
   const { checkTelegramStatus } = useNotificationStore();
   const { trades, fetchTrades } = useJournalStore();
   const clock = useRealtimeClock();
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try { return localStorage.getItem('onboarding_dismissed') !== '1'; }
+    catch { return true; }
+  });
 
   useEffect(() => { checkTelegramStatus(); }, []);
 
@@ -587,6 +592,11 @@ export function DashboardPage() {
     <div className="space-y-8">
       {/* ── System Status Bar ────────────────────────────────────── */}
       <SystemStatusBar />
+
+      {/* ── Onboarding Wizard (new users) ──────────────────────── */}
+      {showOnboarding && accounts.length === 0 && (
+        <OnboardingWizard onDismiss={() => setShowOnboarding(false)} />
+      )}
 
       {/* ── Mission Control Header ───────────────────────────────── */}
       <div className="animate-fade-in-up flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between" style={{ animationDelay: '60ms' }}>

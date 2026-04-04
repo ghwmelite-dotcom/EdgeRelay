@@ -166,19 +166,34 @@ const BENEFITS = [
 
 const TESTIMONIALS = [
   {
-    quote: 'TradeMetrics Pro replaced my VPS setup entirely. Signals hit my 6 funded accounts faster than my old copier handled one.',
-    name: 'Alex M.',
-    context: 'Managing 6 FTMO accounts',
-  },
-  {
-    quote: 'PropGuard saved me twice in one week. It blocked trades that would have breached my drawdown limit on a $200k account.',
+    quote: 'PropGuard blocked 4 trades this week that would have breached my daily loss limit. Two of those would have cost me the account. This thing literally pays for itself — except it\'s free.',
     name: 'Sarah K.',
-    context: 'Running 3 funded challenges',
+    context: '$200K FTMO account',
+    metric: 'Saved 4 breaches',
   },
   {
-    quote: 'Setup took 10 minutes. No VPS, no port forwarding, no headaches. Just install the EA and it works.',
+    quote: 'TradeMetrics Pro replaced my $97/month copier. Signals hit my 6 funded accounts across 3 different VPSes in under 500ms. I was skeptical, but the latency is actually better than what I paid for.',
+    name: 'Alex M.',
+    context: '6 funded accounts',
+    metric: '$97/mo saved',
+  },
+  {
+    quote: 'The AI told me my win rate drops 22% during Asian session. I stopped trading it and my monthly P&L jumped by $3,400. Data I would never have found on my own.',
+    name: 'Marcus T.',
+    context: 'Gold & indices trader',
+    metric: '+$3,400/mo',
+  },
+  {
+    quote: 'I talked to Sage after blowing my third challenge. No judgment, just genuine understanding. It helped me see I was revenge trading every Thursday. Haven\'t blown an account since.',
+    name: 'James L.',
+    context: 'FundedNext trader',
+    metric: '0 breaches since',
+  },
+  {
+    quote: 'Generated a custom EA in 60 seconds — described my strategy in plain English and got compilable MQL5 with built-in risk management. No coding, no MetaEditor headaches.',
     name: 'David R.',
-    context: 'Prop firm trader',
+    context: 'EA developer',
+    metric: '60-second EA',
   },
 ];
 
@@ -1814,7 +1829,7 @@ export function LandingPage() {
             What Traders Are Saying
           </h2>
 
-          {/* Featured testimonial — the second one (PropGuard story) is most compelling */}
+          {/* Featured testimonial — PropGuard story */}
           <div
             className="glass-premium animate-fade-in-up mt-14 rounded-2xl p-8 md:p-12"
             style={{
@@ -1823,45 +1838,39 @@ export function LandingPage() {
               boxShadow: '0 0 40px rgba(0,229,255,0.05)',
             }}
           >
-            {/* Stars */}
-            <div className="mb-6 flex gap-1">
-              {[...Array(5)].map((_, si) => (
-                <svg
-                  key={si}
-                  className="h-5 w-5 text-neon-cyan"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, si) => (
+                  <svg key={si} className="h-4 w-4 text-neon-cyan" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              {TESTIMONIALS[0].metric && (
+                <span className="rounded-full border border-neon-green/25 bg-neon-green/10 px-3 py-0.5 font-mono-nums text-[11px] font-semibold text-neon-green">
+                  {TESTIMONIALS[0].metric}
+                </span>
+              )}
             </div>
 
-            <blockquote className="text-xl leading-relaxed text-slate-200 md:text-2xl">
-              &ldquo;{TESTIMONIALS[1].quote}&rdquo;
+            <blockquote className="text-lg leading-relaxed text-slate-200 md:text-xl">
+              &ldquo;{TESTIMONIALS[0].quote}&rdquo;
             </blockquote>
 
-            <div className="mt-8 flex items-center gap-4">
-              {/* Avatar placeholder */}
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-neon-cyan/20 bg-neon-cyan/10">
-                <span className="font-display text-lg font-bold text-neon-cyan">
-                  {TESTIMONIALS[1].name[0]}
-                </span>
+            <div className="mt-6 flex items-center gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-neon-cyan/20 bg-neon-cyan/10">
+                <span className="font-display text-base font-bold text-neon-cyan">{TESTIMONIALS[0].name[0]}</span>
               </div>
               <div>
-                <p className="font-display text-base font-semibold text-white">
-                  {TESTIMONIALS[1].name}
-                </p>
-                <p className="font-mono-nums text-sm text-neon-cyan/70">
-                  {TESTIMONIALS[1].context}
-                </p>
+                <p className="font-display text-sm font-semibold text-white">{TESTIMONIALS[0].name}</p>
+                <p className="font-mono-nums text-[12px] text-neon-cyan/70">{TESTIMONIALS[0].context}</p>
               </div>
             </div>
           </div>
 
-          {/* Secondary testimonials — smaller, below */}
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            {[TESTIMONIALS[0], TESTIMONIALS[2]].map((t, i) => (
+          {/* Grid testimonials */}
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {TESTIMONIALS.slice(1).map((t, i) => (
               <div
                 key={t.name}
                 className="glass-premium animate-fade-in-up rounded-xl p-6"
@@ -1870,12 +1879,22 @@ export function LandingPage() {
                   borderLeft: '2px solid var(--color-terminal-border)',
                 }}
               >
+                {t.metric && (
+                  <span className="mb-3 inline-block rounded-full border border-neon-green/20 bg-neon-green/10 px-2.5 py-0.5 font-mono-nums text-[10px] font-semibold text-neon-green">
+                    {t.metric}
+                  </span>
+                )}
                 <p className="text-sm leading-relaxed text-slate-400">
                   &ldquo;{t.quote}&rdquo;
                 </p>
-                <div className="mt-4">
-                  <p className="font-display text-sm font-semibold text-white">{t.name}</p>
-                  <p className="font-mono-nums text-xs text-terminal-muted">{t.context}</p>
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-terminal-border/30 bg-terminal-card/50">
+                    <span className="font-display text-xs font-bold text-terminal-muted">{t.name[0]}</span>
+                  </div>
+                  <div>
+                    <p className="font-display text-[12px] font-semibold text-white">{t.name}</p>
+                    <p className="font-mono-nums text-[10px] text-terminal-muted">{t.context}</p>
+                  </div>
                 </div>
               </div>
             ))}

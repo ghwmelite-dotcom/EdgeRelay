@@ -729,10 +729,9 @@ const CUSTOM_EA_SCAFFOLD = `//+-------------------------------------------------
 #property copyright "TradeMetrics Pro"
 #property link      "https://trademetrics.pro"
 #property version   "1.00"
-#property strict
 #property description "{{EA_DESCRIPTION}}"
 
-#include <Trade\\Trade.mqh>
+#include <Trade\\\\Trade.mqh>
 
 //--- Input Parameters
 input group "=== Trade Management ==="

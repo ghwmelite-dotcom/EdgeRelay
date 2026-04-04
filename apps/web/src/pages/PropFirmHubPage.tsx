@@ -92,11 +92,13 @@ export function PropFirmHubPage() {
   const handleApplyPreset = async () => {
     if (!selectedAccountId || !selectedPreset) return;
     setApplyError(null);
-    try {
-      await applyPreset(selectedAccountId, selectedPreset, parseFloat(initialBalance) || 100000);
+    await applyPreset(selectedAccountId, selectedPreset, parseFloat(initialBalance) || 100000);
+    // Check if the preset was actually saved by verifying rules state
+    const { rules: updatedRules, error: pgError } = usePropGuardStore.getState();
+    if (updatedRules[selectedAccountId]) {
       setSetupStep('done');
-    } catch (err) {
-      setApplyError('Failed to apply preset. Please try again.');
+    } else {
+      setApplyError(pgError || 'Failed to apply preset. Please try again.');
     }
   };
 

@@ -34,6 +34,8 @@ import {
   Shield,
   Lightbulb,
   GraduationCap,
+  Menu,
+  X,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────── */
@@ -695,6 +697,7 @@ const PRODUCT_VIZ: Record<string, () => JSX.Element> = {
 export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModal, setAuthModal] = useState<{ open: boolean; mode: 'login' | 'register' }>({ open: false, mode: 'register' });
   const [disclaimerExpanded, setDisclaimerExpanded] = useState(false);
   const [blogCategory, setBlogCategory] = useState<string>('all');
@@ -715,7 +718,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="scan-line relative min-h-screen bg-terminal-bg text-slate-100">
+    <div className="scan-line relative min-h-screen bg-terminal-bg text-slate-100 overflow-x-hidden">
       {/* Ambient glow orbs */}
       <div className="ambient-glow" />
       {/* Noise texture */}
@@ -845,13 +848,68 @@ export function LandingPage() {
             </button>
             <button
               onClick={() => setAuthModal({ open: true, mode: 'register' })}
-              className="btn-premium group relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg bg-neon-cyan px-5 py-2 text-[12px] font-bold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.25)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.45)] cursor-pointer"
+              className="btn-premium group relative hidden sm:inline-flex items-center gap-1.5 overflow-hidden rounded-lg bg-neon-cyan px-5 py-2 text-[12px] font-bold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.25)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.45)] cursor-pointer"
             >
-              {/* Inner radial highlight */}
               <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(255,255,255,0.2),transparent)]" />
               <span className="relative">Launch App</span>
               <ArrowRight className="relative h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
             </button>
+
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-terminal-border/30 text-terminal-muted hover:text-white transition-colors cursor-pointer sm:hidden"
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu panel */}
+        <div
+          className={`sm:hidden overflow-hidden transition-all duration-300 ease-out ${
+            mobileMenuOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="border-t border-terminal-border/20 px-6 py-4 space-y-2">
+            {NAV_LINKS.map((l) =>
+              l.href.startsWith('/') ? (
+                <Link
+                  key={l.href}
+                  to={l.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-terminal-muted transition-colors hover:bg-terminal-card/50 hover:text-white"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color, boxShadow: `0 0 5px ${l.color}` }} />
+                  {l.label}
+                </Link>
+              ) : (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-terminal-muted transition-colors hover:bg-terminal-card/50 hover:text-white"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color, boxShadow: `0 0 5px ${l.color}` }} />
+                  {l.label}
+                </a>
+              )
+            )}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => { setAuthModal({ open: true, mode: 'login' }); setMobileMenuOpen(false); }}
+                className="flex-1 rounded-lg border border-terminal-border bg-terminal-card/60 py-2.5 text-sm font-semibold text-slate-200 cursor-pointer"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => { setAuthModal({ open: true, mode: 'register' }); setMobileMenuOpen(false); }}
+                className="flex-1 rounded-lg bg-neon-cyan py-2.5 text-sm font-semibold text-terminal-bg cursor-pointer"
+              >
+                Launch App
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -1073,7 +1131,7 @@ export function LandingPage() {
             </div>
 
             {/* Cross-VPS architecture indicator */}
-            <div className="mt-4 flex items-center justify-center gap-3 font-mono-nums text-[11px]">
+            <div className="mt-4 hidden md:flex items-center justify-center gap-3 font-mono-nums text-[11px]">
               <div className="flex items-center gap-1.5 rounded-md border border-terminal-border bg-terminal-card/60 px-3 py-1.5">
                 <span className="live-dot" style={{ width: 4, height: 4 }} />
                 <span className="text-slate-400">VPS 1</span>

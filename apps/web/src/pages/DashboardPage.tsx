@@ -589,7 +589,7 @@ export function DashboardPage() {
       <SystemStatusBar />
 
       {/* ── Mission Control Header ───────────────────────────────── */}
-      <div className="animate-fade-in-up flex items-start justify-between" style={{ animationDelay: '60ms' }}>
+      <div className="animate-fade-in-up flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between" style={{ animationDelay: '60ms' }}>
         <div>
           <p className="text-[10px] uppercase tracking-[0.2em] text-terminal-muted font-semibold mb-1.5">
             {getGreeting()}, {getTraderTitle(user?.email)}

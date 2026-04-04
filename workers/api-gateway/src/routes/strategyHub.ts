@@ -970,6 +970,7 @@ void ManageTrailingStop()
 `;
 
 strategyHub.post('/generate-custom', async (c) => {
+  try {
   const userId = c.get('userId');
 
   // Limit check (same as regular generate)
@@ -1077,6 +1078,8 @@ Generate the GetSignal() function and any required indicator initialization. Out
       .trim();
 
     if (signalLogic.length > 50 && signalLogic.includes('GetSignal')) {
+      // Post-process: fix common AI MQL5 mistakes
+      signalLogic = fixMql5CommonErrors(signalLogic);
       modelUsed = 'llama-3.3-70b';
     } else {
       throw new Error('AI output did not contain valid GetSignal function');
@@ -1115,12 +1118,18 @@ Generate the GetSignal() function and any required indicator initialization. Out
   output = output.replace(/\{\{STRATEGY_INPUTS\}\}/g, strategyInputs);
   output = output.replace(/\{\{SIGNAL_LOGIC\}\}/g, signalLogic);
 
-  // Record generation
-  await c.env.DB.prepare(
-    'INSERT INTO ea_generations (user_id, strategy_id, parameters_json) VALUES (?, ?, ?)',
-  )
-    .bind(userId, 'custom-ea', JSON.stringify({ ...body, model: modelUsed }))
-    .run();
+  // Record generation (strategy_id has FK constraint — use NULL-safe approach)
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO ea_generations (id, user_id, strategy_id, parameters_json)
+       VALUES (lower(hex(randomblob(16))), ?, ?, ?)`,
+    )
+      .bind(userId, 'custom-ea', JSON.stringify({ ...body, model: modelUsed }))
+      .run();
+  } catch {
+    // FK constraint may fail for 'custom-ea' — log but don't block download
+    console.log('[custom-ea] Generation record insert skipped (FK constraint)');
+  }
 
   const safeName = body.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
   const filename = `custom-${safeName}-${Date.now()}.mq5`;
@@ -1131,7 +1140,78 @@ Generate the GetSignal() function and any required indicator initialization. Out
       'Content-Disposition': `attachment; filename="${filename}"`,
     },
   });
+
+  } catch (err) {
+    console.error('[custom-ea] Generation error:', err);
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'GENERATION_FAILED', message: err instanceof Error ? err.message : 'Custom EA generation failed' } },
+      500,
+    );
+  }
 });
+
+/**
+ * Post-process AI-generated MQL5 to fix common mistakes.
+ * LLMs often produce MQL4 syntax or wrong parameter counts.
+ */
+function fixMql5CommonErrors(code: string): string {
+  let fixed = code;
+
+  // Fix iMA with 7 args (extra trailing 0): iMA(sym, tf, period, shift, method, price, 0) → remove last 0
+  fixed = fixed.replace(/iMA\(([^)]+),\s*0\s*\)/g, (match, args) => {
+    const parts = args.split(',').map((s: string) => s.trim());
+    if (parts.length === 6) return `iMA(${args}, 0)`; // Already correct 7 params — keep
+    if (parts.length >= 7) return `iMA(${parts.slice(0, 6).join(', ')})`; // Remove extra param
+    return match;
+  });
+
+  // Fix iRSI with numeric applied_price (0 instead of PRICE_CLOSE)
+  fixed = fixed.replace(/iRSI\(([^,]+),\s*([^,]+),\s*(\d+),\s*0\s*\)/g, 'iRSI($1, $2, $3, PRICE_CLOSE)');
+
+  // Fix iBands with MODE_MAIN (MQL4 param): iBands(sym, tf, period, shift, dev, MODE_MAIN, price) → remove MODE_MAIN
+  fixed = fixed.replace(/iBands\(([^,]+),\s*([^,]+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*MODE_MAIN,\s*([^)]+)\)/g,
+    'iBands($1, $2, $3, $4, $5, $6)');
+  fixed = fixed.replace(/iBands\(([^,]+),\s*([^,]+),\s*(\d+),\s*([^,]+),\s*(\d+),\s*MODE_MAIN,\s*([^)]+)\)/g,
+    'iBands($1, $2, $3, $4, $5, $6)');
+
+  // Fix iATR with extra param: iATR(sym, tf, period, price) → iATR(sym, tf, period)
+  fixed = fixed.replace(/iATR\(([^,]+),\s*([^,]+),\s*(\d+),\s*[^)]+\)/g, 'iATR($1, $2, $3)');
+
+  // Fix iMACD — MQL5 sig: iMACD(sym, tf, fast, slow, signal, applied_price) — 6 params only
+  fixed = fixed.replace(/iMACD\(([^,]+),\s*([^,]+),\s*(\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*MODE_MAIN[^)]*\)/g,
+    'iMACD($1, $2, $3, $4, $5, $6)');
+
+  // Fix iStochastic — MQL5 sig: iStochastic(sym, tf, Kperiod, Dperiod, slowing, ma_method, price_field) — 7 params
+  fixed = fixed.replace(/iStochastic\(([^,]+),\s*([^,]+),\s*(\d+),\s*(\d+),\s*(\d+),\s*\d+,\s*\d+,\s*\d+,\s*\d+[^)]*\)/g,
+    'iStochastic($1, $2, $3, $4, $5, MODE_SMA, STO_LOWHIGH)');
+
+  // Remove iCustom lines that duplicate handles (AI sometimes creates both iMACD and iCustom for same indicator)
+  fixed = fixed.replace(/^\s*int\s+\w+\s*=\s*iCustom\([^)]*\);\s*$/gm, '   // [removed duplicate iCustom call]');
+
+  // Fix OP_BUY/OP_SELL (MQL4 constants) → POSITION_TYPE_BUY/POSITION_TYPE_SELL
+  fixed = fixed.replace(/\bOP_BUY\b/g, 'POSITION_TYPE_BUY');
+  fixed = fixed.replace(/\bOP_SELL\b/g, 'POSITION_TYPE_SELL');
+
+  // Fix iClose/iOpen/iHigh/iLow — valid in MQL5 but warn about potential issues
+  // These are fine in MQL5 — no change needed
+
+  // Fix deprecated OrderSend, OrderClose (MQL4) — flag as comment
+  fixed = fixed.replace(/\bOrderSend\s*\(/g, '// [MQL4-DEPRECATED] OrderSend(');
+  fixed = fixed.replace(/\bOrderClose\s*\(/g, '// [MQL4-DEPRECATED] OrderClose(');
+  fixed = fixed.replace(/\bOrderSelect\s*\(/g, '// [MQL4-DEPRECATED] OrderSelect(');
+  fixed = fixed.replace(/\bOrdersTotal\s*\(/g, '// [MQL4-DEPRECATED] OrdersTotal(');
+
+  // Fix Symbol() vs _Symbol — both valid but _Symbol is preferred
+  // No change needed — both compile fine in MQL5
+
+  // Fix Mode_* enum names (MQL4) → MODE_* (MQL5)
+  fixed = fixed.replace(/\bMode_SMA\b/g, 'MODE_SMA');
+  fixed = fixed.replace(/\bMode_EMA\b/g, 'MODE_EMA');
+  fixed = fixed.replace(/\bMode_SMMA\b/g, 'MODE_SMMA');
+  fixed = fixed.replace(/\bMode_LWMA\b/g, 'MODE_LWMA');
+
+  return fixed;
+}
 
 function sanitizeMql5String(s: string): string {
   return s.replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 200);

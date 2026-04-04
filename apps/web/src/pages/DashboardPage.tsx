@@ -17,6 +17,7 @@ import {
   Gauge,
   Sparkles,
   BarChart3,
+  Settings,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useAccountsStore, type Account } from '@/stores/accounts';
@@ -276,6 +277,56 @@ function MiniSparkline() {
           }}
         />
       ))}
+    </div>
+  );
+}
+
+// ── Alert Config Nudge ────────────────────────────────────────
+
+function AlertConfigNudge() {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return sessionStorage.getItem('alert-nudge-dismissed') === '1'; }
+    catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    try { sessionStorage.setItem('alert-nudge-dismissed', '1'); } catch {}
+  };
+
+  return (
+    <div className="animate-fade-in-up" style={{ animationDelay: '160ms' }}>
+      <div className="relative overflow-hidden rounded-xl border border-neon-cyan/15 bg-gradient-to-r from-neon-cyan/[0.04] to-transparent px-5 py-3.5">
+        <div className="flex items-center gap-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-neon-cyan/20 bg-neon-cyan/10">
+            <Sparkles size={16} className="text-neon-cyan" />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-slate-300">
+              <span className="font-semibold text-white">Stay ahead of the market</span> — enable breaking news, economic event warnings, and session alerts via Telegram.
+            </p>
+          </div>
+
+          <Link
+            to="/settings"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neon-cyan/25 bg-neon-cyan/10 px-3.5 py-2 text-[12px] font-semibold text-neon-cyan transition-all hover:bg-neon-cyan/20 hover:shadow-[0_0_12px_rgba(0,229,255,0.15)]"
+          >
+            <Settings size={13} />
+            Configure Alerts
+          </Link>
+
+          <button
+            onClick={handleDismiss}
+            className="shrink-0 text-terminal-muted/40 hover:text-terminal-muted transition-colors cursor-pointer"
+            aria-label="Dismiss"
+          >
+            <span className="text-lg leading-none">&times;</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -569,6 +620,9 @@ export function DashboardPage() {
 
       {/* ── Telegram Banner ──────────────────────────────────────── */}
       <TelegramBanner />
+
+      {/* ── Alert Config Nudge ─────────────────────────────────── */}
+      <AlertConfigNudge />
 
       {/* ── Top AI Insight ─────────────────────────────────────── */}
       <TopInsightCard />

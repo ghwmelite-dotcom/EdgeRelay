@@ -1468,6 +1468,207 @@ export function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
+          7b. INTELLIGENCE SUITE — 5 Innovative Features
+          ══════════════════════════════════════════════════════════ */}
+      <section className="px-6 py-20 md:py-32">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Intelligence Suite
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
+          <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
+            Features No Other Platform Has
+          </h2>
+          <p className="animate-fade-in-up mx-auto mt-4 max-w-2xl text-center text-slate-400" style={{ animationDelay: '60ms' }}>
+            Institutional-grade intelligence built from your own trading data.
+            Every insight is personal, every recommendation is actionable — and it's all free.
+          </p>
+
+          {/* Feature 1: Community Trading Pulse — Full width hero card */}
+          <div
+            className="animate-fade-in-up mt-14 overflow-hidden rounded-2xl border border-neon-purple/20 sm:col-span-2"
+            style={{
+              animationDelay: '100ms',
+              background: 'linear-gradient(135deg, rgba(177,140,255,0.04) 0%, rgba(0,229,255,0.02) 100%)',
+              boxShadow: '0 0 40px rgba(177,140,255,0.05)',
+            }}
+          >
+            <div className="flex flex-col gap-0 md:flex-row">
+              {/* Left — Content */}
+              <div className="flex-1 p-8 md:p-10">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-neon-purple/25 bg-neon-purple/10 px-3 py-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-neon-purple animate-pulse" />
+                  <span className="font-mono-nums text-[9px] uppercase tracking-widest text-neon-purple">Live Sentiment</span>
+                </div>
+                <h3 className="font-display text-2xl font-bold text-white">Community Trading Pulse</h3>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-400">
+                  Real-time sentiment data from actual trade executions — not Twitter polls or broker reports.
+                  See what percentage of traders are long vs short on every major pair, detect volume surges,
+                  and get crowded-trade alerts when consensus exceeds 80%.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {['Live Sentiment Bars', 'Volume Spike Detection', 'Crowded Trade Alerts', 'Community Win Rate'].map((tag) => (
+                    <span key={tag} className="chip border border-neon-purple/20 bg-neon-purple/10 text-neon-purple">{tag}</span>
+                  ))}
+                </div>
+              </div>
+              {/* Right — Mini viz */}
+              <div className="flex-1 border-t border-neon-purple/10 bg-terminal-bg/50 p-6 md:border-l md:border-t-0">
+                <div className="space-y-3">
+                  {[
+                    { pair: 'EURUSD', long: 62, color: '#00ff9d' },
+                    { pair: 'XAUUSD', long: 74, color: '#ffb800' },
+                    { pair: 'GBPUSD', long: 41, color: '#ff3d57' },
+                    { pair: 'USDJPY', long: 58, color: '#00e5ff' },
+                  ].map((p) => (
+                    <div key={p.pair} className="flex items-center gap-3">
+                      <span className="w-14 font-mono-nums text-[11px] font-semibold text-white">{p.pair}</span>
+                      <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-terminal-border/20">
+                        <div className="flex items-center justify-end pr-1.5 rounded-l-full" style={{ width: `${p.long}%`, background: `linear-gradient(90deg, #00ff9d15, #00ff9d30)` }}>
+                          <span className="font-mono-nums text-[8px] font-bold text-neon-green">{p.long}%</span>
+                        </div>
+                        <div className="flex items-center pl-1.5 rounded-r-full" style={{ width: `${100 - p.long}%`, background: `linear-gradient(90deg, #ff3d5730, #ff3d5715)` }}>
+                          <span className="font-mono-nums text-[8px] font-bold text-neon-red">{100 - p.long}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="mt-2 flex items-center gap-2 rounded-lg border border-neon-green/15 bg-neon-green/[0.04] px-3 py-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-neon-green" />
+                    <span className="font-mono-nums text-[10px] text-neon-green">Community Win Rate: 58%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Features 2-5: 2x2 Grid */}
+          <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            {/* Feature 2: Pre-Trade Flight Check */}
+            <div
+              className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6"
+              style={{ animationDelay: '200ms' }}
+            >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00e5ff30]">
+                <BarChart3 className="h-6 w-6 text-neon-cyan" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">Pre-Trade Flight Check</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Before you trade, know your edge. Your win rate by pair, by session, by day of week — computed from your own history.
+                Overtrading warnings when you exceed your daily average. The 60-second decision upgrade.
+              </p>
+              {/* Mini viz — session bars */}
+              <div className="mt-4 flex items-end gap-1.5 h-10">
+                {[
+                  { label: 'Mon', h: 65, c: '#00ff9d' },
+                  { label: 'Tue', h: 55, c: '#00e5ff' },
+                  { label: 'Wed', h: 78, c: '#00ff9d' },
+                  { label: 'Thu', h: 45, c: '#ffb800' },
+                  { label: 'Fri', h: 35, c: '#ff3d57' },
+                ].map((d) => (
+                  <div key={d.label} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full rounded-t" style={{ height: `${d.h}%`, backgroundColor: `${d.c}30`, borderTop: `2px solid ${d.c}` }} />
+                    <span className="font-mono-nums text-[7px] text-terminal-muted">{d.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature 3: Trade Autopsy */}
+            <div
+              className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6"
+              style={{ animationDelay: '280ms' }}
+            >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-amber/20 bg-neon-amber/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#ffb80030]">
+                <FlaskConical className="h-6 w-6 text-neon-amber" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">Trade Autopsy Reports</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Every losing trade gets a post-mortem. AI classifies the cause — news-driven, execution error, strategy failure, or market randomness.
+                Cross-references with economic events. Finally answers: "Was I wrong, or was I unlucky?"
+              </p>
+              {/* Mini viz — classification badges */}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {[
+                  { label: 'News-Driven', color: '#ffb800' },
+                  { label: 'Execution Error', color: '#ff3d57' },
+                  { label: 'Strategy Failure', color: '#b18cff' },
+                  { label: 'Market Randomness', color: '#00e5ff' },
+                ].map((c) => (
+                  <span key={c.label} className="rounded-full border px-2.5 py-1 font-mono-nums text-[9px]" style={{ borderColor: `${c.color}25`, color: c.color, backgroundColor: `${c.color}08` }}>
+                    {c.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature 4: Strategy DNA */}
+            <div
+              className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6"
+              style={{ animationDelay: '360ms' }}
+            >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-green/20 bg-neon-green/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00ff9d30]">
+                <Sparkles className="h-6 w-6 text-neon-green" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">Strategy DNA Fingerprint</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Your unique trading identity, visualized. Session focus, win rate, risk appetite, symbol concentration,
+                hold style, consistency, and direction bias — computed from every trade you've ever taken.
+              </p>
+              {/* Mini viz — DNA bars */}
+              <div className="mt-4 space-y-1.5">
+                {[
+                  { label: 'Session', pct: 72, color: '#00e5ff' },
+                  { label: 'Win Rate', pct: 61, color: '#00ff9d' },
+                  { label: 'R:R', pct: 55, color: '#ffb800' },
+                  { label: 'Consistency', pct: 68, color: '#b18cff' },
+                ].map((t) => (
+                  <div key={t.label} className="flex items-center gap-2">
+                    <span className="w-16 font-mono-nums text-[8px] text-terminal-muted">{t.label}</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-terminal-border/20 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${t.pct}%`, backgroundColor: `${t.color}60`, boxShadow: `0 0 6px ${t.color}25` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Feature 5: Funded Trader Blueprint */}
+            <div
+              className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6"
+              style={{ animationDelay: '440ms' }}
+            >
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-red/20 bg-neon-red/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#ff3d5730]">
+                <Target className="h-6 w-6 text-neon-red" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">Funded Trader Blueprint</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Compare yourself to the archetype of successfully funded traders across 8 dimensions.
+                Get a Readiness Score, see exactly where you fall short, and receive actionable recommendations to close the gap.
+              </p>
+              {/* Mini viz — score gauge */}
+              <div className="mt-4 flex items-center gap-4">
+                <div className="relative h-14 w-14">
+                  <svg viewBox="0 0 36 36" className="h-14 w-14 -rotate-90">
+                    <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-terminal-border)" strokeWidth="2.5" opacity="0.2" />
+                    <circle cx="18" cy="18" r="15" fill="none" stroke="#00ff9d" strokeWidth="2.5" strokeDasharray="66 94.2" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px #00ff9d50)' }} />
+                  </svg>
+                  <span className="absolute inset-0 flex items-center justify-center font-mono-nums text-[13px] font-bold text-neon-green">72</span>
+                </div>
+                <div>
+                  <p className="font-mono-nums text-[11px] font-semibold text-neon-green">Challenge Ready</p>
+                  <p className="font-mono-nums text-[9px] text-terminal-muted">3 improvements identified</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
           8. TESTIMONIALS — Single featured testimonial
           ══════════════════════════════════════════════════════════ */}
       <section id="testimonials" className="px-6 py-20 md:py-32">

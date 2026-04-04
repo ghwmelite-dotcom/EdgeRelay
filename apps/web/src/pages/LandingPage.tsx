@@ -59,7 +59,7 @@ const ECOSYSTEM = [
   {
     icon: Radio,
     title: 'Edge Signal Copier',
-    desc: 'The world\'s only free cross-VPS trade copier. Master on VPS 1, followers on VPS 2, 3, 4 — different servers, different brokers, different countries. Sub-500ms via Cloudflare\'s 300+ edge locations.',
+    desc: 'The world\'s only free cross-VPS trade copier. Forex, gold, indices, oil, crypto — any MT5 instrument. Master on VPS 1, followers on VPS 2, 3, 4 — different servers, different brokers, different countries. Sub-500ms via Cloudflare\'s 300+ edge locations.',
     badge: 'LIVE' as const,
   },
   {
@@ -101,7 +101,7 @@ const ECOSYSTEM = [
   {
     icon: Link2,
     title: 'Platform Bridge',
-    desc: 'Cross-platform trade copier with universal signal format. Symbol normalization across MT5, cTrader, DXTrade, and TradeLocker.',
+    desc: 'Cross-platform trade copier with universal signal format. Trade forex, metals, indices, commodities, and crypto across MT5, cTrader, DXTrade, and TradeLocker with automatic symbol normalization.',
     badge: 'LIVE' as const,
   },
 ];
@@ -135,7 +135,7 @@ const FEATURES = [
   {
     icon: CloudOff,
     title: 'Multi-Asset, One Chart',
-    desc: 'Trade EURUSD, GBPUSD, and XAUUSD simultaneously from a single EA on any chart. Auto-adaptive mode adjusts to trending, ranging, or volatile markets.',
+    desc: 'Trade forex, gold, NAS100, US30, oil, and crypto simultaneously from a single EA. Auto-adaptive mode adjusts to trending, ranging, or volatile markets across any instrument.',
   },
 ];
 
@@ -350,12 +350,12 @@ const PARTICLES = Array.from({ length: 12 }, (_, i) => ({
 /* ────────────────────────────────────────────────────────────── */
 
 const SIGNAL_LINES = [
-  { time: '14:32:07', pair: 'EURUSD', action: 'BUY', lot: '0.50', status: 'ok' },
-  { time: '14:31:44', pair: 'XAUUSD', action: 'SELL', lot: '1.00', status: 'ok' },
-  { time: '14:28:19', pair: 'GBPJPY', action: 'CLOSE', lot: '0.30', status: 'ok' },
-  { time: '14:25:02', pair: 'USDJPY', action: 'BUY', lot: '0.20', status: 'pending' },
-  { time: '14:22:58', pair: 'NZDUSD', action: 'SELL', lot: '0.75', status: 'ok' },
-  { time: '14:19:33', pair: 'EURJPY', action: 'BUY', lot: '0.40', status: 'ok' },
+  { time: '14:32:07', pair: 'XAUUSD', action: 'BUY', lot: '1.00', status: 'ok' },
+  { time: '14:31:44', pair: 'NAS100', action: 'SELL', lot: '0.50', status: 'ok' },
+  { time: '14:28:19', pair: 'EURUSD', action: 'BUY', lot: '0.30', status: 'ok' },
+  { time: '14:25:02', pair: 'USOIL', action: 'SELL', lot: '0.75', status: 'pending' },
+  { time: '14:22:58', pair: 'GBPJPY', action: 'CLOSE', lot: '0.40', status: 'ok' },
+  { time: '14:19:33', pair: 'US30', action: 'BUY', lot: '0.20', status: 'ok' },
 ];
 
 /* ────────────────────────────────────────────────────────────── */
@@ -364,9 +364,9 @@ const SIGNAL_LINES = [
 
 function CopierViz() {
   const signals = [
-    { time: '14:32', pair: 'EURUSD', side: 'BUY', lot: '0.50' },
-    { time: '14:31', pair: 'XAUUSD', side: 'SELL', lot: '1.00' },
-    { time: '14:28', pair: 'GBPJPY', side: 'BUY', lot: '0.30' },
+    { time: '14:32', pair: 'XAUUSD', side: 'BUY', lot: '1.00' },
+    { time: '14:31', pair: 'NAS100', side: 'SELL', lot: '0.50' },
+    { time: '14:28', pair: 'EURUSD', side: 'BUY', lot: '0.30' },
   ];
   return (
     <div className="space-y-3" style={{ minHeight: 120 }}>
@@ -934,9 +934,10 @@ export function LandingPage() {
               className="animate-fade-in-up mt-8 max-w-lg text-lg leading-relaxed text-slate-400"
               style={{ animationDelay: '550ms' }}
             >
+              Forex, gold, indices, oil, crypto — any MT5 instrument.
               Master EA on VPS 1, Follower EA on VPS 2 — different servers, different countries, different brokers.{' '}
               <span className="text-slate-200">Sub-500ms via Cloudflare&rsquo;s 300+ edge locations.</span>{' '}
-              No port forwarding. No shared networks. No VPS-to-VPS headaches. Just connect and copy.
+              No port forwarding. No shared networks. Just connect and copy.
             </p>
 
             {/* CTA row */}
@@ -1100,7 +1101,7 @@ export function LandingPage() {
               </div>
             </div>
             <p className="mt-2 text-center font-mono-nums text-[10px] text-terminal-muted/50">
-              Different servers · Different countries · Different brokers · Zero configuration
+              Forex · Gold · Indices · Oil · Crypto — Any MT5 instrument · Any broker · Zero configuration
             </p>
           </div>
         </div>
@@ -2152,7 +2153,8 @@ export function LandingPage() {
                 <span className="text-neon-cyan">Metrics</span>
               </div>
               <p className="max-w-[280px] text-[12px] leading-relaxed text-terminal-muted">
-                The world&rsquo;s only free cross-VPS trade copier. Signals travel through
+                The world&rsquo;s only free cross-VPS trade copier.
+                Forex, gold, indices, oil &amp; crypto. Signals travel through
                 Cloudflare&rsquo;s edge &mdash; not your VPS.
               </p>
               {/* Mini EKG signature */}

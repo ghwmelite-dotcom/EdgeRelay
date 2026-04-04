@@ -153,7 +153,7 @@ const FEATURES = [
   {
     icon: Radio,
     title: 'Cross-VPS Signal Copier',
-    desc: 'Run your master EA on VPS 1 and copy signals to funded accounts on VPS 2, 3, 4. Different servers, different brokers. Sub-500ms via Cloudflare\'s 300+ edge locations. Free.',
+    desc: 'Forex, gold, indices, oil, crypto — copy any MT5 instrument across VPSes. Master on VPS 1, followers on VPS 2, 3, 4. Different servers, different brokers. Sub-500ms via Cloudflare\'s 300+ edge locations. Free.',
     color: '#ffb800',
   },
   {

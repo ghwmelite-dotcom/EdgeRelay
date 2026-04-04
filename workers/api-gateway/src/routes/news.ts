@@ -30,6 +30,31 @@ news.get('/calendar', async (c) => {
   return c.json<ApiResponse>({ data: { events: result.results }, error: null });
 });
 
+// GET /events — news events within a time window (for Trade Autopsy)
+news.get('/events', async (c) => {
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+
+  if (!from || !to) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'from and to query params required' } },
+      400,
+    );
+  }
+
+  const result = await c.env.DB.prepare(
+    `SELECT event_name, currency, impact, event_time, forecast, previous, actual
+     FROM news_events
+     WHERE event_time >= ? AND event_time <= ?
+     ORDER BY event_time ASC
+     LIMIT 50`,
+  )
+    .bind(from, to)
+    .all();
+
+  return c.json<ApiResponse>({ data: { events: result.results }, error: null });
+});
+
 // GET /check — quick check for imminent news
 news.get('/check', async (c) => {
   const minutes = parseInt(c.req.query('minutes') ?? '5');

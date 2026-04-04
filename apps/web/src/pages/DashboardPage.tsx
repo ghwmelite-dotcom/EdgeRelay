@@ -34,6 +34,7 @@ import { MarketIntelWidget } from '@/components/dashboard/MarketIntelWidget';
 import { CommunityPulseWidget } from '@/components/dashboard/CommunityPulseWidget';
 import { FlightCheckWidget } from '@/components/dashboard/FlightCheckWidget';
 import { StrategyGenomeWidget } from '@/components/dashboard/StrategyGenomeWidget';
+import { useJournalStore } from '@/stores/journal';
 
 // ── Signal type from API ─────────────────────────────────────────
 
@@ -501,9 +502,18 @@ export function DashboardPage() {
   const { accounts, fetchAccounts } = useAccountsStore();
   const { healthResults, fetchHealth } = useCommandCenterStore();
   const { checkTelegramStatus } = useNotificationStore();
+  const { trades, fetchTrades } = useJournalStore();
   const clock = useRealtimeClock();
 
   useEffect(() => { checkTelegramStatus(); }, []);
+
+  // Load journal trades for Flight Check + Strategy DNA widgets
+  useEffect(() => {
+    if (accounts.length > 0 && trades.length === 0) {
+      const follower = accounts.find((a) => a.role === 'follower');
+      if (follower) fetchTrades(follower.id);
+    }
+  }, [accounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch recent signals and total P&L from API
   const [recentSignals, setRecentSignals] = useState<ApiSignal[]>([]);

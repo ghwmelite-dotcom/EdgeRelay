@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAccountsStore } from '@/stores/accounts';
 import { usePropGuardStore } from '@/stores/propguard';
+import { useJournalStore } from '@/stores/journal';
 import { FundedBlueprintWidget } from '@/components/propguard/FundedBlueprintWidget';
 import type { Account } from '@/stores/accounts';
 
@@ -57,6 +58,7 @@ export function PropFirmHubPage() {
   const navigate = useNavigate();
   const { accounts, fetchAccounts, isLoading: accountsLoading } = useAccountsStore();
   const { rules, applyPreset, fetchRules, loading: pgLoading } = usePropGuardStore();
+  const { trades: journalTrades, fetchTrades: fetchJournalTrades } = useJournalStore();
 
   // Local state
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
@@ -72,6 +74,13 @@ export function PropFirmHubPage() {
   useEffect(() => {
     fetchAccounts();
   }, [fetchAccounts]);
+
+  // Load journal trades for Funded Blueprint widget
+  useEffect(() => {
+    if (followers.length > 0 && journalTrades.length === 0) {
+      fetchJournalTrades(followers[0].id);
+    }
+  }, [accounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch PropGuard rules for all followers
   useEffect(() => {

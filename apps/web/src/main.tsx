@@ -43,6 +43,9 @@ const BlogPostPage = React.lazy(() => import('@/pages/BlogPostPage').then(m => (
 const PropFirmChallengePage = React.lazy(() => import('@/pages/PropFirmChallengePage').then(m => ({ default: m.PropFirmChallengePage })));
 const PropFirmHubPage = React.lazy(() => import('@/pages/PropFirmHubPage').then(m => ({ default: m.PropFirmHubPage })));
 const CounselorPage = React.lazy(() => import('@/pages/CounselorPage').then(m => ({ default: m.CounselorPage })));
+const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m => ({ default: m.TradeGoldPage })));
+const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
+const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -111,6 +114,9 @@ function App() {
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/pass-prop-firm-challenge" element={<PropFirmChallengePage />} />
+        <Route path="/trade-gold" element={<TradeGoldPage />} />
+        <Route path="/trade-indices" element={<TradeIndicesPage />} />
+        <Route path="/trade-oil" element={<TradeOilPage />} />
 
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
 

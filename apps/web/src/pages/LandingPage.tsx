@@ -203,6 +203,9 @@ const FOOTER_LINKS_PLATFORM = [
   { label: 'AI Journal', href: '#ecosystem' },
   { label: 'Platform Bridge', href: '#ecosystem' },
   { label: 'Pass Prop Firm Challenge', href: '/pass-prop-firm-challenge' },
+  { label: 'Trade Gold', href: '/trade-gold' },
+  { label: 'Trade Indices', href: '/trade-indices' },
+  { label: 'Trade Oil', href: '/trade-oil' },
 ];
 
 const FOOTER_LINKS_RESOURCES = [

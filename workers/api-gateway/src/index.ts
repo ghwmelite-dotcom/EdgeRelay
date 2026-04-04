@@ -35,7 +35,13 @@ app.use(
       : ['http://localhost:3000'];
 
     const corsMiddleware = cors({
-      origin: origins,
+      origin: (requestOrigin) => {
+        if (!requestOrigin) return origins[0];
+        if (origins.includes(requestOrigin)) return requestOrigin;
+        // Allow all Cloudflare Pages preview deployments
+        if (requestOrigin.endsWith('.edgerelay-web.pages.dev')) return requestOrigin;
+        return origins[0];
+      },
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
       maxAge: 86400,

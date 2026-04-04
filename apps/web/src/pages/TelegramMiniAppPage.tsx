@@ -51,7 +51,7 @@ interface MiniAppData {
 
 type Tab = 'overview' | 'propguard' | 'signals';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '/v1';
+const API_BASE = 'https://edgerelay-api.ghwmelite.workers.dev/v1';
 
 /* ────────────────────────────────────────────────────────────── */
 /*  Telegram WebApp SDK helpers                                   */

@@ -14,6 +14,9 @@ import {
   Sparkles,
   X,
   ArrowRight,
+  Wand2,
+  Code2,
+  CheckCircle2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -1119,6 +1122,360 @@ function MyGenerations({
   );
 }
 
+// ── Custom EA Modal ───────────────────────────────────────────────
+
+const INDICATOR_OPTIONS = [
+  'Moving Average (MA)', 'RSI', 'Bollinger Bands', 'MACD', 'Stochastic',
+  'ATR', 'ADX', 'CCI', 'Ichimoku', 'Volume',
+];
+
+const TIMEFRAME_OPTIONS = [
+  { value: 'M1', label: 'M1 (1 Minute)' },
+  { value: 'M5', label: 'M5 (5 Minutes)' },
+  { value: 'M15', label: 'M15 (15 Minutes)' },
+  { value: 'M30', label: 'M30 (30 Minutes)' },
+  { value: 'H1', label: 'H1 (1 Hour)' },
+  { value: 'H4', label: 'H4 (4 Hours)' },
+  { value: 'D1', label: 'D1 (Daily)' },
+];
+
+const PAIR_OPTIONS = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'AUDUSD', 'USDCAD', 'NZDUSD', 'GBPJPY', 'EURJPY', 'EURGBP'];
+
+function CustomEAModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [step, setStep] = useState(1);
+  const [generating, setGenerating] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Step 1: Strategy definition
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [indicators, setIndicators] = useState<string[]>([]);
+  const [timeframe, setTimeframe] = useState('H1');
+  const [pairs, setPairs] = useState<string[]>(['EURUSD']);
+
+  // Step 2: Entry/Exit logic
+  const [entryConditions, setEntryConditions] = useState('');
+  const [exitConditions, setExitConditions] = useState('');
+
+  // Step 3: Risk parameters
+  const [lotSize, setLotSize] = useState('0.10');
+  const [slPips, setSlPips] = useState('50');
+  const [tpPips, setTpPips] = useState('100');
+  const [maxSpread, setMaxSpread] = useState('30');
+  const [maxDailyLoss, setMaxDailyLoss] = useState('500');
+  const [trailingStop, setTrailingStop] = useState(false);
+  const [trailingPips, setTrailingPips] = useState('20');
+  const [closeFriday, setCloseFriday] = useState(true);
+  const [useSession, setUseSession] = useState(false);
+  const [sessionStart, setSessionStart] = useState('8');
+  const [sessionEnd, setSessionEnd] = useState('20');
+
+  const toggleIndicator = (ind: string) => {
+    setIndicators((prev) => prev.includes(ind) ? prev.filter((i) => i !== ind) : [...prev, ind]);
+  };
+
+  const togglePair = (pair: string) => {
+    setPairs((prev) => prev.includes(pair) ? prev.filter((p) => p !== pair) : [...prev, pair]);
+  };
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const token = useAuthStore.getState().token;
+      const res = await fetch(`${API_BASE}/strategy-hub/generate-custom`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name,
+          description,
+          indicators,
+          entry_conditions: entryConditions,
+          exit_conditions: exitConditions,
+          timeframe,
+          pairs,
+          lot_size: parseFloat(lotSize) || 0.1,
+          sl_pips: parseInt(slPips) || 50,
+          tp_pips: parseInt(tpPips) || 100,
+          max_spread: parseInt(maxSpread) || 30,
+          max_daily_loss: parseFloat(maxDailyLoss) || 500,
+          trailing_stop: trailingStop,
+          trailing_pips: parseInt(trailingPips) || 20,
+          close_friday: closeFriday,
+          use_session: useSession,
+          session_start: parseInt(sessionStart) || 8,
+          session_end: parseInt(sessionEnd) || 20,
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({})) as { error?: { message?: string } };
+        throw new Error(json.error?.message || `Generation failed (${res.status})`);
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+      a.href = url;
+      a.download = `custom-${safeName}-${Date.now()}.mq5`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Generation failed');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const resetModal = () => {
+    setStep(1);
+    setSuccess(false);
+    setError(null);
+    setName('');
+    setDescription('');
+    setIndicators([]);
+    setEntryConditions('');
+    setExitConditions('');
+  };
+
+  if (!open) return null;
+
+  return (
+    <Modal open={open} onClose={onClose} title={success ? 'Custom EA Generated!' : `Build Custom EA — Step ${step} of 3`}>
+      {success ? (
+        <div className="text-center py-6">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-neon-green/30 bg-neon-green/10">
+            <CheckCircle2 size={32} className="text-neon-green" />
+          </div>
+          <h3 className="text-lg font-bold text-white font-display">EA Generated & Downloaded!</h3>
+          <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto">
+            Your custom <span className="text-neon-cyan font-semibold">{name}</span> EA has been downloaded.
+            Place the .mq5 file in your MT5 Experts folder and compile with F7 in MetaEditor.
+          </p>
+          <div className="mt-6 rounded-xl border border-terminal-border/30 bg-terminal-card/30 p-4 text-left space-y-2">
+            <p className="font-mono-nums text-[10px] uppercase tracking-widest text-terminal-muted">Setup Steps</p>
+            {[
+              'Copy .mq5 to MQL5\\Experts\\',
+              'Open MetaEditor and press F7 to compile',
+              'Drag EA onto chart in MetaTrader 5',
+              'Enable AutoTrading and configure inputs',
+            ].map((s, i) => (
+              <div key={i} className="flex items-center gap-2 text-[13px] text-slate-300">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neon-cyan/15 font-mono-nums text-[10px] font-bold text-neon-cyan">{i + 1}</span>
+                {s}
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex gap-3 justify-center">
+            <Button onClick={() => { resetModal(); }} variant="secondary">Build Another</Button>
+            <Button onClick={onClose}>Done</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* Step 1: Strategy Definition */}
+          {step === 1 && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">EA Name *</label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., London Breakout Scalper" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your strategy in plain English..."
+                  rows={3}
+                  className="w-full rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2 text-sm text-white placeholder:text-terminal-muted/50 focus:border-neon-cyan/40 focus:outline-none focus:ring-1 focus:ring-neon-cyan/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Indicators</label>
+                <div className="flex flex-wrap gap-2">
+                  {INDICATOR_OPTIONS.map((ind) => (
+                    <button
+                      key={ind}
+                      onClick={() => toggleIndicator(ind)}
+                      className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-all cursor-pointer ${
+                        indicators.includes(ind)
+                          ? 'border border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan'
+                          : 'border border-terminal-border/40 bg-terminal-card/30 text-terminal-muted hover:text-white'
+                      }`}
+                    >
+                      {ind}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1">Timeframe</label>
+                  <Select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} options={TIMEFRAME_OPTIONS} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Pairs</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PAIR_OPTIONS.slice(0, 6).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => togglePair(p)}
+                        className={`rounded-md px-2 py-1 font-mono-nums text-[10px] transition-all cursor-pointer ${
+                          pairs.includes(p)
+                            ? 'border border-neon-green/30 bg-neon-green/15 text-neon-green'
+                            : 'border border-terminal-border/30 bg-terminal-card/30 text-terminal-muted'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => setStep(2)} disabled={!name}>
+                  Next: Entry/Exit Logic <ChevronRight size={14} />
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Step 2: Entry/Exit Conditions */}
+          {step === 2 && (
+            <>
+              <div className="rounded-lg border border-neon-cyan/15 bg-neon-cyan/[0.03] px-4 py-3">
+                <p className="text-[12px] text-slate-400">
+                  <span className="font-semibold text-neon-cyan">Describe your logic in plain English.</span> The AI will translate it into MQL5 code.
+                  Be specific about conditions, thresholds, and which indicators to use.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Entry Conditions (Buy Signal) *</label>
+                <textarea
+                  value={entryConditions}
+                  onChange={(e) => setEntryConditions(e.target.value)}
+                  placeholder="e.g., Buy when the 14 EMA crosses above the 50 EMA AND RSI(14) is above 50 AND price is above the upper Bollinger Band..."
+                  rows={4}
+                  className="w-full rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2 text-sm text-white placeholder:text-terminal-muted/50 focus:border-neon-cyan/40 focus:outline-none focus:ring-1 focus:ring-neon-cyan/20"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Exit Conditions / Sell Signal</label>
+                <textarea
+                  value={exitConditions}
+                  onChange={(e) => setExitConditions(e.target.value)}
+                  placeholder="e.g., Sell when the opposite crossover occurs OR RSI drops below 30. Leave empty to use opposite of buy conditions."
+                  rows={4}
+                  className="w-full rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2 text-sm text-white placeholder:text-terminal-muted/50 focus:border-neon-cyan/40 focus:outline-none focus:ring-1 focus:ring-neon-cyan/20"
+                />
+              </div>
+              <div className="flex justify-between">
+                <Button onClick={() => setStep(1)} variant="secondary">Back</Button>
+                <Button onClick={() => setStep(3)} disabled={!entryConditions}>
+                  Next: Risk Settings <ChevronRight size={14} />
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Step 3: Risk Parameters + Generate */}
+          {step === 3 && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-400 mb-1">Lot Size</label>
+                  <Input type="number" value={lotSize} onChange={(e) => setLotSize(e.target.value)} step="0.01" min="0.01" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-400 mb-1">Max Spread (pts)</label>
+                  <Input type="number" value={maxSpread} onChange={(e) => setMaxSpread(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-400 mb-1">Stop Loss (pips)</label>
+                  <Input type="number" value={slPips} onChange={(e) => setSlPips(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-400 mb-1">Take Profit (pips)</label>
+                  <Input type="number" value={tpPips} onChange={(e) => setTpPips(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-400 mb-1">Max Daily Loss ($)</label>
+                  <Input type="number" value={maxDailyLoss} onChange={(e) => setMaxDailyLoss(e.target.value)} />
+                </div>
+                <div className="flex items-end gap-3 pb-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={trailingStop} onChange={(e) => setTrailingStop(e.target.checked)} className="accent-neon-cyan" />
+                    <span className="text-[12px] text-slate-400">Trailing Stop</span>
+                  </label>
+                  {trailingStop && (
+                    <Input type="number" value={trailingPips} onChange={(e) => setTrailingPips(e.target.value)} className="w-20" placeholder="pips" />
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-4 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={closeFriday} onChange={(e) => setCloseFriday(e.target.checked)} className="accent-neon-green" />
+                  <span className="text-[12px] text-slate-400">Close Before Weekend</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={useSession} onChange={(e) => setUseSession(e.target.checked)} className="accent-neon-cyan" />
+                  <span className="text-[12px] text-slate-400">Session Filter</span>
+                </label>
+                {useSession && (
+                  <div className="flex items-center gap-2">
+                    <Input type="number" value={sessionStart} onChange={(e) => setSessionStart(e.target.value)} className="w-16" min="0" max="23" />
+                    <span className="text-terminal-muted text-[12px]">to</span>
+                    <Input type="number" value={sessionEnd} onChange={(e) => setSessionEnd(e.target.value)} className="w-16" min="0" max="23" />
+                    <span className="text-terminal-muted text-[11px]">UTC</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Summary */}
+              <div className="rounded-lg border border-terminal-border/20 bg-terminal-bg/50 p-3 space-y-1">
+                <p className="font-mono-nums text-[9px] uppercase tracking-widest text-terminal-muted">Generation Summary</p>
+                <div className="grid grid-cols-2 gap-1 font-mono-nums text-[11px]">
+                  <span className="text-slate-400">EA Name:</span>
+                  <span className="text-white font-semibold">{name}</span>
+                  <span className="text-slate-400">Indicators:</span>
+                  <span className="text-neon-cyan">{indicators.length > 0 ? indicators.join(', ') : 'AI decides'}</span>
+                  <span className="text-slate-400">Timeframe:</span>
+                  <span className="text-white">{timeframe}</span>
+                  <span className="text-slate-400">Risk:</span>
+                  <span className="text-neon-green">{lotSize} lots, SL {slPips} / TP {tpPips}</span>
+                </div>
+              </div>
+
+              {error && (
+                <div className="rounded-lg border border-neon-red/20 bg-neon-red/5 px-4 py-2 text-[13px] text-neon-red">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <Button onClick={() => setStep(2)} variant="secondary">Back</Button>
+                <Button onClick={handleGenerate} disabled={generating}>
+                  {generating ? (
+                    <><Loader2 size={14} className="animate-spin" /> AI Generating...</>
+                  ) : (
+                    <><Wand2 size={14} /> Generate Custom EA</>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────
 
 export function StrategyHubPage() {
@@ -1126,6 +1483,7 @@ export function StrategyHubPage() {
   const [loading, setLoading] = useState(true);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [customModalOpen, setCustomModalOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1185,6 +1543,35 @@ export function StrategyHubPage() {
         </div>
       )}
 
+      {/* ── Custom EA Banner ── */}
+      <div
+        className="animate-fade-in-up group cursor-pointer overflow-hidden rounded-2xl border border-neon-purple/20 transition-all duration-300 hover:border-neon-purple/40 hover:shadow-[0_0_30px_rgba(177,140,255,0.08)]"
+        style={{ background: 'linear-gradient(135deg, rgba(177,140,255,0.05) 0%, rgba(0,229,255,0.03) 100%)' }}
+        onClick={() => setCustomModalOpen(true)}
+      >
+        <div className="flex flex-col items-center gap-5 p-6 sm:flex-row sm:justify-between sm:p-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-neon-purple/25 bg-neon-purple/10 shadow-[0_0_20px_rgba(177,140,255,0.1)] transition-shadow group-hover:shadow-[0_0_28px_rgba(177,140,255,0.2)]">
+              <Wand2 size={24} className="text-neon-purple" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-display text-lg font-bold text-white">Build a Custom EA</h3>
+                <span className="chip border border-neon-green/30 bg-neon-green/15 text-neon-green text-[9px]">AI-Powered</span>
+              </div>
+              <p className="text-sm text-slate-400 max-w-lg">
+                Describe your strategy in plain English — the AI generates compilable MQL5 code with built-in risk management,
+                session filters, trailing stops, and PropGuard compatibility. No coding required.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-2 rounded-xl border border-neon-purple/25 bg-neon-purple/10 px-5 py-2.5 text-sm font-semibold text-neon-purple transition-all group-hover:bg-neon-purple group-hover:text-white group-hover:shadow-[0_0_16px_rgba(177,140,255,0.3)]">
+            <Code2 size={16} />
+            Build Custom EA
+          </span>
+        </div>
+      </div>
+
       {/* ── Strategy Grid ── */}
       {!loading && strategies.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1224,6 +1611,12 @@ export function StrategyHubPage() {
         open={modalOpen}
         onClose={closeGenerator}
         strategy={selectedStrategy}
+      />
+
+      {/* ── Custom EA Modal ── */}
+      <CustomEAModal
+        open={customModalOpen}
+        onClose={() => setCustomModalOpen(false)}
       />
     </div>
   );

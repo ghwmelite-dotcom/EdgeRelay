@@ -718,6 +718,493 @@ strategyHub.post('/generate', async (c) => {
   });
 });
 
+// ── POST /strategy-hub/generate-custom — AI-powered custom EA generation ──
+
+const CUSTOM_EA_SCAFFOLD = `//+------------------------------------------------------------------+
+//| {{EA_NAME}}.mq5
+//| Custom Expert Advisor — TradeMetrics Pro
+//| Generated: {{TIMESTAMP}}
+//| Build: {{BUILD_ID}}
+//+------------------------------------------------------------------+
+#property copyright "TradeMetrics Pro"
+#property link      "https://trademetrics.pro"
+#property version   "1.00"
+#property strict
+#property description "{{EA_DESCRIPTION}}"
+
+#include <Trade\\Trade.mqh>
+
+//--- Input Parameters
+input group "=== Trade Management ==="
+input double InpLotSize       = {{LOT_SIZE}};       // Lot Size
+input int    InpSlPips         = {{SL_PIPS}};        // Stop Loss (pips)
+input int    InpTpPips         = {{TP_PIPS}};        // Take Profit (pips)
+input int    InpMagicNumber    = {{MAGIC_NUMBER}};   // Magic Number
+input int    InpMaxSpread      = {{MAX_SPREAD}};     // Max Spread (points)
+
+input group "=== Risk Management ==="
+input double InpMaxDailyLoss   = {{MAX_DAILY_LOSS}}; // Max Daily Loss ($)
+input bool   InpTrailingStop   = {{TRAILING_STOP}};  // Use Trailing Stop
+input int    InpTrailingPips   = {{TRAILING_PIPS}};  // Trailing Distance (pips)
+input bool   InpCloseFriday    = {{CLOSE_FRIDAY}};   // Close Before Weekend
+input int    InpFridayHour     = 20;                 // Friday Close Hour
+
+input group "=== Session Filter ==="
+input bool   InpUseSession     = {{USE_SESSION}};    // Enable Session Filter
+input int    InpSessionStart   = {{SESSION_START}};  // Session Start (hour)
+input int    InpSessionEnd     = {{SESSION_END}};    // Session End (hour)
+
+input group "=== Strategy Parameters ==="
+{{STRATEGY_INPUTS}}
+
+//--- Global Variables
+CTrade trade;
+int barsTotal;
+double dailyPnL;
+datetime lastDayChecked;
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                     |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   trade.SetExpertMagicNumber(InpMagicNumber);
+   trade.SetDeviations(10);
+   trade.SetTypeFilling(ORDER_FILLING_IOC);
+   barsTotal = iBars(_Symbol, PERIOD_CURRENT);
+   dailyPnL = 0;
+   lastDayChecked = 0;
+
+   Print("{{EA_NAME}} initialized on ", _Symbol, " | Magic: ", InpMagicNumber);
+   return INIT_SUCCEEDED;
+}
+
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                    |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+{
+   Print("{{EA_NAME}} removed. Reason: ", reason);
+}
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                                |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   //--- Check new bar
+   int bars = iBars(_Symbol, PERIOD_CURRENT);
+   if(bars == barsTotal) return;
+   barsTotal = bars;
+
+   //--- Daily P&L check
+   if(!CheckDailyLoss()) return;
+
+   //--- Spread check
+   double spread = SymbolInfoInteger(_Symbol, SYMBOL_SPREAD);
+   if(spread > InpMaxSpread) return;
+
+   //--- Session filter
+   if(InpUseSession && !IsWithinSession()) return;
+
+   //--- Friday close check
+   if(InpCloseFriday && IsFridayClose())
+   {
+      CloseAllPositions();
+      return;
+   }
+
+   //--- Trailing stop management
+   if(InpTrailingStop) ManageTrailingStop();
+
+   //--- Strategy logic
+   int signal = GetSignal();
+
+   if(signal == 1 && !HasOpenPosition(POSITION_TYPE_BUY))
+   {
+      double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+      double sl  = ask - InpSlPips * _Point * 10;
+      double tp  = ask + InpTpPips * _Point * 10;
+      trade.Buy(InpLotSize, _Symbol, ask, sl, tp, "{{EA_NAME}}");
+   }
+   else if(signal == -1 && !HasOpenPosition(POSITION_TYPE_SELL))
+   {
+      double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+      double sl  = bid + InpSlPips * _Point * 10;
+      double tp  = bid - InpTpPips * _Point * 10;
+      trade.Sell(InpLotSize, _Symbol, bid, sl, tp, "{{EA_NAME}}");
+   }
+}
+
+//+------------------------------------------------------------------+
+//| STRATEGY SIGNAL LOGIC — AI Generated                               |
+//+------------------------------------------------------------------+
+{{SIGNAL_LOGIC}}
+
+//+------------------------------------------------------------------+
+//| Helper Functions                                                    |
+//+------------------------------------------------------------------+
+bool HasOpenPosition(ENUM_POSITION_TYPE type)
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(PositionGetSymbol(i) == _Symbol &&
+         PositionGetInteger(POSITION_MAGIC) == InpMagicNumber &&
+         PositionGetInteger(POSITION_TYPE) == type)
+         return true;
+   }
+   return false;
+}
+
+void CloseAllPositions()
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(PositionGetSymbol(i) == _Symbol &&
+         PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+      {
+         trade.PositionClose(PositionGetTicket(i));
+      }
+   }
+}
+
+bool IsWithinSession()
+{
+   MqlDateTime dt;
+   TimeCurrent(dt);
+   if(InpSessionStart < InpSessionEnd)
+      return (dt.hour >= InpSessionStart && dt.hour < InpSessionEnd);
+   else
+      return (dt.hour >= InpSessionStart || dt.hour < InpSessionEnd);
+}
+
+bool IsFridayClose()
+{
+   MqlDateTime dt;
+   TimeCurrent(dt);
+   return (dt.day_of_week == 5 && dt.hour >= InpFridayHour);
+}
+
+bool CheckDailyLoss()
+{
+   if(InpMaxDailyLoss <= 0) return true;
+
+   MqlDateTime dt;
+   TimeCurrent(dt);
+   datetime today = StringToTime(StringFormat("%04d.%02d.%02d", dt.year, dt.mon, dt.day));
+
+   if(today != lastDayChecked)
+   {
+      dailyPnL = 0;
+      lastDayChecked = today;
+   }
+
+   //--- Sum closed P&L today
+   double todayPnl = 0;
+   HistorySelect(today, TimeCurrent());
+   for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+   {
+      ulong ticket = HistoryDealGetTicket(i);
+      if(HistoryDealGetString(ticket, DEAL_SYMBOL) == _Symbol &&
+         HistoryDealGetInteger(ticket, DEAL_MAGIC) == InpMagicNumber &&
+         HistoryDealGetInteger(ticket, DEAL_ENTRY) == DEAL_ENTRY_OUT)
+      {
+         todayPnl += HistoryDealGetDouble(ticket, DEAL_PROFIT)
+                   + HistoryDealGetDouble(ticket, DEAL_COMMISSION)
+                   + HistoryDealGetDouble(ticket, DEAL_SWAP);
+      }
+   }
+
+   //--- Add floating P&L
+   double floatingPnl = 0;
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(PositionGetSymbol(i) == _Symbol &&
+         PositionGetInteger(POSITION_MAGIC) == InpMagicNumber)
+      {
+         floatingPnl += PositionGetDouble(POSITION_PROFIT)
+                      + PositionGetDouble(POSITION_SWAP);
+      }
+   }
+
+   dailyPnL = todayPnl + floatingPnl;
+
+   if(dailyPnL <= -InpMaxDailyLoss)
+   {
+      Print("Daily loss limit reached: ", dailyPnL);
+      CloseAllPositions();
+      return false;
+   }
+   return true;
+}
+
+void ManageTrailingStop()
+{
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+   {
+      if(PositionGetSymbol(i) != _Symbol) continue;
+      if(PositionGetInteger(POSITION_MAGIC) != InpMagicNumber) continue;
+
+      ulong ticket = PositionGetTicket(i);
+      double openPrice  = PositionGetDouble(POSITION_PRICE_OPEN);
+      double currentSl  = PositionGetDouble(POSITION_SL);
+      double tp         = PositionGetDouble(POSITION_TP);
+      double trailDist  = InpTrailingPips * _Point * 10;
+
+      if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
+      {
+         double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+         double newSl = bid - trailDist;
+         if(newSl > currentSl && newSl > openPrice)
+            trade.PositionModify(ticket, newSl, tp);
+      }
+      else
+      {
+         double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
+         double newSl = ask + trailDist;
+         if((newSl < currentSl || currentSl == 0) && newSl < openPrice)
+            trade.PositionModify(ticket, newSl, tp);
+      }
+   }
+}
+//+------------------------------------------------------------------+
+`;
+
+strategyHub.post('/generate-custom', async (c) => {
+  const userId = c.get('userId');
+
+  // Limit check (same as regular generate)
+  const exempt = await isExemptUser(c.env.DB, userId);
+  if (!exempt) {
+    const { freeRemaining } = await getGenerationCounts(c.env.DB, userId);
+    if (freeRemaining <= 0) {
+      return c.json<ApiResponse>(
+        { data: null, error: { code: 'GENERATION_LIMIT', message: 'Generation limit reached.' } },
+        402,
+      );
+    }
+  }
+
+  const body = await c.req.json<{
+    name: string;
+    description: string;
+    indicators: string[];
+    entry_conditions: string;
+    exit_conditions: string;
+    timeframe: string;
+    pairs: string[];
+    lot_size: number;
+    sl_pips: number;
+    tp_pips: number;
+    max_spread: number;
+    max_daily_loss: number;
+    trailing_stop: boolean;
+    trailing_pips: number;
+    close_friday: boolean;
+    use_session: boolean;
+    session_start: number;
+    session_end: number;
+  }>();
+
+  if (!body.name || !body.entry_conditions) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'Name and entry conditions are required.' } },
+      400,
+    );
+  }
+
+  // Fetch master account for magic number
+  const masterAccount = await c.env.DB.prepare(
+    `SELECT id, api_key FROM accounts WHERE user_id = ? AND role = 'master' LIMIT 1`,
+  ).bind(userId).first<{ id: string; api_key: string }>();
+
+  const magicNumber = magicFromSlug(`${userId}:custom:${body.name}`);
+
+  // Build AI prompt for signal logic generation
+  const indicatorList = body.indicators.length > 0 ? body.indicators.join(', ') : 'None specified';
+  const systemPrompt = `You are an expert MQL5 programmer. Generate ONLY the signal logic functions for a MetaTrader 5 Expert Advisor. Your output must be valid, compilable MQL5 code.
+
+CRITICAL RULES:
+- Output ONLY MQL5 code — no markdown, no explanations, no code fences
+- You MUST define: int GetSignal() that returns 1 for buy, -1 for sell, 0 for no signal
+- You may define additional helper functions and indicator handles as needed
+- Use OnInit-style initialization for indicator handles via a separate InitIndicators() function called from GetSignal on first run
+- All indicator handles must be declared as static or global int variables
+- Use iCustom(), iMA(), iRSI(), iBands(), iATR(), iMACD(), iStochastic(), iCCI(), iADX() etc.
+- Use CopyBuffer() to read indicator values into arrays
+- Set ArraySetAsSeries(buffer, true) before reading
+- NEVER use undeclared variables
+- NEVER use deprecated MQL4 functions
+- Always check array bounds before access
+- If using multiple indicators, declare each handle as a static int initialized to INVALID_HANDLE`;
+
+  const userPrompt = `Generate the signal logic for this custom EA:
+
+EA Name: ${body.name}
+Description: ${body.description || 'Custom strategy'}
+Timeframe: ${body.timeframe}
+Pairs: ${body.pairs.join(', ')}
+Indicators to use: ${indicatorList}
+
+ENTRY CONDITIONS (BUY):
+${body.entry_conditions}
+
+EXIT CONDITIONS / SELL:
+${body.exit_conditions || 'Opposite of buy conditions'}
+
+Generate the GetSignal() function and any required indicator initialization. Output ONLY valid MQL5 code.`;
+
+  let signalLogic = '';
+  let modelUsed = 'template';
+
+  try {
+    const aiResponse = await c.env.AI.run(
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as Parameters<typeof c.env.AI.run>[0],
+      {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 4096,
+        temperature: 0.3,
+      },
+    );
+
+    const raw = (aiResponse as { response?: string })?.response || '';
+    // Strip any markdown fences the model might add
+    signalLogic = raw
+      .replace(/```mql5?\n?/gi, '')
+      .replace(/```\n?/g, '')
+      .trim();
+
+    if (signalLogic.length > 50 && signalLogic.includes('GetSignal')) {
+      modelUsed = 'llama-3.3-70b';
+    } else {
+      throw new Error('AI output did not contain valid GetSignal function');
+    }
+  } catch (err) {
+    console.error('AI generation failed, using fallback:', err);
+    // Fallback: generate a basic signal logic from the described indicators
+    signalLogic = generateFallbackSignal(body.indicators, body.entry_conditions);
+    modelUsed = 'fallback-template';
+  }
+
+  // Build strategy-specific input parameters from indicators
+  const strategyInputs = generateStrategyInputs(body.indicators);
+
+  // Assemble the final .mq5 file
+  const buildId = crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+  const timestamp = new Date().toISOString();
+
+  let output = CUSTOM_EA_SCAFFOLD;
+  output = output.replace(/\{\{EA_NAME\}\}/g, sanitizeMql5String(body.name));
+  output = output.replace(/\{\{EA_DESCRIPTION\}\}/g, sanitizeMql5String(body.description || 'Custom EA'));
+  output = output.replace(/\{\{TIMESTAMP\}\}/g, timestamp);
+  output = output.replace(/\{\{BUILD_ID\}\}/g, buildId);
+  output = output.replace(/\{\{MAGIC_NUMBER\}\}/g, String(magicNumber));
+  output = output.replace(/\{\{LOT_SIZE\}\}/g, String(body.lot_size || 0.1));
+  output = output.replace(/\{\{SL_PIPS\}\}/g, String(body.sl_pips || 50));
+  output = output.replace(/\{\{TP_PIPS\}\}/g, String(body.tp_pips || 100));
+  output = output.replace(/\{\{MAX_SPREAD\}\}/g, String(body.max_spread || 30));
+  output = output.replace(/\{\{MAX_DAILY_LOSS\}\}/g, String(body.max_daily_loss || 500));
+  output = output.replace(/\{\{TRAILING_STOP\}\}/g, body.trailing_stop ? 'true' : 'false');
+  output = output.replace(/\{\{TRAILING_PIPS\}\}/g, String(body.trailing_pips || 20));
+  output = output.replace(/\{\{CLOSE_FRIDAY\}\}/g, body.close_friday ? 'true' : 'false');
+  output = output.replace(/\{\{USE_SESSION\}\}/g, body.use_session ? 'true' : 'false');
+  output = output.replace(/\{\{SESSION_START\}\}/g, String(body.session_start || 8));
+  output = output.replace(/\{\{SESSION_END\}\}/g, String(body.session_end || 20));
+  output = output.replace(/\{\{STRATEGY_INPUTS\}\}/g, strategyInputs);
+  output = output.replace(/\{\{SIGNAL_LOGIC\}\}/g, signalLogic);
+
+  // Record generation
+  await c.env.DB.prepare(
+    'INSERT INTO ea_generations (user_id, strategy_id, parameters_json) VALUES (?, ?, ?)',
+  )
+    .bind(userId, 'custom-ea', JSON.stringify({ ...body, model: modelUsed }))
+    .run();
+
+  const safeName = body.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+  const filename = `custom-${safeName}-${Date.now()}.mq5`;
+
+  return new Response(output, {
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    },
+  });
+});
+
+function sanitizeMql5String(s: string): string {
+  return s.replace(/"/g, '\\"').replace(/\n/g, ' ').slice(0, 200);
+}
+
+function generateStrategyInputs(indicators: string[]): string {
+  const lines: string[] = [];
+  for (const ind of indicators) {
+    const lower = ind.toLowerCase();
+    if (lower.includes('ma') || lower.includes('moving average')) {
+      lines.push('input int    InpMaPeriodFast  = 14;     // Fast MA Period');
+      lines.push('input int    InpMaPeriodSlow  = 50;     // Slow MA Period');
+      lines.push('input ENUM_MA_METHOD InpMaMethod = MODE_EMA; // MA Method');
+    } else if (lower.includes('rsi')) {
+      lines.push('input int    InpRsiPeriod     = 14;     // RSI Period');
+      lines.push('input double InpRsiOverbought = 70;     // RSI Overbought');
+      lines.push('input double InpRsiOversold   = 30;     // RSI Oversold');
+    } else if (lower.includes('bollinger') || lower.includes('bands')) {
+      lines.push('input int    InpBbPeriod      = 20;     // Bollinger Period');
+      lines.push('input double InpBbDeviation   = 2.0;    // Bollinger Deviation');
+    } else if (lower.includes('macd')) {
+      lines.push('input int    InpMacdFast      = 12;     // MACD Fast');
+      lines.push('input int    InpMacdSlow      = 26;     // MACD Slow');
+      lines.push('input int    InpMacdSignal    = 9;      // MACD Signal');
+    } else if (lower.includes('stochastic') || lower.includes('stoch')) {
+      lines.push('input int    InpStochK        = 14;     // Stochastic %K');
+      lines.push('input int    InpStochD        = 3;      // Stochastic %D');
+      lines.push('input int    InpStochSlowing  = 3;      // Stochastic Slowing');
+    } else if (lower.includes('atr')) {
+      lines.push('input int    InpAtrPeriod     = 14;     // ATR Period');
+      lines.push('input double InpAtrMultiplier = 1.5;    // ATR Multiplier');
+    } else if (lower.includes('adx')) {
+      lines.push('input int    InpAdxPeriod     = 14;     // ADX Period');
+      lines.push('input double InpAdxThreshold  = 25.0;   // ADX Threshold');
+    } else if (lower.includes('cci')) {
+      lines.push('input int    InpCciPeriod     = 14;     // CCI Period');
+      lines.push('input double InpCciOverbought = 100;    // CCI Overbought');
+      lines.push('input double InpCciOversold   = -100;   // CCI Oversold');
+    }
+  }
+  return lines.length > 0 ? lines.join('\n') : '// No additional strategy parameters';
+}
+
+function generateFallbackSignal(indicators: string[], entryConditions: string): string {
+  // Generate a basic MA crossover as fallback
+  return `// Fallback signal logic — customize in MetaEditor
+static int maFastHandle = INVALID_HANDLE;
+static int maSlowHandle = INVALID_HANDLE;
+
+int GetSignal()
+{
+   if(maFastHandle == INVALID_HANDLE)
+   {
+      maFastHandle = iMA(_Symbol, PERIOD_CURRENT, 14, 0, MODE_EMA, PRICE_CLOSE);
+      maSlowHandle = iMA(_Symbol, PERIOD_CURRENT, 50, 0, MODE_EMA, PRICE_CLOSE);
+   }
+
+   double fastMa[3], slowMa[3];
+   ArraySetAsSeries(fastMa, true);
+   ArraySetAsSeries(slowMa, true);
+
+   if(CopyBuffer(maFastHandle, 0, 0, 3, fastMa) < 3) return 0;
+   if(CopyBuffer(maSlowHandle, 0, 0, 3, slowMa) < 3) return 0;
+
+   // Crossover detection
+   if(fastMa[1] > slowMa[1] && fastMa[2] <= slowMa[2]) return 1;   // Buy
+   if(fastMa[1] < slowMa[1] && fastMa[2] >= slowMa[2]) return -1;  // Sell
+
+   return 0;
+}`;
+}
+
 // ── GET /strategy-hub/my-generations — User's generation history ─
 strategyHub.get('/my-generations', async (c) => {
   const userId = c.get('userId');

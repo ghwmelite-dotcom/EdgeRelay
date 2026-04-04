@@ -22,6 +22,7 @@ import { strategyHub, strategyHubPublic } from './routes/strategyHub.js';
 import { analytics } from './routes/analytics.js';
 import { admin } from './routes/admin.js';
 import { referral } from './routes/referral.js';
+import { counselor } from './routes/counselor.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -110,6 +111,7 @@ protectedApp.route('/strategy-hub', strategyHub);
 protectedApp.route('/analytics', analytics);
 protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
+protectedApp.route('/counselor', counselor);
 
 app.route('/v1', protectedApp);
 

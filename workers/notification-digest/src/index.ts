@@ -5,6 +5,7 @@ interface Env {
   BOT_STATE: KVNamespace;
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHANNEL_ID: string;
+  AI?: any; // Workers AI binding (optional)
 }
 
 interface PrefRow {
@@ -52,6 +53,11 @@ export default {
     if (now.getUTCMinutes() === 0) {
       console.log(`[digest] Top-of-hour cron fired at ${now.toISOString()}`);
       await sendDigests(env, ctx, now);
+
+      // Daily AI briefing to @edgerelay channel (7:00 UTC, weekdays)
+      if (now.getUTCHours() === 7 && now.getUTCDay() >= 1 && now.getUTCDay() <= 5) {
+        await sendChannelBriefing(env, ctx, now);
+      }
     }
   },
 
@@ -322,7 +328,7 @@ async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void
   }
 }
 
-async function formatMorningBrief(db: D1Database, now: Date): Promise<string | null> {
+async function formatMorningBrief(db: D1Database, now: Date, ai?: any): Promise<string | null> {
   const today = now.toISOString().slice(0, 10);
   const utcHour = now.getUTCHours();
 
@@ -373,7 +379,63 @@ async function formatMorningBrief(db: D1Database, now: Date): Promise<string | n
     }
   }
 
+  // AI Market Narrative (if AI binding available)
+  if (ai) {
+    try {
+      const eventSummary = events && events.length > 0
+        ? events.map(e => `${e.event_name} (${e.currency})`).join(', ')
+        : 'No high-impact events';
+      const newsSummary = news && news.length > 0
+        ? news.map(n => n.headline.slice(0, 60)).join('; ')
+        : 'No breaking news';
+
+      const activeSessions = SESSION_TIMES.filter(s => {
+        return s.openHour <= s.closeHour
+          ? utcHour >= s.openHour && utcHour < s.closeHour
+          : utcHour >= s.openHour || utcHour < s.closeHour;
+      }).map(s => s.name);
+
+      const aiResponse = await ai.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a concise market analyst. Write a 2-3 sentence morning market briefing for a forex/CFD trader. Be specific, mention currencies/events, and give an actionable tone. Use 1-2 emojis. No advice — just observations.',
+          },
+          {
+            role: 'user',
+            content: `Active sessions: ${activeSessions.join(', ') || 'None'}. Events today: ${eventSummary}. Headlines: ${newsSummary}. Current time: ${utcHour}:00 UTC.`,
+          },
+        ],
+        max_tokens: 200,
+        temperature: 0.6,
+      });
+
+      const narrative = (aiResponse as { response?: string })?.response;
+      if (narrative && narrative.length > 20) {
+        lines.push('', '🤖 <b>AI Market Insight:</b>', narrative);
+      }
+    } catch (err) {
+      console.log('[digest] AI briefing failed, skipping:', err);
+    }
+  }
+
   return lines.join('\n');
+}
+
+async function sendChannelBriefing(env: Env, ctx: ExecutionContext, now: Date): Promise<void> {
+  if (!env.TELEGRAM_CHANNEL_ID) return;
+
+  const today = now.toISOString().slice(0, 10);
+  const dedupKey = `channel-briefing:${today}`;
+  const sent = await env.BOT_STATE.get(dedupKey);
+  if (sent) return;
+
+  const brief = await formatMorningBrief(env.DB, now, env.AI);
+  if (brief) {
+    ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, brief));
+    await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+    console.log(`[digest] Channel briefing sent to ${env.TELEGRAM_CHANNEL_ID}`);
+  }
 }
 
 async function sendDigests(env: Env, _ctx: ExecutionContext, now: Date): Promise<void> {
@@ -471,7 +533,7 @@ async function sendDigests(env: Env, _ctx: ExecutionContext, now: Date): Promise
       const alreadySent = await env.BOT_STATE.get(dedupKey);
       if (!alreadySent) {
         try {
-          const brief = await formatMorningBrief(env.DB, now);
+          const brief = await formatMorningBrief(env.DB, now, env.AI);
           if (brief) {
             const sent = await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, brief);
             if (sent) {

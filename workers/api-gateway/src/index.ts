@@ -23,6 +23,7 @@ import { analytics } from './routes/analytics.js';
 import { admin } from './routes/admin.js';
 import { referral } from './routes/referral.js';
 import { counselor } from './routes/counselor.js';
+import { marketPulse } from './routes/marketPulse.js';
 import { academy } from './routes/academy.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -99,6 +100,7 @@ app.route('/v1/marketplace', marketplacePublic);
 
 // Strategy Hub public — strategy list + detail, no auth required
 app.route('/v1/strategy-hub', strategyHubPublic);
+app.route('/v1/market-pulse', marketPulse);
 
 // ── Protected Routes ────────────────────────────────────────────
 const protectedApp = new Hono<{ Bindings: Env }>();

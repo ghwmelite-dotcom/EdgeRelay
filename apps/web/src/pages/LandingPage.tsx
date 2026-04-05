@@ -46,7 +46,7 @@ const NAV_LINKS = [
   { label: 'Features', href: '#features', color: '#00ff9d' },
   { label: 'How It Works', href: '#how-it-works', color: '#00e5ff' },
   { label: 'Ecosystem', href: '#ecosystem', color: '#b18cff' },
-  { label: 'Prop Firms', href: '/pass-prop-firm-challenge', color: '#ff3d57' },
+  { label: 'Markets', href: '/markets', color: '#ff3d57' },
   { label: 'Blog', href: '/blog', color: '#ffb800' },
 ];
 
@@ -203,6 +203,7 @@ const FOOTER_LINKS_PLATFORM = [
   { label: 'AI Journal', href: '#ecosystem' },
   { label: 'Platform Bridge', href: '#ecosystem' },
   { label: 'Pass Prop Firm Challenge', href: '/pass-prop-firm-challenge' },
+  { label: 'Market Pulse', href: '/markets' },
   { label: 'Trade Gold', href: '/trade-gold' },
   { label: 'Trade Indices', href: '/trade-indices' },
   { label: 'Trade Oil', href: '/trade-oil' },

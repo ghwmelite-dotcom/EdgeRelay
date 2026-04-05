@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { GraduationCap, BookOpen, CheckCircle2, Lock, ChevronRight, Sparkles, BarChart3 } from 'lucide-react';
+import { GraduationCap, BookOpen, CheckCircle2, Lock, ChevronRight, Sparkles, BarChart3, Target } from 'lucide-react';
 import { useAcademyStore } from '@/stores/academy';
 import { ACADEMY_CURRICULUM } from '@/data/academy-curriculum';
 
@@ -44,6 +44,24 @@ export function AcademyPage() {
           />
         </div>
       </div>
+
+      {/* Practice Trading CTA */}
+      <Link
+        to="/academy/practice"
+        className="animate-fade-in-up group block rounded-2xl border border-neon-cyan/20 bg-gradient-to-r from-neon-cyan/[0.04] to-transparent p-5 hover:border-neon-cyan/40 transition-all"
+        style={{ animationDelay: '100ms' }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neon-cyan/25 bg-neon-cyan/10">
+            <Target size={20} className="text-neon-cyan" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-display text-base font-bold text-white group-hover:text-neon-cyan transition-colors">Practice Trading</h3>
+            <p className="text-[12px] text-terminal-muted">Trade against historical data with zero risk. 4 scenarios from beginner to expert.</p>
+          </div>
+          <ChevronRight size={18} className="text-terminal-muted group-hover:text-neon-cyan transition-colors" />
+        </div>
+      </Link>
 
       {/* Level cards */}
       <div className="space-y-4">

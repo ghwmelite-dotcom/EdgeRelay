@@ -49,6 +49,7 @@ const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => (
 const TelegramMiniAppPage = React.lazy(() => import('@/pages/TelegramMiniAppPage').then(m => ({ default: m.TelegramMiniAppPage })));
 const AcademyPage = React.lazy(() => import('@/pages/AcademyPage').then(m => ({ default: m.AcademyPage })));
 const AcademyLessonPage = React.lazy(() => import('@/pages/AcademyLessonPage').then(m => ({ default: m.AcademyLessonPage })));
+const ChartSimulatorPage = React.lazy(() => import('@/pages/ChartSimulatorPage').then(m => ({ default: m.ChartSimulatorPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -151,6 +152,7 @@ function App() {
           <Route path="/counselor" element={<CounselorPage />} />
           <Route path="/academy" element={<AcademyPage />} />
           <Route path="/academy/:lessonId" element={<AcademyLessonPage />} />
+          <Route path="/academy/practice" element={<ChartSimulatorPage />} />
           <Route path="/simulator" element={<SimulatorPage />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />

@@ -212,6 +212,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
 <p><strong>Small candles with long wicks (Doji)</strong> = Indecision. Neither buyers nor sellers won. The market is pausing, and a bigger move might be coming.</p>
 <p><strong>A series of green candles getting smaller</strong> = Buyers are losing momentum. The trend might be about to slow down or reverse.</p>
 <p>Don't try to memorize dozens of candlestick patterns right now. Instead, focus on understanding the <em>story</em> behind each candle: Who won the battle? Buyers or sellers? How convincingly did they win? That's the foundation of all chart reading.</p>`,
+            widgetId: 'candlestick-quiz',
           },
         ],
         quiz: [
@@ -1260,6 +1261,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
   <li><strong>Asian timezone traders</strong> — Focus on the Tokyo session for JPY pairs, or trade the London open if you're willing to stay up late. Avoid forcing trades during the quiet Sydney session.</li>
 </ul>
 <p><strong>Consistency is more important than screen time.</strong> Trading the same 2-3 hours every day, during the same session, helps you recognize patterns specific to that time window. A trader who trades London open every day will develop an intuition for how price behaves at that time — something you can't get by randomly checking charts throughout the day.</p>`,
+            widgetId: 'session-timezone-map',
           },
         ],
         quiz: [
@@ -1506,6 +1508,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
 </ul>
 <p><strong>Warning:</strong> Crossover signals work well in trending markets but generate false signals in ranging markets. If price is chopping sideways, the MAs will cross back and forth repeatedly, causing "whipsaw" losses. This is why you should <em>always</em> combine crossovers with other confirmation (support/resistance, trend structure, candlestick patterns) rather than blindly trading every crossover.</p>
 <p>Moving averages are a building block, not a complete strategy. In the next lesson, we'll combine them with other elements to build a full, rules-based strategy.</p>`,
+            widgetId: 'moving-average-crossover',
           },
         ],
         quiz: [
@@ -2031,6 +2034,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
 </ul>
 <p>The solution is the same as for every other emotion: <strong>stick to your process</strong>. Your rules don't change because you're winning. Your position size doesn't change because you're confident. Your checklist doesn't become optional because you're on a streak.</p>
 <p>The best traders are emotionally flat. They don't celebrate wins or mourn losses. Each trade is just one of the next thousand — a single data point in a long career. This emotional neutrality is the ultimate psychological skill, and it takes years to develop. But awareness of these six emotions is the first step.</p>`,
+            widgetId: 'emotion-check-in',
           },
         ],
         quiz: [

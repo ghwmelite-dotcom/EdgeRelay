@@ -9,11 +9,19 @@ import { ACADEMY_CURRICULUM, type AcademyLesson, type AcademyLevel } from '@/dat
 import { PositionSizeCalculator } from '@/components/academy/widgets/PositionSizeCalculator';
 import { RiskRewardVisualizer } from '@/components/academy/widgets/RiskRewardVisualizer';
 import { CompoundingCalculator } from '@/components/academy/widgets/CompoundingCalculator';
+import { CandlestickQuiz } from '@/components/academy/widgets/CandlestickQuiz';
+import { SessionTimezoneMap } from '@/components/academy/widgets/SessionTimezoneMap';
+import { MovingAverageCrossover } from '@/components/academy/widgets/MovingAverageCrossover';
+import { EmotionCheckIn } from '@/components/academy/widgets/EmotionCheckIn';
 
 const WIDGET_REGISTRY: Record<string, React.ComponentType> = {
   'position-size-calculator': PositionSizeCalculator,
   'risk-reward-visualizer': RiskRewardVisualizer,
   'compounding-calculator': CompoundingCalculator,
+  'candlestick-quiz': CandlestickQuiz,
+  'session-timezone-map': SessionTimezoneMap,
+  'moving-average-crossover': MovingAverageCrossover,
+  'emotion-check-in': EmotionCheckIn,
 };
 
 const ACCENT_MAP: Record<string, string> = {

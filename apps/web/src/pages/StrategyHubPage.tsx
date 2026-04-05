@@ -17,6 +17,7 @@ import {
   Wand2,
   Code2,
   CheckCircle2,
+  BarChart3,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -1146,6 +1147,8 @@ function CustomEAModal({ open, onClose }: { open: boolean; onClose: () => void }
   const [generating, setGenerating] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [backtestResult, setBacktestResult] = useState<import('@/lib/strategy-backtester').BacktestResult | null>(null);
+  const [backtesting, setBacktesting] = useState(false);
 
   // Step 1: Strategy definition
   const [name, setName] = useState('');
@@ -1246,7 +1249,7 @@ function CustomEAModal({ open, onClose }: { open: boolean; onClose: () => void }
   if (!open) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title={success ? 'Custom EA Generated!' : `Build Custom EA — Step ${step} of 3`}>
+    <Modal open={open} onClose={onClose} title={success ? 'Custom EA Generated!' : `Build Custom EA — Step ${step} of 4`}>
       {success ? (
         <div className="text-center py-6">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-neon-green/30 bg-neon-green/10">
@@ -1460,11 +1463,103 @@ function CustomEAModal({ open, onClose }: { open: boolean; onClose: () => void }
 
               <div className="flex justify-between">
                 <Button onClick={() => setStep(2)} variant="secondary">Back</Button>
+                <Button onClick={async () => {
+                  setBacktesting(true);
+                  try {
+                    const { runBacktest } = await import('@/lib/strategy-backtester');
+                    const { PRACTICE_SCENARIOS } = await import('@/data/practice-scenarios');
+                    // Pick the first scenario (EURUSD trending) for backtest
+                    const scenario = PRACTICE_SCENARIOS[0];
+                    const result = runBacktest(scenario.candles, {
+                      instrument: scenario.instrument,
+                      indicators,
+                      lotSize: parseFloat(lotSize) || 0.1,
+                      slPips: parseInt(slPips) || 50,
+                      tpPips: parseInt(tpPips) || 100,
+                      maxDailyLoss: parseFloat(maxDailyLoss) || 500,
+                      useSession,
+                      sessionStart: parseInt(sessionStart) || 8,
+                      sessionEnd: parseInt(sessionEnd) || 20,
+                    });
+                    setBacktestResult(result);
+                    setStep(4);
+                  } catch { setStep(4); }
+                  setBacktesting(false);
+                }} disabled={backtesting}>
+                  {backtesting ? (
+                    <><Loader2 size={14} className="animate-spin" /> Running Backtest...</>
+                  ) : (
+                    <><BarChart3 size={14} /> Preview Backtest</>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Step 4: Backtest Results + Generate */}
+          {step === 4 && (
+            <>
+              {backtestResult ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-neon-cyan/20 bg-neon-cyan/[0.03] p-4">
+                    <p className="font-mono-nums text-[9px] uppercase tracking-widest text-neon-cyan mb-3">Backtest Results (200 candles)</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      <div className="rounded-lg bg-terminal-bg/50 p-2">
+                        <p className="font-mono-nums text-lg font-bold text-white">{backtestResult.totalTrades}</p>
+                        <p className="text-[8px] text-terminal-muted">Trades</p>
+                      </div>
+                      <div className="rounded-lg bg-terminal-bg/50 p-2">
+                        <p className={`font-mono-nums text-lg font-bold ${backtestResult.winRate >= 50 ? 'text-neon-green' : 'text-neon-red'}`}>{backtestResult.winRate}%</p>
+                        <p className="text-[8px] text-terminal-muted">Win Rate</p>
+                      </div>
+                      <div className="rounded-lg bg-terminal-bg/50 p-2">
+                        <p className={`font-mono-nums text-lg font-bold ${backtestResult.totalPnl >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>${backtestResult.totalPnl}</p>
+                        <p className="text-[8px] text-terminal-muted">Net P&L</p>
+                      </div>
+                      <div className="rounded-lg bg-terminal-bg/50 p-2">
+                        <p className="font-mono-nums text-lg font-bold text-neon-cyan">{backtestResult.profitFactor}</p>
+                        <p className="text-[8px] text-terminal-muted">Profit Factor</p>
+                      </div>
+                    </div>
+
+                    {/* Mini equity curve */}
+                    <div className="mt-3 h-16 flex items-end gap-px">
+                      {backtestResult.equityCurve.filter((_, i) => i % Math.max(1, Math.floor(backtestResult.equityCurve.length / 80)) === 0).map((eq, i, arr) => {
+                        const min = Math.min(...arr);
+                        const max = Math.max(...arr);
+                        const h = max > min ? ((eq - min) / (max - min)) * 100 : 50;
+                        return (
+                          <div key={i} className="flex-1 rounded-t transition-all" style={{ height: `${Math.max(h, 2)}%`, backgroundColor: eq >= 10000 ? '#00ff9d40' : '#ff3d5740' }} />
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-3 gap-2 font-mono-nums text-[10px]">
+                      <div><span className="text-terminal-muted">Max DD:</span> <span className="text-neon-red">${backtestResult.maxDrawdown} ({backtestResult.maxDrawdownPct}%)</span></div>
+                      <div><span className="text-terminal-muted">Avg Win:</span> <span className="text-neon-green">${backtestResult.avgWin}</span></div>
+                      <div><span className="text-terminal-muted">Avg Loss:</span> <span className="text-neon-red">${backtestResult.avgLoss}</span></div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-terminal-muted">
+                    ⚠️ Backtest uses simplified indicator logic on sample data. Real results may vary. This is an approximation to validate your strategy concept.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-terminal-muted">No backtest data available.</p>
+              )}
+
+              {error && (
+                <div className="rounded-lg border border-neon-red/20 bg-neon-red/5 px-4 py-2 text-[13px] text-neon-red">{error}</div>
+              )}
+
+              <div className="flex justify-between">
+                <Button onClick={() => setStep(3)} variant="secondary">Back</Button>
                 <Button onClick={handleGenerate} disabled={generating}>
                   {generating ? (
                     <><Loader2 size={14} className="animate-spin" /> AI Generating...</>
                   ) : (
-                    <><Wand2 size={14} /> Generate Custom EA</>
+                    <><Wand2 size={14} /> Generate & Download EA</>
                   )}
                 </Button>
               </div>

@@ -4,6 +4,7 @@ import { GraduationCap, BookOpen, CheckCircle2, Lock, ChevronRight, Sparkles, Ba
 import { useAcademyStore } from '@/stores/academy';
 import { ACADEMY_CURRICULUM } from '@/data/academy-curriculum';
 import { HomeworkSection } from '@/components/academy/HomeworkCard';
+import { PeerChallenges } from '@/components/academy/PeerChallenges';
 
 const ACCENT_MAP: Record<string, string> = {
   'neon-cyan': '#00e5ff', 'neon-green': '#00ff9d', 'neon-amber': '#ffb800',
@@ -63,6 +64,9 @@ export function AcademyPage() {
           <ChevronRight size={18} className="text-terminal-muted group-hover:text-neon-cyan transition-colors" />
         </div>
       </Link>
+
+      {/* Streaks, Badges & Leaderboard */}
+      <PeerChallenges />
 
       {/* Homework */}
       <HomeworkSection />

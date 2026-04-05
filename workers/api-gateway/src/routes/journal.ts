@@ -159,6 +159,78 @@ journal.get('/trades/:accountId/:dealTicket', async (c) => {
   return c.json<ApiResponse>({ data: trade, error: null });
 });
 
+// ── POST /trades/:accountId/:dealTicket/narrate — AI trade narration ──
+
+journal.post('/trades/:accountId/:dealTicket/narrate', async (c) => {
+  const accountId = c.req.param('accountId');
+  const dealTicket = parseInt(c.req.param('dealTicket'), 10);
+  const userId = c.get('userId');
+
+  const owns = await verifyAccountOwnership(c.env.DB, accountId, userId);
+  if (!owns) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'FORBIDDEN', message: 'Not authorized' } }, 403);
+  }
+
+  const trade = await c.env.DB.prepare(
+    `SELECT symbol, direction, volume, price, sl, tp, time, profit, pips,
+            session_tag, duration_seconds, spread_at_entry
+     FROM journal_trades WHERE account_id = ? AND deal_ticket = ?`,
+  ).bind(accountId, dealTicket).first<{
+    symbol: string; direction: string; volume: number; price: number;
+    sl: number | null; tp: number | null; time: number; profit: number;
+    pips: number | null; session_tag: string | null; duration_seconds: number | null;
+    spread_at_entry: number | null;
+  }>();
+
+  if (!trade) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NOT_FOUND', message: 'Trade not found' } }, 404);
+  }
+
+  // Determine exit type
+  const pipMult = trade.symbol.includes('JPY') ? 0.01 : trade.symbol.includes('XAU') ? 0.1 : 0.0001;
+  const exitPrice = trade.direction === 'buy'
+    ? trade.price + (trade.pips || 0) * pipMult
+    : trade.price - (trade.pips || 0) * pipMult;
+  let exitType = 'manual close';
+  if (trade.sl && Math.abs(exitPrice - trade.sl) < pipMult * 3) exitType = 'stop loss hit';
+  else if (trade.tp && Math.abs(exitPrice - trade.tp) < pipMult * 3) exitType = 'take profit hit';
+
+  const durationMin = trade.duration_seconds ? Math.round(trade.duration_seconds / 60) : 0;
+  const durationStr = durationMin >= 60 ? `${Math.floor(durationMin / 60)}h ${durationMin % 60}m` : `${durationMin}m`;
+  const sessionLabel = trade.session_tag ? trade.session_tag.replace('_', ' ') : 'unknown';
+
+  const prompt = `Trade: ${trade.direction.toUpperCase()} ${trade.symbol} at ${trade.price}, SL ${trade.sl || 'none'}, TP ${trade.tp || 'none'}
+Session: ${sessionLabel}
+Duration: ${durationStr}
+Result: $${trade.profit?.toFixed(2)} (${trade.pips?.toFixed(1) || '?'} pips)
+Exit: ${exitType}
+Spread at entry: ${trade.spread_at_entry || 'unknown'} points`;
+
+  try {
+    const aiResponse = await c.env.AI.run(
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as Parameters<typeof c.env.AI.run>[0],
+      {
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a concise trade analyst narrating a forex trade replay. Describe what happened in 2-3 sentences using a calm, observational tone. Include the entry context (direction, price, session), how price moved, and the outcome. Use specific numbers. Do not give advice or opinions. Use 1-2 relevant emojis.',
+          },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 256,
+        temperature: 0.5,
+      },
+    );
+
+    const narration = (aiResponse as { response?: string })?.response || '';
+    return c.json<ApiResponse>({ data: { narration }, error: null });
+  } catch {
+    // Fallback narration
+    const fallback = `${trade.profit >= 0 ? '📈' : '📉'} ${trade.direction.toUpperCase()} ${trade.symbol} at ${trade.price} during ${sessionLabel} session. Trade lasted ${durationStr} and closed via ${exitType} for ${trade.profit >= 0 ? '+' : ''}$${trade.profit?.toFixed(2)} (${trade.pips?.toFixed(1)} pips).`;
+    return c.json<ApiResponse>({ data: { narration: fallback }, error: null });
+  }
+});
+
 // ── Helper: build date range conditions ─────────────────────
 
 function addDateRange(

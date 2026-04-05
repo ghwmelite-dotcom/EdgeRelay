@@ -5,6 +5,7 @@ import {
   ChevronRight, Loader2, RotateCcw, GraduationCap,
 } from 'lucide-react';
 import { useAcademyStore, type QuizAnswer, type QuizResult } from '@/stores/academy';
+import { InlineAITutor } from '@/components/academy/InlineAITutor';
 import { ACADEMY_CURRICULUM, type AcademyLesson, type AcademyLevel } from '@/data/academy-curriculum';
 import { PositionSizeCalculator } from '@/components/academy/widgets/PositionSizeCalculator';
 import { RiskRewardVisualizer } from '@/components/academy/widgets/RiskRewardVisualizer';
@@ -51,6 +52,8 @@ export function AcademyLessonPage() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [tutorOpen, setTutorOpen] = useState(false);
+  const [tutorPrompt, setTutorPrompt] = useState<string | undefined>();
 
   const found = lessonId ? findLessonAndLevel(lessonId) : null;
 
@@ -143,6 +146,17 @@ export function AcademyLessonPage() {
             </h2>
             <div className="prose-blog text-[15px] leading-[1.8] text-slate-300" dangerouslySetInnerHTML={{ __html: section.content }} />
 
+            {/* Ask Sage about this section */}
+            <button
+              onClick={() => {
+                setTutorPrompt(`Explain the concept of "${section.heading}" from the lesson "${lesson.title}" in simple terms. I'm a beginner.`);
+                setTutorOpen(true);
+              }}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-neon-purple/20 bg-neon-purple/[0.05] px-3 py-1.5 text-[11px] text-neon-purple hover:bg-neon-purple/10 transition-all cursor-pointer"
+            >
+              <Brain size={12} /> Ask Sage about this
+            </button>
+
             {/* Interactive widget */}
             {section.widgetId && WIDGET_REGISTRY[section.widgetId] && (
               <div className="mt-6 rounded-xl border border-terminal-border/30 bg-terminal-card/20 p-5">
@@ -198,11 +212,27 @@ export function AcademyLessonPage() {
                 );
               })}
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 {!quizResult.passed && (
-                  <button onClick={handleRetry} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 py-3 text-sm font-semibold text-slate-200 cursor-pointer">
-                    <RotateCcw size={14} /> Retry Quiz
-                  </button>
+                  <>
+                    <button onClick={handleRetry} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 py-3 text-sm font-semibold text-slate-200 cursor-pointer">
+                      <RotateCcw size={14} /> Retry Quiz
+                    </button>
+                    <button
+                      onClick={() => {
+                        const wrongQs = quizResult.results.filter(r => !r.isCorrect);
+                        const wrongTopics = wrongQs.map(r => {
+                          const q = lesson.quiz.find(q => q.id === r.questionId);
+                          return q ? `"${q.question}" (correct answer: ${q.options[r.correctIndex]})` : '';
+                        }).filter(Boolean).join('\n');
+                        setTutorPrompt(`I just failed the quiz for "${lesson.title}". I got these questions wrong:\n${wrongTopics}\n\nCan you explain these concepts to me in a simple way?`);
+                        setTutorOpen(true);
+                      }}
+                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-neon-purple/25 bg-neon-purple/10 py-3 text-sm font-semibold text-neon-purple cursor-pointer hover:bg-neon-purple/20 transition-all"
+                    >
+                      <Brain size={14} /> Review with Sage
+                    </button>
+                  </>
                 )}
                 {quizResult.passed && nextLessonId && (
                   <Link to={`/academy/${nextLessonId}`} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-terminal-bg" style={{ backgroundColor: accent }}>
@@ -251,17 +281,31 @@ export function AcademyLessonPage() {
         </div>
       </div>
 
-      {/* Ask Sage */}
-      <div className="mt-6 rounded-xl border border-neon-purple/20 bg-neon-purple/[0.03] p-4 flex items-center gap-3">
-        <Brain size={18} className="text-neon-purple shrink-0" />
-        <div className="flex-1">
-          <p className="text-[13px] text-slate-300">Confused about something in this lesson?</p>
-          <p className="text-[11px] text-terminal-muted">Sage can explain any concept in simple terms</p>
+      {/* Inline AI Tutor */}
+      {tutorOpen ? (
+        <div className="mt-6">
+          <InlineAITutor
+            lessonTitle={lesson.title}
+            levelTitle={`Level ${level.id}: ${level.title}`}
+            initialPrompt={tutorPrompt}
+            onClose={() => { setTutorOpen(false); setTutorPrompt(undefined); }}
+          />
         </div>
-        <Link to="/counselor" className="shrink-0 rounded-lg border border-neon-purple/25 bg-neon-purple/10 px-3 py-2 text-[11px] font-semibold text-neon-purple hover:bg-neon-purple/20 transition-all">
-          Ask Sage
-        </Link>
-      </div>
+      ) : (
+        <div className="mt-6 rounded-xl border border-neon-purple/20 bg-neon-purple/[0.03] p-4 flex items-center gap-3">
+          <Brain size={18} className="text-neon-purple shrink-0" />
+          <div className="flex-1">
+            <p className="text-[13px] text-slate-300">Confused about something in this lesson?</p>
+            <p className="text-[11px] text-terminal-muted">Sage can explain any concept in simple terms</p>
+          </div>
+          <button
+            onClick={() => setTutorOpen(true)}
+            className="shrink-0 rounded-lg border border-neon-purple/25 bg-neon-purple/10 px-3 py-2 text-[11px] font-semibold text-neon-purple hover:bg-neon-purple/20 transition-all cursor-pointer"
+          >
+            Ask Sage
+          </button>
+        </div>
+      )}
     </div>
   );
 }

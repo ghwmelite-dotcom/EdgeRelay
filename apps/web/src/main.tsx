@@ -5,6 +5,23 @@ import './app.css';
 
 import { useAuthStore } from '@/stores/auth';
 import { InstallPrompt } from '@/components/ui/InstallPrompt';
+
+const FounderDashboardPage = React.lazy(() => import('@/pages/FounderDashboardPage').then(m => ({ default: m.FounderDashboardPage })));
+
+// Lightweight page view tracker
+function PageTracker() {
+  const location = useLocation();
+  const user = useAuthStore(s => s.user);
+  useEffect(() => {
+    const base = import.meta.env.PROD ? 'https://edgerelay-api.ghwmelite.workers.dev' : '';
+    fetch(`${base}/v1/analytics/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventType: 'page_view', page: location.pathname, userId: user?.id }),
+    }).catch(() => {});
+  }, [location.pathname]);
+  return null;
+}
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 
@@ -98,6 +115,7 @@ function App() {
     <BrowserRouter>
       <ReferralCapture />
       <InstallPrompt />
+      <PageTracker />
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-screen bg-terminal-bg">
           <div className="flex items-center gap-3 text-terminal-muted">
@@ -165,6 +183,7 @@ function App() {
           <Route path="/app/strategy-hub" element={<StrategyHubPage />} />
           <Route path="/referrals" element={<ReferralPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/founder" element={<FounderDashboardPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

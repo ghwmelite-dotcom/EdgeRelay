@@ -25,6 +25,7 @@ import { referral } from './routes/referral.js';
 import { counselor } from './routes/counselor.js';
 import { marketPulse } from './routes/marketPulse.js';
 import { social } from './routes/social.js';
+import { founderAnalytics } from './routes/founderAnalytics.js';
 import { academy } from './routes/academy.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -103,6 +104,17 @@ app.route('/v1/marketplace', marketplacePublic);
 app.route('/v1/strategy-hub', strategyHubPublic);
 app.route('/v1/market-pulse', marketPulse);
 app.route('/v1/social', social); // Public social feed (GET /feed is open, POST requires auth via social.ts)
+app.post('/v1/analytics/track', async (c) => {
+  // Public tracking endpoint — fire-and-forget
+  const body = await c.req.json().catch(() => ({})) as { eventType?: string; page?: string; userId?: string };
+  if (body.eventType) {
+    try {
+      await c.env.DB.prepare('INSERT INTO analytics_events (id, user_id, event_type, page) VALUES (lower(hex(randomblob(16))), ?, ?, ?)')
+        .bind(body.userId || null, body.eventType, body.page || null).run();
+    } catch {}
+  }
+  return c.json({ ok: true });
+});
 
 // ── Protected Routes ────────────────────────────────────────────
 const protectedApp = new Hono<{ Bindings: Env }>();
@@ -124,6 +136,7 @@ protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
 protectedApp.route('/academy', academy);
+protectedApp.route('/analytics', founderAnalytics);
 // social routes mounted publicly above (auth checked per-endpoint in social.ts)
 
 app.route('/v1', protectedApp);

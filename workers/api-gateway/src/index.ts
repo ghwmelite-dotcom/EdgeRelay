@@ -24,6 +24,7 @@ import { admin } from './routes/admin.js';
 import { referral } from './routes/referral.js';
 import { counselor } from './routes/counselor.js';
 import { marketPulse } from './routes/marketPulse.js';
+import { social } from './routes/social.js';
 import { academy } from './routes/academy.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -101,6 +102,7 @@ app.route('/v1/marketplace', marketplacePublic);
 // Strategy Hub public — strategy list + detail, no auth required
 app.route('/v1/strategy-hub', strategyHubPublic);
 app.route('/v1/market-pulse', marketPulse);
+app.route('/v1/social', social); // Public social feed (GET /feed is open, POST requires auth via social.ts)
 
 // ── Protected Routes ────────────────────────────────────────────
 const protectedApp = new Hono<{ Bindings: Env }>();
@@ -122,6 +124,7 @@ protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
 protectedApp.route('/academy', academy);
+// social routes mounted publicly above (auth checked per-endpoint in social.ts)
 
 app.route('/v1', protectedApp);
 

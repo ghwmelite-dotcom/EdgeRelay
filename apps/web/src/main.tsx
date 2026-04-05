@@ -48,6 +48,7 @@ const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m =>
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
 const TelegramMiniAppPage = React.lazy(() => import('@/pages/TelegramMiniAppPage').then(m => ({ default: m.TelegramMiniAppPage })));
+const CommunityPage = React.lazy(() => import('@/pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
 const AcademyPage = React.lazy(() => import('@/pages/AcademyPage').then(m => ({ default: m.AcademyPage })));
 const AcademyLessonPage = React.lazy(() => import('@/pages/AcademyLessonPage').then(m => ({ default: m.AcademyLessonPage })));
 const ChartSimulatorPage = React.lazy(() => import('@/pages/ChartSimulatorPage').then(m => ({ default: m.ChartSimulatorPage })));
@@ -152,6 +153,7 @@ function App() {
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
           <Route path="/app/prop-firms" element={<PropFirmHubPage />} />
           <Route path="/counselor" element={<CounselorPage />} />
+          <Route path="/community" element={<CommunityPage />} />
           <Route path="/academy" element={<AcademyPage />} />
           <Route path="/academy/:lessonId" element={<AcademyLessonPage />} />
           <Route path="/academy/practice" element={<ChartSimulatorPage />} />

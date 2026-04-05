@@ -14,6 +14,12 @@ import { CandlestickQuiz } from '@/components/academy/widgets/CandlestickQuiz';
 import { SessionTimezoneMap } from '@/components/academy/widgets/SessionTimezoneMap';
 import { MovingAverageCrossover } from '@/components/academy/widgets/MovingAverageCrossover';
 import { EmotionCheckIn } from '@/components/academy/widgets/EmotionCheckIn';
+import { CandlestickForming } from '@/components/academy/animations/CandlestickForming';
+import { RiskMathAnimation } from '@/components/academy/animations/RiskMathAnimation';
+import { SupportResistanceBounce } from '@/components/academy/animations/SupportResistanceBounce';
+import { MACrossoverAnimation } from '@/components/academy/animations/MACrossoverAnimation';
+import { RevengeTradingSpiral } from '@/components/academy/animations/RevengeTradingSpiral';
+import { CompoundGrowthAnimation } from '@/components/academy/animations/CompoundGrowthAnimation';
 
 const WIDGET_REGISTRY: Record<string, React.ComponentType> = {
   'position-size-calculator': PositionSizeCalculator,
@@ -23,6 +29,12 @@ const WIDGET_REGISTRY: Record<string, React.ComponentType> = {
   'session-timezone-map': SessionTimezoneMap,
   'moving-average-crossover': MovingAverageCrossover,
   'emotion-check-in': EmotionCheckIn,
+  'anim-candlestick-forming': CandlestickForming,
+  'anim-risk-math': RiskMathAnimation,
+  'anim-support-resistance': SupportResistanceBounce,
+  'anim-ma-crossover': MACrossoverAnimation,
+  'anim-revenge-spiral': RevengeTradingSpiral,
+  'anim-compound-growth': CompoundGrowthAnimation,
 };
 
 const ACCENT_MAP: Record<string, string> = {

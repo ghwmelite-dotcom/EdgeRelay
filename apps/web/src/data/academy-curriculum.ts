@@ -171,6 +171,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
   <li><strong>Candlestick Chart</strong> — The most popular chart type among traders. Like a bar chart, it shows Open, High, Low, and Close, but it uses a colored "body" that makes it much easier to read at a glance. This is the chart type you'll use 99% of the time.</li>
 </ul>
 <p>We'll focus on candlestick charts from here on, since they're the industry standard and the most informative for making trading decisions.</p>`,
+            widgetId: 'anim-candlestick-forming',
           },
           {
             heading: 'Anatomy of a Candlestick',
@@ -510,6 +511,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
 <p>A study by the French financial regulator (AMF) tracked 14,799 retail Forex traders over four years and found that <strong>89% lost money</strong>, with an average loss of about €10,900 per trader. Similar studies from the US, UK, and Australia show comparable results.</p>
 <p>But here's the important part: these numbers include people who opened an account, deposited $200, used maximum leverage, and blew up in a week. They include gamblers, thrill-seekers, and people who never spent a single hour learning. <strong>You're already ahead</strong> by taking this course seriously.</p>
 <p>The goal of this lesson isn't to discourage you — it's to make you understand that trading is a skill that requires education, discipline, and practice, just like medicine, law, or any other profession. The 13% who are profitable aren't lucky — they've done the work.</p>`,
+            widgetId: 'anim-risk-math',
           },
           {
             heading: 'The Five Mistakes That Kill Accounts',
@@ -988,6 +990,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
 <p><strong>Resistance</strong> is the opposite — a price level where selling pressure prevents the price from rising further. It acts like a "ceiling." Every time price reaches this level, sellers push it back down.</p>
 <p>Here's a real-world analogy: Imagine a rubber ball bouncing on a floor (support) inside a room with a ceiling (resistance). The ball bounces between these two levels. Support and resistance create a similar "range" that price bounces within — until one of the levels finally breaks.</p>
 <p>These levels exist because of human psychology and memory. If a trader bought EUR/USD at 1.0800 and watched it drop to 1.0750, they're nervous. When price recovers back to 1.0800, many of those nervous traders sell to "break even." That cluster of sell orders at 1.0800 creates resistance. The same psychology works in reverse for support.</p>`,
+            widgetId: 'anim-support-resistance',
           },
           {
             heading: 'How to Identify Key Levels',
@@ -1466,6 +1469,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
   <li><strong>Act as dynamic support/resistance</strong> — Price often bounces off moving averages as if they were horizontal support or resistance levels. The 50 MA and 200 MA are particularly respected by institutional traders.</li>
 </ul>
 <p>A moving average is a <strong>lagging indicator</strong>, meaning it's based on past data. It tells you what has happened, not what will happen. This is actually useful — it keeps you from jumping into trades too early and helps you confirm the trend before committing.</p>`,
+            widgetId: 'anim-ma-crossover',
           },
           {
             heading: 'SMA vs. EMA',
@@ -1993,6 +1997,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
   <li><strong>Fear of being wrong</strong> — You avoid setting a stop loss because the stop loss being hit would "prove" you were wrong. This is ego masquerading as analysis. The market doesn't care about your ego.</li>
 </ul>
 <p>The antidote to fear is <strong>confidence built through preparation</strong>. If you've backtested your strategy over 100 trades and know it has a positive expectancy, individual losses don't matter. You trust the process. You've seen losing streaks before in your backtest — they ended, and so will this one.</p>`,
+            widgetId: 'anim-revenge-spiral',
           },
           {
             heading: 'Greed and FOMO',
@@ -2920,6 +2925,7 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = [
 </ul>
 <p>If all five of these are true, you've built the foundation for scaling. If even one is shaky, keep working at your current level until it's solid. <strong>Scaling a broken process just creates bigger problems.</strong></p>
 <p>There are several paths to scale, and they're not mutually exclusive. Let's explore each one.</p>`,
+            widgetId: 'anim-compound-growth',
           },
           {
             heading: 'Multiple Accounts and Signal Copying',

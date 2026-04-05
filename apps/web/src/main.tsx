@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import './app.css';
 
 import { useAuthStore } from '@/stores/auth';
+import { InstallPrompt } from '@/components/ui/InstallPrompt';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 
@@ -96,6 +97,7 @@ function App() {
   return (
     <BrowserRouter>
       <ReferralCapture />
+      <InstallPrompt />
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-screen bg-terminal-bg">
           <div className="flex items-center gap-3 text-terminal-muted">
@@ -177,3 +179,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>,
 );
+
+// ── Service Worker Registration ───────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

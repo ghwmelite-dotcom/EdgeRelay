@@ -1,14 +1,38 @@
 {
-  "name": "TradeMetrics Pro — Edge Signal Copier",
+  "name": "TradeMetrics Pro — AI-Powered Trading Platform",
   "short_name": "TradeMetrics Pro",
-  "description": "TradeMetrics Pro — the world's only free cross-VPS trade copier for prop firm traders",
-  "start_url": "/",
+  "description": "Free trading platform with AI analytics, PropGuard protection, signal copier, Academy, and AI counselor. Forex, gold, indices, oil, crypto.",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#05080d",
   "theme_color": "#00e5ff",
+  "categories": ["finance", "education"],
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Academy",
+      "short_name": "Academy",
+      "url": "/academy",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Sage Counselor",
+      "short_name": "Sage",
+      "url": "/counselor",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

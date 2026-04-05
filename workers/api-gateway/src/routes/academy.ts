@@ -110,3 +110,77 @@ academy.get('/stats', async (c) => {
 
   return c.json<ApiResponse>({ data: { stats: stats || {} }, error: null });
 });
+
+// ── GET /academy/homework — Check homework completion ─────────
+
+academy.get('/homework', async (c) => {
+  const userId = c.get('userId');
+
+  // 1. Total closed trades (for hw-1, hw-4)
+  const tradeCount = await c.env.DB.prepare(
+    `SELECT COUNT(*) as c FROM journal_trades jt
+     JOIN accounts a ON jt.account_id = a.id
+     WHERE a.user_id = ? AND jt.deal_entry = 'out'`,
+  ).bind(userId).first<{ c: number }>();
+
+  // 2. Trades with risk under 2% (for hw-2)
+  const riskControlled = await c.env.DB.prepare(
+    `SELECT COUNT(*) as c FROM journal_trades jt
+     JOIN accounts a ON jt.account_id = a.id
+     WHERE a.user_id = ? AND jt.deal_entry = 'out'
+       AND jt.balance_at_trade > 0
+       AND (ABS(jt.profit) / jt.balance_at_trade) <= 0.02`,
+  ).bind(userId).first<{ c: number }>();
+
+  // 3. London session trades (for hw-3)
+  const londonTrades = await c.env.DB.prepare(
+    `SELECT COUNT(*) as c FROM journal_trades jt
+     JOIN accounts a ON jt.account_id = a.id
+     WHERE a.user_id = ? AND jt.deal_entry = 'out' AND jt.session_tag = 'london'`,
+  ).bind(userId).first<{ c: number }>();
+
+  // 4. Counselor sessions (for hw-5)
+  const counselorSessions = await c.env.DB.prepare(
+    `SELECT COUNT(*) as c FROM counselor_sessions WHERE user_id = ?`,
+  ).bind(userId).first<{ c: number }>();
+
+  // 5. Simulator completions — check if any scenario had positive P&L
+  // Since simulator is client-side only for now, we track via a simple flag
+  // For v1, we'll check if the user has accessed the practice page (optimistic)
+  // TODO: Add proper simulator result persistence
+
+  const homework: Record<string, { current: number; required: number; completed: boolean }> = {
+    'hw-1': {
+      current: Math.min(tradeCount?.c || 0, 5),
+      required: 5,
+      completed: (tradeCount?.c || 0) >= 5,
+    },
+    'hw-2': {
+      current: Math.min(riskControlled?.c || 0, 5),
+      required: 5,
+      completed: (riskControlled?.c || 0) >= 5,
+    },
+    'hw-3': {
+      current: Math.min(londonTrades?.c || 0, 10),
+      required: 10,
+      completed: (londonTrades?.c || 0) >= 10,
+    },
+    'hw-4': {
+      current: Math.min(tradeCount?.c || 0, 20),
+      required: 20,
+      completed: (tradeCount?.c || 0) >= 20,
+    },
+    'hw-5': {
+      current: Math.min(counselorSessions?.c || 0, 3),
+      required: 3,
+      completed: (counselorSessions?.c || 0) >= 3,
+    },
+    'hw-6': {
+      current: 0, // Client-side tracked for now
+      required: 1,
+      completed: false,
+    },
+  };
+
+  return c.json<ApiResponse>({ data: { homework }, error: null });
+});

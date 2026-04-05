@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, BookOpen, CheckCircle2, Lock, ChevronRight, Sparkles, BarChart3, Target } from 'lucide-react';
 import { useAcademyStore } from '@/stores/academy';
 import { ACADEMY_CURRICULUM } from '@/data/academy-curriculum';
+import { HomeworkSection } from '@/components/academy/HomeworkCard';
 
 const ACCENT_MAP: Record<string, string> = {
   'neon-cyan': '#00e5ff', 'neon-green': '#00ff9d', 'neon-amber': '#ffb800',
@@ -62,6 +63,9 @@ export function AcademyPage() {
           <ChevronRight size={18} className="text-terminal-muted group-hover:text-neon-cyan transition-colors" />
         </div>
       </Link>
+
+      {/* Homework */}
+      <HomeworkSection />
 
       {/* Level cards */}
       <div className="space-y-4">

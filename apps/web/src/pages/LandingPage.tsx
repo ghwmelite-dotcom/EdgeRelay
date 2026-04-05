@@ -47,12 +47,12 @@ const NAV_LINKS = [
   { label: 'How It Works', href: '#how-it-works', color: '#00e5ff' },
   { label: 'Ecosystem', href: '#ecosystem', color: '#b18cff' },
   { label: 'Markets', href: '/markets', color: '#ff3d57' },
-  { label: 'Blog', href: '/blog', color: '#ffb800' },
+  { label: 'Academy', href: '#academy', color: '#ffb800' },
 ];
 
 const STATS = [
   { value: '300+', label: 'Edge Locations' },
-  { value: '10', label: 'EA Strategies' },
+  { value: '24', label: 'Academy Lessons' },
   { value: '<500ms', label: 'Avg Latency' },
   { value: 'Free', label: 'Forever Plan' },
 ];
@@ -1810,6 +1810,139 @@ export function LandingPage() {
                       </span>
                     ))}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+          7c. COMPLETE PLATFORM — Academy, Community, Market Pulse, Simulator
+          ══════════════════════════════════════════════════════════ */}
+      <section id="academy" className="px-6 py-20 md:py-32">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-terminal-border" />
+            <span className="font-mono-nums text-[10px] uppercase tracking-[0.3em] text-terminal-muted">
+              Complete Platform
+            </span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-terminal-border" />
+          </div>
+          <h2 className="animate-fade-in-up text-center font-display text-3xl font-bold md:text-4xl">
+            Everything a Trader Needs — <span className="text-neon-green">All Free</span>
+          </h2>
+          <p className="animate-fade-in-up mx-auto mt-4 max-w-2xl text-center text-slate-400" style={{ animationDelay: '60ms' }}>
+            From learning your first candlestick to passing a funded challenge and scaling across accounts — TradeMetrics Pro covers the entire journey.
+          </p>
+
+          {/* Academy — Full width hero */}
+          <Link
+            to="/academy"
+            className="animate-fade-in-up mt-12 group block overflow-hidden rounded-2xl border border-neon-amber/20 transition-all hover:border-neon-amber/40 hover:shadow-[0_0_30px_rgba(255,184,0,0.06)]"
+            style={{ animationDelay: '120ms', background: 'linear-gradient(135deg, rgba(255,184,0,0.04) 0%, rgba(0,229,255,0.02) 100%)' }}
+          >
+            <div className="h-[3px] w-full" style={{ background: 'linear-gradient(90deg, #ffb80080, #ffb80020, transparent)' }} />
+            <div className="flex flex-col gap-6 p-8 md:flex-row md:items-center md:p-10">
+              <div className="flex-1">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-neon-amber/25 bg-neon-amber/10 px-3 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-neon-amber animate-pulse" />
+                    <span className="font-mono-nums text-[9px] uppercase tracking-widest text-neon-amber">Interactive Academy</span>
+                  </span>
+                  <span className="rounded-full border border-neon-green/20 bg-neon-green/10 px-2.5 py-0.5 font-mono-nums text-[9px] text-neon-green">24 Lessons</span>
+                </div>
+                <h3 className="font-display text-2xl font-bold text-white">TradeMetrics Academy</h3>
+                <p className="mt-2 max-w-lg text-sm leading-relaxed text-slate-400">
+                  Learn trading from zero — 6 progressive levels with interactive exercises, animated visual explainers, live chart simulator, quizzes with AI tutoring, and daily streaks with badges. The education platform trading deserved but never had.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['Interactive Widgets', 'Chart Simulator', 'AI Tutor', 'Quizzes & Badges', 'Practice Trading'].map(t => (
+                    <span key={t} className="chip border border-neon-amber/20 bg-neon-amber/10 text-neon-amber">{t}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center">
+                <span className="inline-flex items-center gap-2 rounded-xl border border-neon-amber/25 bg-neon-amber/10 px-5 py-2.5 text-sm font-semibold text-neon-amber transition-all group-hover:bg-neon-amber group-hover:text-terminal-bg">
+                  Start Learning <ArrowRight className="h-4 w-4" />
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* 3-card row: Community, Market Pulse, Simulator */}
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            {/* Community */}
+            <div className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6" style={{ animationDelay: '200ms' }}>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#00e5ff30]">
+                <ShieldCheck className="h-6 w-6 text-neon-cyan" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">Trading Community</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Share setups, post results, and learn from verified traders. Upvote the best analysis. Build your reputation with a verified badge.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <span className="rounded-full bg-neon-green/10 border border-neon-green/20 px-2 py-0.5 font-mono-nums text-[9px] text-neon-green">Verified Badges</span>
+                <span className="rounded-full bg-neon-cyan/10 border border-neon-cyan/20 px-2 py-0.5 font-mono-nums text-[9px] text-neon-cyan">Voting</span>
+              </div>
+            </div>
+
+            {/* Market Pulse */}
+            <Link to="/markets" className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6" style={{ animationDelay: '280ms' }}>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-red/20 bg-neon-red/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#ff3d5730]">
+                <BarChart3 className="h-6 w-6 text-neon-red" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white group-hover:text-neon-cyan transition-colors">Live Market Pulse</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Economic calendar with live countdowns, session status, currency heat map, and breaking headlines. Free, no login required.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <span className="rounded-full bg-neon-red/10 border border-neon-red/20 px-2 py-0.5 font-mono-nums text-[9px] text-neon-red">Live Data</span>
+                <span className="rounded-full bg-neon-amber/10 border border-neon-amber/20 px-2 py-0.5 font-mono-nums text-[9px] text-neon-amber">Public</span>
+              </div>
+            </Link>
+
+            {/* Custom EA + Simulator */}
+            <div className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6" style={{ animationDelay: '360ms' }}>
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-neon-purple/20 bg-neon-purple/10 transition-shadow duration-300 group-hover:shadow-[0_0_24px_#b18cff30]">
+                <Sparkles className="h-6 w-6 text-neon-purple" />
+              </div>
+              <h3 className="font-display text-lg font-semibold text-white">AI EA Builder + Backtest</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                Describe your strategy in plain English. AI generates compilable MQL5 code, runs an instant backtest, and shows equity curve + stats before download.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <span className="rounded-full bg-neon-purple/10 border border-neon-purple/20 px-2 py-0.5 font-mono-nums text-[9px] text-neon-purple">AI-Powered</span>
+                <span className="rounded-full bg-neon-green/10 border border-neon-green/20 px-2 py-0.5 font-mono-nums text-[9px] text-neon-green">Backtest</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Trade Replay + PWA row */}
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <div className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6" style={{ animationDelay: '440ms' }}>
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neon-cyan/20 bg-neon-cyan/10">
+                  <FlaskConical className="h-5 w-5 text-neon-cyan" />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-semibold text-white">Trade Replay with AI Narration</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                    Watch any trade unfold candle by candle with SL/TP overlays. AI narrates what happened — entry context, price movement, and outcome. Every trade becomes a lesson.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="glass-premium card-hover-premium animate-fade-in-up group rounded-2xl p-6" style={{ animationDelay: '520ms' }}>
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neon-green/20 bg-neon-green/10">
+                  <HardDriveDownload className="h-5 w-5 text-neon-green" />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-semibold text-white">Install as Mobile App</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-400">
+                    Add TradeMetrics Pro to your home screen. Offline Academy lessons, fast access to dashboard, Sage counselor, and market pulse — all without the app store.
+                  </p>
                 </div>
               </div>
             </div>

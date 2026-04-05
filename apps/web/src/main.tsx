@@ -47,6 +47,8 @@ const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m =>
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
 const TelegramMiniAppPage = React.lazy(() => import('@/pages/TelegramMiniAppPage').then(m => ({ default: m.TelegramMiniAppPage })));
+const AcademyPage = React.lazy(() => import('@/pages/AcademyPage').then(m => ({ default: m.AcademyPage })));
+const AcademyLessonPage = React.lazy(() => import('@/pages/AcademyLessonPage').then(m => ({ default: m.AcademyLessonPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -147,6 +149,8 @@ function App() {
           <Route path="/propguard/setup" element={<PropGuardSetupPage />} />
           <Route path="/app/prop-firms" element={<PropFirmHubPage />} />
           <Route path="/counselor" element={<CounselorPage />} />
+          <Route path="/academy" element={<AcademyPage />} />
+          <Route path="/academy/:lessonId" element={<AcademyLessonPage />} />
           <Route path="/simulator" element={<SimulatorPage />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />

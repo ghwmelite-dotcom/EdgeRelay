@@ -23,6 +23,7 @@ import { analytics } from './routes/analytics.js';
 import { admin } from './routes/admin.js';
 import { referral } from './routes/referral.js';
 import { counselor } from './routes/counselor.js';
+import { academy } from './routes/academy.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -118,6 +119,7 @@ protectedApp.route('/analytics', analytics);
 protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
+protectedApp.route('/academy', academy);
 
 app.route('/v1', protectedApp);
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, ShieldCheck, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Brain, Heart, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown, Gift } from 'lucide-react';
+import { LayoutDashboard, Shield, ShieldCheck, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Brain, Heart, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown, Gift, GraduationCap } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
@@ -37,6 +37,7 @@ const NAV_GROUPS = [
   {
     label: 'Tools',
     items: [
+      { label: 'Academy', icon: GraduationCap, to: '/academy', highlight: true, highlightColor: 'amber' },
       { label: 'Prop Firm Hub', icon: ShieldCheck, to: '/app/prop-firms', highlight: true, highlightColor: 'green' },
       { label: 'Simulator', icon: Dice5, to: '/simulator' },
       { label: 'Strategy Hub', icon: FlaskConical, to: '/app/strategy-hub' },
@@ -198,9 +199,12 @@ export function AppLayout() {
                   const { label, icon: Icon, to } = item;
                   const isHighlight = 'highlight' in item && !!(item as { highlight?: boolean }).highlight;
                   const hlColor = (item as { highlightColor?: string }).highlightColor || 'green';
-                  const hlClass = hlColor === 'purple'
-                    ? { text: 'text-neon-purple', border: 'border-neon-purple/20', bg: 'bg-neon-purple/[0.06]', hoverBg: 'hover:bg-neon-purple/10', hoverBorder: 'hover:border-neon-purple/30', shadow: 'hover:shadow-[0_0_16px_rgba(177,140,255,0.08)]', dot: 'bg-neon-purple', dotShadow: 'shadow-[0_0_6px_rgba(177,140,255,0.6)]', drop: 'drop-shadow-[0_0_4px_rgba(177,140,255,0.5)]' }
-                    : { text: 'text-neon-green', border: 'border-neon-green/20', bg: 'bg-neon-green/[0.06]', hoverBg: 'hover:bg-neon-green/10', hoverBorder: 'hover:border-neon-green/30', shadow: 'hover:shadow-[0_0_16px_rgba(0,255,157,0.08)]', dot: 'bg-neon-green', dotShadow: 'shadow-[0_0_6px_rgba(0,255,157,0.6)]', drop: 'drop-shadow-[0_0_4px_rgba(0,255,157,0.5)]' };
+                  const hlStyles: Record<string, { text: string; border: string; bg: string; hoverBg: string; hoverBorder: string; shadow: string; dot: string; dotShadow: string; drop: string }> = {
+                    green: { text: 'text-neon-green', border: 'border-neon-green/20', bg: 'bg-neon-green/[0.06]', hoverBg: 'hover:bg-neon-green/10', hoverBorder: 'hover:border-neon-green/30', shadow: 'hover:shadow-[0_0_16px_rgba(0,255,157,0.08)]', dot: 'bg-neon-green', dotShadow: 'shadow-[0_0_6px_rgba(0,255,157,0.6)]', drop: 'drop-shadow-[0_0_4px_rgba(0,255,157,0.5)]' },
+                    purple: { text: 'text-neon-purple', border: 'border-neon-purple/20', bg: 'bg-neon-purple/[0.06]', hoverBg: 'hover:bg-neon-purple/10', hoverBorder: 'hover:border-neon-purple/30', shadow: 'hover:shadow-[0_0_16px_rgba(177,140,255,0.08)]', dot: 'bg-neon-purple', dotShadow: 'shadow-[0_0_6px_rgba(177,140,255,0.6)]', drop: 'drop-shadow-[0_0_4px_rgba(177,140,255,0.5)]' },
+                    amber: { text: 'text-neon-amber', border: 'border-neon-amber/20', bg: 'bg-neon-amber/[0.06]', hoverBg: 'hover:bg-neon-amber/10', hoverBorder: 'hover:border-neon-amber/30', shadow: 'hover:shadow-[0_0_16px_rgba(255,184,0,0.08)]', dot: 'bg-neon-amber', dotShadow: 'shadow-[0_0_6px_rgba(255,184,0,0.6)]', drop: 'drop-shadow-[0_0_4px_rgba(255,184,0,0.5)]' },
+                  };
+                  const hlClass = hlStyles[hlColor] || hlStyles.green;
                   const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
                   return (
                     <NavLink

@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /accounts
+Disallow: /settings
+Disallow: /billing
+Disallow: /admin
+Disallow: /founder
+Disallow: /propguard/
+Disallow: /app/
+Disallow: /auth/
+Disallow: /tg
+
+Sitemap: https://trademetricspro.com/sitemap.xml

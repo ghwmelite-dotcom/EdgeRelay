@@ -128,7 +128,8 @@
       "WebFetch(domain:www.financialjuice.com)",
       "mcp__claude_ai_Cloudflare_Developer_Platform__set_active_account",
       "Bash(sed -n '1,15p' /tmp/test_ea2.mq5)",
-      "Bash(sed -n '120,185p' /tmp/test_ea2.mq5)"
+      "Bash(sed -n '120,185p' /tmp/test_ea2.mq5)",
+      "Bash(npx -y tsx -e ':*)"
     ]
   }
 }

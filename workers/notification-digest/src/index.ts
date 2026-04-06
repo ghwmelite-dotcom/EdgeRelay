@@ -146,16 +146,17 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
  * Batches up to 5 headlines per message to avoid spam.
  */
 async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void> {
-  // Fetch news items from the last 20 minutes (covers 15-min cron + buffer)
+  // Fetch news items from the last 16 minutes (covers 15-min fetcher interval + 1min buffer)
   const { results: newsItems } = await env.DB.prepare(
-    `SELECT id, headline, source, related_currencies, published_at, url
+    `SELECT id, headline_hash, headline, source, related_currencies, published_at, url
      FROM market_news
      WHERE source = 'FinancialJuice'
-       AND published_at >= datetime('now', '-20 minutes')
+       AND published_at >= datetime('now', '-16 minutes')
      ORDER BY published_at DESC
      LIMIT 10`,
   ).all<{
     id: string;
+    headline_hash: string;
     headline: string;
     source: string;
     related_currencies: string | null;
@@ -169,7 +170,7 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
   if (env.TELEGRAM_CHANNEL_ID) {
     const unsentChannel: typeof newsItems = [];
     for (const item of newsItems) {
-      const dedupKey = `news-channel:${item.id}`;
+      const dedupKey = `news-channel:${item.headline_hash}`;
       const alreadySent = await env.BOT_STATE.get(dedupKey);
       if (!alreadySent) unsentChannel.push(item);
     }
@@ -196,7 +197,7 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
       await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg);
 
       for (const item of batch) {
-        await env.BOT_STATE.put(`news-channel:${item.id}`, '1', { expirationTtl: 21600 });
+        await env.BOT_STATE.put(`news-channel:${item.headline_hash}`, '1', { expirationTtl: 21600 });
       }
       console.log(`[digest] Pushed ${batch.length} headlines to channel ${env.TELEGRAM_CHANNEL_ID}`);
     }
@@ -223,7 +224,7 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
     // Filter to only unsent headlines for this user
     const unsent: typeof newsItems = [];
     for (const item of newsItems) {
-      const dedupKey = `news-push:${user.user_id}:${item.id}`;
+      const dedupKey = `news-push:${user.user_id}:${item.headline_hash}`;
       const alreadySent = await env.BOT_STATE.get(dedupKey);
       if (!alreadySent) unsent.push(item);
     }
@@ -253,8 +254,7 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
 
     // Mark all as sent (TTL 6 hours to prevent re-sending)
     for (const item of batch) {
-      const dedupKey = `news-push:${user.user_id}:${item.id}`;
-      await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 21600 });
+      await env.BOT_STATE.put(`news-push:${user.user_id}:${item.headline_hash}`, '1', { expirationTtl: 21600 });
     }
 
     console.log(`[digest] Pushed ${batch.length} FinancialJuice headlines to user ${user.user_id}`);

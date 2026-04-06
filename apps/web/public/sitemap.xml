@@ -7,6 +7,11 @@
   <url><loc>https://trademetricspro.com/pass-prop-firm-challenge</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://trademetricspro.com/referral</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
+  <!-- Free Tools (high search volume) -->
+  <url><loc>https://trademetricspro.com/tools/pip-calculator</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/tools/position-size-calculator</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/tools/risk-reward-calculator</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+
   <!-- SEO Landing Pages -->
   <url><loc>https://trademetricspro.com/trade-gold</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://trademetricspro.com/trade-indices</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>

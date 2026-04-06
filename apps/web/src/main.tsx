@@ -62,6 +62,9 @@ const PropFirmChallengePage = React.lazy(() => import('@/pages/PropFirmChallenge
 const PropFirmHubPage = React.lazy(() => import('@/pages/PropFirmHubPage').then(m => ({ default: m.PropFirmHubPage })));
 const CounselorPage = React.lazy(() => import('@/pages/CounselorPage').then(m => ({ default: m.CounselorPage })));
 const MarketPulsePage = React.lazy(() => import('@/pages/MarketPulsePage').then(m => ({ default: m.MarketPulsePage })));
+const PipCalculatorPage = React.lazy(() => import('@/pages/tools/PipCalculatorPage').then(m => ({ default: m.PipCalculatorPage })));
+const PositionSizeCalculatorPage = React.lazy(() => import('@/pages/tools/PositionSizeCalculatorPage').then(m => ({ default: m.PositionSizeCalculatorPage })));
+const RiskRewardCalculatorPage = React.lazy(() => import('@/pages/tools/RiskRewardCalculatorPage').then(m => ({ default: m.RiskRewardCalculatorPage })));
 const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m => ({ default: m.TradeGoldPage })));
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
@@ -141,6 +144,9 @@ function App() {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/pass-prop-firm-challenge" element={<PropFirmChallengePage />} />
         <Route path="/markets" element={<MarketPulsePage />} />
+        <Route path="/tools/pip-calculator" element={<PipCalculatorPage />} />
+        <Route path="/tools/position-size-calculator" element={<PositionSizeCalculatorPage />} />
+        <Route path="/tools/risk-reward-calculator" element={<RiskRewardCalculatorPage />} />
         <Route path="/trade-gold" element={<TradeGoldPage />} />
         <Route path="/trade-indices" element={<TradeIndicesPage />} />
         <Route path="/trade-oil" element={<TradeOilPage />} />

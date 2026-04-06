@@ -5,7 +5,7 @@ interface Env {
   BOT_STATE: KVNamespace;
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHANNEL_ID: string;
-  AI?: any; // Workers AI binding (optional)
+  AI?: { run: (model: string, params: Record<string, unknown>) => Promise<unknown> };
 }
 
 interface PrefRow {
@@ -328,7 +328,7 @@ async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void
   }
 }
 
-async function formatMorningBrief(db: D1Database, now: Date, ai?: any): Promise<string | null> {
+async function formatMorningBrief(db: D1Database, now: Date, ai?: Env['AI']): Promise<string | null> {
   const today = now.toISOString().slice(0, 10);
   const utcHour = now.getUTCHours();
 

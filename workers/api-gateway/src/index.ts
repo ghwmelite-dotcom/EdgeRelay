@@ -136,7 +136,7 @@ protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
 protectedApp.route('/academy', academy);
-protectedApp.route('/analytics', founderAnalytics);
+protectedApp.route('/founder-analytics', founderAnalytics);
 // social routes mounted publicly above (auth checked per-endpoint in social.ts)
 
 app.route('/v1', protectedApp);

@@ -47,7 +47,7 @@ async function signJwt(payload: JwtPayload, secret: string): Promise<string> {
   return `${signingInput}.${base64UrlEncode(signature)}`;
 }
 
-async function verifyJwt(token: string, secret: string): Promise<JwtPayload | null> {
+export async function verifyJwt(token: string, secret: string): Promise<JwtPayload | null> {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
 

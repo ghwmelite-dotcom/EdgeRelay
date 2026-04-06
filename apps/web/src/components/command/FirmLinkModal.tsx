@@ -40,7 +40,7 @@ export function FirmLinkModal({
     setStep(2);
   };
 
-  const handleTemplateClick = (template: any) => {
+  const handleTemplateClick = (template: import('@/stores/commandCenter').FirmTemplate) => {
     setSelectedTemplate(template);
     setStep(3);
   };

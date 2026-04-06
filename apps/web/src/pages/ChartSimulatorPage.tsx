@@ -133,7 +133,7 @@ export function ChartSimulatorPage() {
             <span className="font-mono-nums text-[11px]" style={{ color: accent }}>{progress}%</span>
           </div>
         </div>
-        <button onClick={() => { store.reset(); store.selectScenario(null as any); }} className="text-terminal-muted hover:text-white transition-colors cursor-pointer">
+        <button onClick={() => { store.reset(); store.selectScenario(undefined!); }} className="text-terminal-muted hover:text-white transition-colors cursor-pointer">
           <XIcon size={18} />
         </button>
       </div>
@@ -307,7 +307,7 @@ export function ChartSimulatorPage() {
               </p>
               <div className="mt-3 flex gap-2">
                 <button onClick={() => store.reset()} className="flex-1 rounded-lg border border-terminal-border py-2 text-[12px] text-slate-300 cursor-pointer">Retry</button>
-                <Link to="/academy/practice" onClick={() => { store.reset(); store.selectScenario(null as any); }} className="flex-1 rounded-lg bg-neon-cyan/15 border border-neon-cyan/30 py-2 text-[12px] text-neon-cyan text-center">More Scenarios</Link>
+                <Link to="/academy/practice" onClick={() => { store.reset(); store.selectScenario(undefined!); }} className="flex-1 rounded-lg bg-neon-cyan/15 border border-neon-cyan/30 py-2 text-[12px] text-neon-cyan text-center">More Scenarios</Link>
               </div>
             </div>
           )}

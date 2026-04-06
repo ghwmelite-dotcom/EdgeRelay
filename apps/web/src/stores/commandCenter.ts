@@ -7,6 +7,16 @@ export interface FirmListItem {
   plan_count: number;
 }
 
+export interface FirmTemplate {
+  id: string;
+  plan_name: string;
+  challenge_phase: string;
+  daily_loss_percent: number | null;
+  max_drawdown_percent: number;
+  profit_target_percent: number | null;
+  drawdown_type: string;
+}
+
 export interface AccountHealthResult {
   account_id: string;
   alias: string;
@@ -18,7 +28,7 @@ export interface AccountHealthResult {
 interface CommandCenterState {
   healthResults: AccountHealthResult[];
   firms: FirmListItem[];
-  firmTemplates: any[];
+  firmTemplates: FirmTemplate[];
   isLoading: boolean;
   error: string | null;
   selectedFirm: string | null;
@@ -34,7 +44,7 @@ interface CommandCenterState {
 const initialState = {
   healthResults: [] as AccountHealthResult[],
   firms: [] as FirmListItem[],
-  firmTemplates: [] as any[],
+  firmTemplates: [] as FirmTemplate[],
   isLoading: false,
   error: null as string | null,
   selectedFirm: null as string | null,
@@ -75,7 +85,7 @@ export const useCommandCenterStore = create<CommandCenterState>()((set) => ({
   fetchFirmTemplates: async (firmName: string) => {
     set({ firmTemplates: [], selectedFirm: firmName });
     try {
-      const res = await api.get<{ templates: any[] }>(`/firms/${firmName}/templates`);
+      const res = await api.get<{ templates: FirmTemplate[] }>(`/firms/${firmName}/templates`);
       if (res.data) {
         set({ firmTemplates: res.data.templates ?? [] });
       }

@@ -25,7 +25,7 @@ export function FounderDashboardPage() {
 
   async function fetchData() {
     setLoading(true);
-    const res = await api.get<FounderData>('/analytics/founder');
+    const res = await api.get<FounderData>('/founder-analytics/founder');
     if (res.data) { setData(res.data); setError(null); }
     else setError(res.error?.message || 'Failed to load');
     setLoading(false);

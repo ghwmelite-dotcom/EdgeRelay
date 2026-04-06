@@ -1,16 +1,16 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
-import { verifyJwtIgnoreExpiry } from '../middleware/auth.js';
+import { verifyJwt } from '../middleware/auth.js';
 
 export const social = new Hono<{ Bindings: Env }>();
 
 // Helper: extract userId from Authorization header (for public-mounted routes)
-async function getUserId(c: any): Promise<string | null> {
+async function getUserId(c: { req: { header: (name: string) => string | undefined }; env: { JWT_SECRET: string } }): Promise<string | null> {
   const auth = c.req.header('Authorization');
   if (!auth?.startsWith('Bearer ')) return null;
   try {
-    const payload = await verifyJwtIgnoreExpiry(auth.slice(7), c.env.JWT_SECRET);
+    const payload = await verifyJwt(auth.slice(7), c.env.JWT_SECRET);
     return payload?.sub || null;
   } catch { return null; }
 }

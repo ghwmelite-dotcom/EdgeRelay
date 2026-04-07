@@ -1,5 +1,19 @@
 User-agent: *
 Allow: /
+Allow: /blog
+Allow: /blog/*
+Allow: /markets
+Allow: /tools/*
+Allow: /trade-gold
+Allow: /trade-indices
+Allow: /trade-oil
+Allow: /pass-prop-firm-challenge
+Allow: /referral
+Allow: /privacy
+Allow: /terms
+Allow: /firms
+Allow: /firms/*
+
 Disallow: /dashboard
 Disallow: /accounts
 Disallow: /settings
@@ -10,5 +24,22 @@ Disallow: /propguard/
 Disallow: /app/
 Disallow: /auth/
 Disallow: /tg
+Disallow: /counselor
+Disallow: /academy
+Disallow: /community
+Disallow: /simulator
+Disallow: /risk
+Disallow: /signals
+Disallow: /journal
+Disallow: /journal/*
+Disallow: /command-center
+Disallow: /discipline
+Disallow: /downloads
+Disallow: /analytics
+Disallow: /usage
+Disallow: /provider/
+Disallow: /referrals
+Disallow: /login
+Disallow: /register
 
 Sitemap: https://trademetricspro.com/sitemap.xml

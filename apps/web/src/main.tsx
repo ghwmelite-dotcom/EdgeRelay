@@ -13,12 +13,22 @@ function PageTracker() {
   const location = useLocation();
   const user = useAuthStore(s => s.user);
   useEffect(() => {
+    // Track page view
     const base = import.meta.env.PROD ? 'https://edgerelay-api.ghwmelite.workers.dev' : '';
     fetch(`${base}/v1/analytics/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventType: 'page_view', page: location.pathname, userId: user?.id }),
     }).catch(() => {});
+
+    // Update canonical URL dynamically (fixes duplicate content issues)
+    let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'canonical';
+      document.head.appendChild(link);
+    }
+    link.href = `https://trademetricspro.com${location.pathname}`;
   }, [location.pathname]);
   return null;
 }

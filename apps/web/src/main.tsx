@@ -75,6 +75,7 @@ const MarketPulsePage = React.lazy(() => import('@/pages/MarketPulsePage').then(
 const PipCalculatorPage = React.lazy(() => import('@/pages/tools/PipCalculatorPage').then(m => ({ default: m.PipCalculatorPage })));
 const PositionSizeCalculatorPage = React.lazy(() => import('@/pages/tools/PositionSizeCalculatorPage').then(m => ({ default: m.PositionSizeCalculatorPage })));
 const RiskRewardCalculatorPage = React.lazy(() => import('@/pages/tools/RiskRewardCalculatorPage').then(m => ({ default: m.RiskRewardCalculatorPage })));
+const ICCStudioPage = React.lazy(() => import('@/pages/ICCStudioPage').then(m => ({ default: m.ICCStudioPage })));
 const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m => ({ default: m.TradeGoldPage })));
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
@@ -193,6 +194,7 @@ function App() {
           <Route path="/academy" element={<AcademyPage />} />
           <Route path="/academy/:lessonId" element={<AcademyLessonPage />} />
           <Route path="/academy/practice" element={<ChartSimulatorPage />} />
+          <Route path="/academy/icc-studio" element={<ICCStudioPage />} />
           <Route path="/simulator" element={<SimulatorPage />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />

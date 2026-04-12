@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   Play, Pause, SkipForward, RotateCcw, ChevronRight, Target, TrendingUp,
   TrendingDown, X as XIcon, Eye, EyeOff, Clock, Loader2, CheckCircle2,
-  ArrowUp, ArrowDown, Crosshair, Lock,
+  ArrowUp, ArrowDown, Crosshair, Lock, Sparkles,
 } from 'lucide-react';
 import { useICCStudioStore, type ICCMark } from '@/stores/iccStudio';
 import { ICCChartCanvas } from '@/components/practice/icc/ICCChartCanvas';
 import { ICCTimeframeGrid } from '@/components/practice/icc/ICCTimeframeGrid';
 import { ICCScorePanel } from '@/components/practice/icc/ICCScorePanel';
+import { ICCGuidedTutorial } from '@/components/practice/icc/ICCGuidedTutorial';
 import { ICC_SCENARIOS } from '@/data/icc-scenarios';
 import { Layout, Columns2, Square } from 'lucide-react';
 import { type Timeframe, TF_LABELS } from '@/lib/icc-candle-generator';
@@ -33,6 +34,16 @@ export function ICCStudioPage() {
   const [slPips, setSlPips] = useState('25');
   const [tpPips, setTpPips] = useState('50');
   const [lotSize, setLotSize] = useState('0.10');
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return localStorage.getItem('icc-tutorial-done') !== '1'; }
+    catch { return true; }
+  });
+  const [mode, setMode] = useState<'learn' | 'practice' | 'challenge'>('practice');
+
+  const handleTutorialComplete = () => {
+    setShowTutorial(false);
+    try { localStorage.setItem('icc-tutorial-done', '1'); } catch {}
+  };
 
   // Playback interval
   useEffect(() => {
@@ -44,6 +55,22 @@ export function ICCStudioPage() {
 
   const stats = store.getStats();
   const currentPrice = store.getCurrentPrice();
+
+  // Tutorial mode — show for first-time users
+  if (showTutorial && !store.scenario) {
+    return (
+      <div className="page-enter max-w-5xl mx-auto space-y-6 pb-12">
+        <div className="animate-fade-in-up">
+          <nav className="mb-4 flex items-center gap-2 text-[11px] font-mono-nums text-terminal-muted">
+            <Link to="/academy" className="hover:text-neon-cyan">Academy</Link>
+            <ChevronRight size={10} />
+            <span className="text-neon-cyan">ICC Practice Studio</span>
+          </nav>
+        </div>
+        <ICCGuidedTutorial onComplete={handleTutorialComplete} onSkip={handleTutorialComplete} />
+      </div>
+    );
+  }
 
   // Scenario selector
   if (!store.scenario) {
@@ -60,6 +87,14 @@ export function ICCStudioPage() {
             <h1 className="text-2xl font-bold text-white font-display">ICC Practice Studio</h1>
           </div>
           <p className="text-sm text-terminal-muted">Master Indication, Correction, Continuation across 4 timeframes. Practice on high-volume assets during optimal sessions.</p>
+        </div>
+
+        {/* Mode selector */}
+        <div className="animate-fade-in-up flex gap-2" style={{ animationDelay: '40ms' }}>
+          <button onClick={() => setShowTutorial(true)}
+            className="flex items-center gap-2 rounded-xl border border-neon-amber/25 bg-neon-amber/[0.06] px-4 py-2.5 text-[12px] font-semibold text-neon-amber hover:bg-neon-amber/10 transition-all cursor-pointer">
+            <Sparkles size={14} /> Replay Tutorial
+          </button>
         </div>
 
         {/* ICC Method explanation */}

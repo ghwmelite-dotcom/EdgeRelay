@@ -65,6 +65,24 @@ export function AcademyPage() {
         </div>
       </Link>
 
+      {/* ICC Practice Studio CTA */}
+      <Link
+        to="/academy/icc-studio"
+        className="animate-fade-in-up group block rounded-2xl border border-neon-purple/20 bg-gradient-to-r from-neon-purple/[0.04] to-transparent p-5 hover:border-neon-purple/40 transition-all"
+        style={{ animationDelay: '140ms' }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-neon-purple/25 bg-neon-purple/10">
+            <Target size={20} className="text-neon-purple" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-display text-base font-bold text-white group-hover:text-neon-purple transition-colors">ICC Practice Studio</h3>
+            <p className="text-[12px] text-terminal-muted">Master Indication-Correction-Continuation across 4 timeframes. 8 scenarios with scoring.</p>
+          </div>
+          <ChevronRight size={18} className="text-terminal-muted group-hover:text-neon-purple transition-colors" />
+        </div>
+      </Link>
+
       {/* Streaks, Badges & Leaderboard */}
       <PeerChallenges />
 

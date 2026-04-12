@@ -155,6 +155,7 @@ function App() {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/pass-prop-firm-challenge" element={<PropFirmChallengePage />} />
         <Route path="/markets" element={<MarketPulsePage />} />
+        <Route path="/icc-studio" element={<ICCStudioPage />} />
         <Route path="/tools/pip-calculator" element={<PipCalculatorPage />} />
         <Route path="/tools/position-size-calculator" element={<PositionSizeCalculatorPage />} />
         <Route path="/tools/risk-reward-calculator" element={<RiskRewardCalculatorPage />} />

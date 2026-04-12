@@ -1,7 +1,10 @@
+import { useEffect, useRef, useCallback } from 'react';
 import { type Timeframe } from '@/lib/icc-candle-generator';
 import { type Candle, type Position, type ClosedTrade } from '@/lib/chart-simulator-engine';
-import { ICCChartCanvas } from './ICCChartCanvas';
+import { ICCLightweightChart } from './ICCLightweightChart';
 import type { ICCMark } from '@/stores/iccStudio';
+import type { DrawingObject, DrawingType } from './ICCDrawingTools';
+import type { IChartApi, ISeriesApi } from 'lightweight-charts';
 
 interface Props {
   candles: Record<Timeframe, Candle[]>;
@@ -18,6 +21,10 @@ interface Props {
   activeTimeframe: Timeframe;
   onSelectTimeframe: (tf: Timeframe) => void;
   dualPair?: [Timeframe, Timeframe];
+  // Drawing props passthrough
+  drawings?: DrawingObject[];
+  activeDrawingTool?: DrawingType | null;
+  onCreateDrawing?: (drawing: DrawingObject) => void;
 }
 
 const ALL_TFS: Timeframe[] = ['4H', '1H', '15M', '5M'];
@@ -33,12 +40,60 @@ export function ICCTimeframeGrid({
   candles, visibleCounts, positions, closedTrades, instrument,
   marks, markingMode, onMarkRange, showGhost, ghostRanges,
   viewMode, activeTimeframe, onSelectTimeframe, dualPair,
+  drawings, activeDrawingTool, onCreateDrawing,
 }: Props) {
+  // Crosshair sync refs
+  const chartRefs = useRef<Map<string, { chart: IChartApi; series: ISeriesApi<'Candlestick'> }>>(new Map());
+  const syncingRef = useRef(false);
+
+  const handleChartReady = useCallback((tf: Timeframe, chart: IChartApi, series: ISeriesApi<'Candlestick'>) => {
+    chartRefs.current.set(tf, { chart, series });
+  }, []);
+
+  // Setup crosshair sync for multi-chart modes
+  useEffect(() => {
+    if (viewMode === 'single') return;
+
+    const unsubscribes: (() => void)[] = [];
+
+    // Small delay to ensure all charts are ready
+    const timer = setTimeout(() => {
+      chartRefs.current.forEach((ref, sourceTf) => {
+        const handler = (param: any) => {
+          if (syncingRef.current || !param.time || !param.point) return;
+          syncingRef.current = true;
+
+          chartRefs.current.forEach((targetRef, targetTf) => {
+            if (targetTf === sourceTf) return;
+            try {
+              targetRef.chart.setCrosshairPosition(
+                param.seriesData?.get(ref.series),
+                param.time,
+                targetRef.series,
+              );
+            } catch {}
+          });
+
+          syncingRef.current = false;
+        };
+
+        ref.chart.subscribeCrosshairMove(handler);
+        unsubscribes.push(() => ref.chart.unsubscribeCrosshairMove(handler));
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      unsubscribes.forEach(u => u());
+    };
+  }, [viewMode]);
+
+  const chartHeight = viewMode === 'single' ? 380 : 240;
+
   // Single view — one chart with tabs
   if (viewMode === 'single') {
     return (
       <div>
-        {/* TF tabs */}
         <div className="flex gap-1 mb-2">
           {ALL_TFS.map(tf => (
             <button key={tf} onClick={() => onSelectTimeframe(tf)}
@@ -52,7 +107,7 @@ export function ICCTimeframeGrid({
             </button>
           ))}
         </div>
-        <ICCChartCanvas
+        <ICCLightweightChart
           candles={candles[activeTimeframe]}
           visibleCount={visibleCounts[activeTimeframe]}
           positions={positions}
@@ -64,6 +119,11 @@ export function ICCTimeframeGrid({
           onMarkRange={onMarkRange}
           showGhost={showGhost}
           ghostRanges={ghostRanges}
+          drawings={drawings}
+          activeDrawingTool={activeDrawingTool}
+          onCreateDrawing={onCreateDrawing}
+          onChartReady={(chart, series) => handleChartReady(activeTimeframe, chart, series)}
+          height={chartHeight}
         />
       </div>
     );
@@ -74,7 +134,6 @@ export function ICCTimeframeGrid({
     const pair = dualPair || ['1H', '5M'] as [Timeframe, Timeframe];
     return (
       <div>
-        {/* Dual pair selector */}
         <div className="flex gap-1 mb-2">
           {[['4H', '1H'], ['1H', '15M'], ['15M', '5M'], ['1H', '5M']].map(([a, b]) => {
             const isActive = pair[0] === a && pair[1] === b;
@@ -92,7 +151,7 @@ export function ICCTimeframeGrid({
           {pair.map(tf => (
             <div key={tf}>
               <p className="font-mono-nums text-[9px] text-terminal-muted mb-1 text-center">{TF_PURPOSES[tf]}</p>
-              <ICCChartCanvas
+              <ICCLightweightChart
                 candles={candles[tf]}
                 visibleCount={visibleCounts[tf]}
                 positions={tf === '5M' ? positions : []}
@@ -104,6 +163,11 @@ export function ICCTimeframeGrid({
                 onMarkRange={onMarkRange}
                 showGhost={showGhost}
                 ghostRanges={ghostRanges}
+                drawings={drawings}
+                activeDrawingTool={activeDrawingTool}
+                onCreateDrawing={onCreateDrawing}
+                onChartReady={(chart, series) => handleChartReady(tf, chart, series)}
+                height={chartHeight}
               />
             </div>
           ))}
@@ -123,7 +187,7 @@ export function ICCTimeframeGrid({
               <span>{TF_PURPOSES[tf]}</span>
               {activeTimeframe === tf && <span className="text-neon-cyan">Active</span>}
             </p>
-            <ICCChartCanvas
+            <ICCLightweightChart
               candles={candles[tf]}
               visibleCount={visibleCounts[tf]}
               positions={tf === '5M' || tf === activeTimeframe ? positions : []}
@@ -135,6 +199,11 @@ export function ICCTimeframeGrid({
               onMarkRange={onMarkRange}
               showGhost={showGhost}
               ghostRanges={ghostRanges}
+              drawings={drawings}
+              activeDrawingTool={activeTimeframe === tf ? activeDrawingTool : null}
+              onCreateDrawing={onCreateDrawing}
+              onChartReady={(chart, series) => handleChartReady(tf, chart, series)}
+              height={chartHeight}
             />
           </div>
         ))}

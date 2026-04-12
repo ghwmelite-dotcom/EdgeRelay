@@ -7,7 +7,9 @@ import {
 } from 'lucide-react';
 import { useICCStudioStore, type ICCMark } from '@/stores/iccStudio';
 import { ICCChartCanvas } from '@/components/practice/icc/ICCChartCanvas';
+import { ICCTimeframeGrid } from '@/components/practice/icc/ICCTimeframeGrid';
 import { ICC_SCENARIOS } from '@/data/icc-scenarios';
+import { Layout, Columns2, Square } from 'lucide-react';
 import { type Timeframe, TF_LABELS } from '@/lib/icc-candle-generator';
 import { calculatePnl, getPipMultiplier } from '@/lib/chart-simulator-engine';
 
@@ -158,28 +160,41 @@ export function ICCStudioPage() {
         <p className="text-[11px] text-slate-400">{scenario.assetGuidance}</p>
       </div>
 
-      {/* Timeframe tabs */}
-      <div className="flex gap-1">
-        {TIMEFRAMES.map(tf => (
-          <button key={tf} onClick={() => store.setActiveTimeframe(tf)}
-            className={`flex-1 rounded-lg py-2 font-mono-nums text-[11px] font-semibold transition-all cursor-pointer ${
-              store.activeTimeframe === tf
-                ? 'bg-terminal-card/50 border border-neon-cyan/30 text-neon-cyan'
-                : 'border border-terminal-border/20 text-terminal-muted hover:text-white'
-            }`}>
-            {tf}
-          </button>
-        ))}
+      {/* View mode selector */}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          {([
+            { mode: 'single' as const, icon: Square, label: 'Single' },
+            { mode: 'dual' as const, icon: Columns2, label: 'Dual' },
+            { mode: 'quad' as const, icon: Layout, label: 'Quad' },
+          ]).map(v => (
+            <button key={v.mode} onClick={() => store.setViewMode(v.mode)}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-all ${
+                store.viewMode === v.mode
+                  ? 'bg-neon-cyan/15 border border-neon-cyan/30 text-neon-cyan'
+                  : 'border border-terminal-border/20 text-terminal-muted hover:text-white'
+              }`}>
+              <v.icon size={12} /> {v.label}
+            </button>
+          ))}
+        </div>
+        <span className="font-mono-nums text-[9px] text-terminal-muted ml-auto">
+          4H: Bias → 1H: Indication → 15M: Correction → 5M: Entry
+        </span>
       </div>
 
-      {/* Chart */}
-      <ICCChartCanvas
-        candles={store.candles[store.activeTimeframe]}
-        visibleCount={store.getVisibleCount(store.activeTimeframe)}
+      {/* Multi-Timeframe Chart Grid */}
+      <ICCTimeframeGrid
+        candles={store.candles}
+        visibleCounts={{
+          '4H': store.getVisibleCount('4H'),
+          '1H': store.getVisibleCount('1H'),
+          '15M': store.getVisibleCount('15M'),
+          '5M': store.getVisibleCount('5M'),
+        }}
         positions={store.positions}
         closedTrades={store.closedTrades}
         instrument={scenario.instrument}
-        timeframe={store.activeTimeframe}
         marks={store.marks}
         markingMode={store.markingMode}
         onMarkRange={handleMarkRange}
@@ -188,6 +203,9 @@ export function ICCStudioPage() {
           indication: scenario.answer.indicationRange,
           correction: scenario.answer.correctionRange,
         } : undefined}
+        viewMode={store.viewMode}
+        activeTimeframe={store.activeTimeframe}
+        onSelectTimeframe={(tf) => store.setActiveTimeframe(tf)}
       />
 
       {/* ICC Marking Toolbar */}

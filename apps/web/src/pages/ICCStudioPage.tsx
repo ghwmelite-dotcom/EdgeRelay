@@ -8,6 +8,7 @@ import {
 import { useICCStudioStore, type ICCMark } from '@/stores/iccStudio';
 import { ICCChartCanvas } from '@/components/practice/icc/ICCChartCanvas';
 import { ICCTimeframeGrid } from '@/components/practice/icc/ICCTimeframeGrid';
+import { ICCScorePanel } from '@/components/practice/icc/ICCScorePanel';
 import { ICC_SCENARIOS } from '@/data/icc-scenarios';
 import { Layout, Columns2, Square } from 'lucide-react';
 import { type Timeframe, TF_LABELS } from '@/lib/icc-candle-generator';
@@ -351,16 +352,25 @@ export function ICCStudioPage() {
           </div>
 
           {store.isFinished && (
-            <div className="mt-2 rounded-lg border border-neon-cyan/20 bg-neon-cyan/[0.04] p-3 text-center">
-              <p className="text-sm font-bold text-white">Session Complete</p>
-              <div className="mt-2 flex gap-2">
-                <button onClick={() => store.reset()} className="flex-1 rounded-lg border border-terminal-border py-1.5 text-[11px] text-slate-300 cursor-pointer">Retry</button>
-                <button onClick={() => { store.reset(); store.selectScenario(undefined!); }} className="flex-1 rounded-lg bg-neon-cyan/15 border border-neon-cyan/30 py-1.5 text-[11px] text-neon-cyan cursor-pointer">More</button>
-              </div>
+            <div className="mt-2 text-center">
+              <p className="text-[10px] text-terminal-muted mb-2">Session complete — see score below</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* ICC Score Panel — appears when session finishes or user wants to check */}
+      {store.isFinished && (
+        <ICCScorePanel
+          marks={store.marks}
+          biasSelection={store.biasSelection}
+          answer={scenario.answer}
+          tradesTaken={stats.totalTrades}
+          totalPnl={stats.totalPnl}
+          onRetry={() => store.reset()}
+          onNextScenario={() => { store.reset(); store.selectScenario(undefined!); }}
+        />
+      )}
     </div>
   );
 }

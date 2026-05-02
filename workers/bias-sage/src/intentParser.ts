@@ -13,9 +13,16 @@ export function parseSageResponse(raw: string): ParseResult {
   if (!briefMatch || !intentMatch) {
     return { kind: 'parse_error', reason: 'missing brief or intent block' };
   }
+  // Llama 3.3 frequently appends commentary after the JSON object inside the
+  // <intent> block (e.g. "Note: I haven't greenlit anything because..."). Pull
+  // the first balanced { ... } and ignore everything else.
+  const jsonText = extractFirstJsonObject(intentMatch[1]!);
+  if (!jsonText) {
+    return { kind: 'parse_error', reason: 'no JSON object found inside <intent>' };
+  }
   let intent: unknown;
   try {
-    intent = JSON.parse(intentMatch[1]!.trim());
+    intent = JSON.parse(jsonText);
   } catch (e) {
     return { kind: 'parse_error', reason: `intent JSON invalid: ${(e as Error).message}` };
   }
@@ -24,6 +31,28 @@ export function parseSageResponse(raw: string): ParseResult {
     return { kind: 'parse_error', reason: validated.reason };
   }
   return { kind: 'ok', briefMd: briefMatch[1]!.trim(), intent: validated.value };
+}
+
+/** Find the first balanced top-level { ... } in `text` and return its substring. */
+function extractFirstJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\') { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
 }
 
 function validateIntent(

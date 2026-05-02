@@ -61,4 +61,26 @@ Morning, Oz. Look at this.</brief>
     <intent>{"greenlit":[],"skip":[],"watch":[],"hero_symbol":null}</intent>   `;
     expect(parseSageResponse(text).kind).toBe('ok');
   });
+
+  it('extracts JSON when Llama appends commentary after the intent object', () => {
+    // Llama 3.3 frequently violates the "Nothing outside" rule by adding a
+    // sentence of explanation after the JSON. The parser must ignore it.
+    const text = `<brief>x</brief><intent>
+{"greenlit":[],"skip":[],"watch":[{"symbol":"EURUSD","reason":"no-edge"}],"hero_symbol":null}
+
+Note: I haven't greenlit any assets because the trader has no journal data yet.
+</intent>`;
+    const r = parseSageResponse(text);
+    expect(r.kind).toBe('ok');
+    if (r.kind !== 'ok') return;
+    expect(r.intent.watch).toHaveLength(1);
+  });
+
+  it('ignores nested objects in commentary after primary JSON', () => {
+    const text = `<brief>x</brief><intent>{"greenlit":[],"skip":[],"watch":[],"hero_symbol":null}
+Some discussion mentioning {"another": "object"} should not break parsing.
+</intent>`;
+    const r = parseSageResponse(text);
+    expect(r.kind).toBe('ok');
+  });
 });

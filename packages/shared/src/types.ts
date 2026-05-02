@@ -544,3 +544,53 @@ export interface AccountHealth {
   } | null;
   warnings: string[];
 }
+
+// ── Sage briefs ─────────────────────────────────────────────────
+
+export type SageBriefKind = 'anchor' | 'delta';
+export type SageBriefLevel = 'L1' | 'L2';
+export type SageGreenlitConviction = 'high' | 'medium' | 'low';
+
+export interface SageGreenlitAsset {
+  symbol: string;
+  direction: 'long' | 'short';
+  conviction: SageGreenlitConviction;
+}
+
+export interface SageSkippedAsset {
+  symbol: string;
+  reason: string;
+}
+
+export interface SageWatchAsset {
+  symbol: string;
+  reason: string;
+}
+
+export interface SageBriefIntent {
+  greenlit: SageGreenlitAsset[];
+  skip: SageSkippedAsset[];
+  watch: SageWatchAsset[];
+  hero_symbol: string | null;
+}
+
+export interface SageBrief {
+  id: string;
+  kind: SageBriefKind;
+  brief_md: string;
+  intent: SageBriefIntent;
+  audio_url: string | null;
+  level: SageBriefLevel;
+  trigger_kind: string | null;
+  generated_at: number; // unix seconds
+}
+
+// User stats join surfaced to the prompt builder
+export interface UserBiasStat {
+  symbol: string;
+  icc_phase: string;
+  n_trades: number;
+  n_wins: number;
+  total_r: number;
+  last_trade_at: number | null;
+}

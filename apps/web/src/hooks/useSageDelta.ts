@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SageBriefIntent } from '@edgerelay/shared';
 import { useAuthStore } from '@/stores/auth';
+import { API_BASE } from '@/lib/constants';
 
 export interface SageDeltaState {
   briefMd: string;
@@ -36,7 +37,7 @@ export function useSageDelta(pollKey: number = 0): SageDeltaState {
     const ctrl = new AbortController();
     (async () => {
       try {
-        const res = await fetch('/v1/bias/sage/delta', {
+        const res = await fetch(`${API_BASE}/bias/sage/delta`, {
           headers: {
             authorization: `Bearer ${token}`,
             accept: 'text/event-stream',

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { SageBriefIntent } from '@edgerelay/shared';
 import { useAuthStore } from '@/stores/auth';
+import { API_BASE } from '@/lib/constants';
 
 export interface SageBriefState {
   briefMd: string;
@@ -34,7 +35,7 @@ export function useSageBrief(): SageBriefState {
     const ctrl = new AbortController();
     (async () => {
       try {
-        const res = await fetch('/v1/bias/sage/anchor', {
+        const res = await fetch(`${API_BASE}/bias/sage/anchor`, {
           headers: {
             authorization: `Bearer ${token}`,
             accept: 'text/event-stream',

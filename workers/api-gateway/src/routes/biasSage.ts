@@ -11,11 +11,15 @@ export const biasSage = new Hono<{ Bindings: Env; Variables: { userId: string } 
 
 biasSage.use('*', authMiddleware);
 
-// Returning the upstream Response object directly through a Hono handler
-// causes the SSE body to be buffered (and a 204 to be silently flipped to 200
-// with an empty body). Construct a fresh Response that explicitly forwards
-// body + status + headers so the streaming chunks pass through untouched.
-async function proxyToSage(c: { env: Env; get: (key: 'userId') => string }, path: '/sage/anchor' | '/sage/delta'): Promise<Response> {
+// SSE proxy — must explicitly pump bytes through a TransformStream because
+// returning `upstream` (or even `new Response(upstream.body, ...)`) from a
+// Hono handler lets the runtime buffer the body. We manually pipe the
+// upstream ReadableStream into our own TransformStream and return that, which
+// forces immediate flushing.
+async function proxyToSage(
+  c: { env: Env; get: (key: 'userId') => string },
+  path: '/sage/anchor' | '/sage/delta',
+): Promise<Response> {
   const userId = c.get('userId');
   const url = new URL(`https://internal${path}`);
   url.searchParams.set('user_id', userId);
@@ -23,10 +27,26 @@ async function proxyToSage(c: { env: Env; get: (key: 'userId') => string }, path
     method: 'GET',
     headers: { accept: 'text/event-stream' },
   });
-  return new Response(upstream.body, {
+
+  // Forward 204 / non-streaming responses untouched.
+  if (upstream.status === 204 || !upstream.body) {
+    return new Response(null, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+    });
+  }
+
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  // Don't await — let the pipe run in the background while we return the response.
+  upstream.body.pipeTo(writable).catch(() => { /* swallow — client may disconnect */ });
+
+  return new Response(readable, {
     status: upstream.status,
-    statusText: upstream.statusText,
-    headers: upstream.headers,
+    headers: {
+      'content-type': 'text/event-stream; charset=utf-8',
+      'cache-control': 'no-cache',
+      'x-content-type-options': 'nosniff',
+    },
   });
 }
 

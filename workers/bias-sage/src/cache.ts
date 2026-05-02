@@ -18,7 +18,7 @@ export async function getAnchor(
   userId: string,
   day: string,
 ): Promise<CachedAnchor | null> {
-  const raw = await env.BIAS_SAGE.get(`anchor:${userId}:${day}`);
+  const raw = await env.BIAS_SAGE.get(`anchor:v2:${userId}:${day}`);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as CachedAnchor;
@@ -33,7 +33,7 @@ export async function putAnchor(
   day: string,
   value: CachedAnchor,
 ): Promise<void> {
-  await env.BIAS_SAGE.put(`anchor:${userId}:${day}`, JSON.stringify(value), {
+  await env.BIAS_SAGE.put(`anchor:v2:${userId}:${day}`, JSON.stringify(value), {
     expirationTtl: ANCHOR_KV_TTL,
   });
 }

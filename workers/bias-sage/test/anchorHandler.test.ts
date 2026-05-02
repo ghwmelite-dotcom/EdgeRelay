@@ -28,7 +28,7 @@ function makeEnv(kv: Map<string, string>): Env {
 describe('handleAnchor', () => {
   it('returns 200 SSE with cached brief', async () => {
     const kv = new Map<string, string>();
-    kv.set('anchor:u1:2024-05-02', JSON.stringify({
+    kv.set('anchor:v2:u1:2024-05-02', JSON.stringify({
       briefMd: 'Morning, Oz. Cached brief content.',
       intentJson: '{"greenlit":[],"skip":[],"watch":[],"hero_symbol":null}',
       level: 'L2',

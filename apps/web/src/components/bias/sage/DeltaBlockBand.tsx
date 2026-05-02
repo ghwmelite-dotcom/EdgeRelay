@@ -30,18 +30,25 @@ export function DeltaBlockBand({ briefMd, hasDelta, isStreaming }: DeltaBlockBan
   );
 }
 
-// Same minimal renderer as AnchorBriefBand. Inputs come from the constrained
-// Sage delta prompt (workers/bias-sage/src/deltaPrompt.ts).
+// Same minimal renderer as AnchorBriefBand. Strips wrapper tags + supports
+// both *italic* and _italic_ since Llama 3.3 alternates between them.
 function renderInlineMarkdown(md: string): string {
+  const stripped = md
+    .replace(/<\/?delta>/gi, '')
+    .replace(/<\/?brief>/gi, '')
+    .replace(/<intent>[\s\S]*?(<\/intent>|$)/gi, '')
+    .trim();
   const escape = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return md
+  return stripped
     .split(/\n\n+/)
+    .filter((p) => p.trim().length > 0)
     .map(
       (para) =>
         `<p class="mb-2 last:mb-0">${escape(para)
           .replace(/\*\*(.+?)\*\*/g, '<strong class="text-slate-50">$1</strong>')
           .replace(/(^|[\s(])\*(.+?)\*([\s).,!?]|$)/g, '$1<em class="text-emerald-400">$2</em>$3')
+          .replace(/(^|[\s(])_(.+?)_([\s).,!?]|$)/g, '$1<em class="text-emerald-400">$2</em>$3')
           .replace(/\n/g, '<br>')}</p>`,
     )
     .join('');

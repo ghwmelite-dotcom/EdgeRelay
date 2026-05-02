@@ -73,7 +73,7 @@ export async function buildPromptInputs(
          GROUP BY symbol
        ) latest ON h.symbol = latest.symbol AND h.captured_unix = latest.max_ts`,
     ).bind(...watchlist).all<BiasSnapshotRow>(),
-    env.BIAS_SAGE.get(`anchor:${userId}:${dayKey(now - 86400)}`),
+    env.BIAS_SAGE.get(`anchor:v2:${userId}:${dayKey(now - 86400)}`),
   ]);
 
   if (!userRow) {

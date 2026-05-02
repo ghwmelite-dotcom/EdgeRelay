@@ -92,19 +92,26 @@ export function AnchorBriefBand({ briefMd, isStreaming, level, error }: AnchorBr
   );
 }
 
-// Minimal renderer: paragraphs (\n\n), **bold**, *italic*. No links, no images.
-// Inputs come from a constrained LLM prompt (see workers/bias-sage/src/voiceSpec.ts);
-// HTML escape first, then apply tokens.
+// Minimal renderer: paragraphs (\n\n), **bold**, *italic* or _italic_.
+// Strips the LLM wrapper tags (<brief>, </brief>, <intent>...</intent>) which
+// the worker streams as part of the raw response. HTML escape first, then apply
+// markdown tokens.
 function renderInlineMarkdown(md: string): string {
+  const stripped = md
+    .replace(/<\/?brief>/gi, '')
+    .replace(/<intent>[\s\S]*?(<\/intent>|$)/gi, '')
+    .trim();
   const escape = (s: string) =>
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return md
+  return stripped
     .split(/\n\n+/)
+    .filter((p) => p.trim().length > 0)
     .map(
       (para) =>
         `<p class="mb-3 last:mb-0">${escape(para)
           .replace(/\*\*(.+?)\*\*/g, '<strong class="text-slate-50">$1</strong>')
           .replace(/(^|[\s(])\*(.+?)\*([\s).,!?]|$)/g, '$1<em class="text-neon-purple">$2</em>$3')
+          .replace(/(^|[\s(])_(.+?)_([\s).,!?]|$)/g, '$1<em class="text-neon-purple">$2</em>$3')
           .replace(/\n/g, '<br>')}</p>`,
     )
     .join('');

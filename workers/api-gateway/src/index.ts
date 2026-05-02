@@ -25,6 +25,8 @@ import { referral } from './routes/referral.js';
 import { counselor } from './routes/counselor.js';
 import { marketPulse } from './routes/marketPulse.js';
 import { social } from './routes/social.js';
+import { bias } from './routes/bias.js';
+import { biasSage } from './routes/biasSage.js';
 import { founderAnalytics } from './routes/founderAnalytics.js';
 import { academy } from './routes/academy.js';
 
@@ -103,6 +105,8 @@ app.route('/v1/marketplace', marketplacePublic);
 // Strategy Hub public — strategy list + detail, no auth required
 app.route('/v1/strategy-hub', strategyHubPublic);
 app.route('/v1/market-pulse', marketPulse);
+app.route('/v1/bias/sage', biasSage);
+app.route('/v1/bias', bias);
 app.route('/v1/social', social); // Public social feed (GET /feed is open, POST requires auth via social.ts)
 app.post('/v1/analytics/track', async (c) => {
   // Public tracking endpoint — fire-and-forget

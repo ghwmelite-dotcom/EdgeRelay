@@ -37,6 +37,10 @@ export interface Env {
 
   /** Google OAuth client secret (set via wrangler secret) */
   GOOGLE_CLIENT_SECRET: string;
+
+  /** Service binding to the bias-sage worker (Sage anchor/delta SSE endpoints) */
+  BIAS_SAGE_SERVICE: Fetcher;
+
 }
 
 export interface JwtPayload {

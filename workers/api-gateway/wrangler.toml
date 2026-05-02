@@ -5,6 +5,10 @@ compatibility_date = "2024-12-30"
 [vars]
 CORS_ORIGINS = "https://trademetricspro.com,https://www.trademetricspro.com,https://edgerelay.com,https://app.edgerelay.com,https://edgerelay-web.pages.dev"
 JWT_EXPIRY_HOURS = "24"
+# VAPID public key — safe to ship publicly (ECDSA P-256 public key).
+# Private counterpart stored via `wrangler secret put VAPID_PRIVATE_KEY`.
+VAPID_PUBLIC_KEY = "BDg5AlDrVCWAaoqBxi3IRURxHHhlIdU04t3feR3dopBPvwfVhYXq47inDTcjSkVtZBR_t8h8DT9vqAS3XEqjUMA"
+VAPID_SUBJECT = "mailto:admin@trademetricspro.com"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
@@ -35,3 +39,13 @@ bindings = [
 
 [ai]
 binding = "AI"
+
+# Bias engine crons:
+#   */15 * * * *  — snapshot writer + phase-transition alerts (runBiasCron)
+#   0    7 * * *  — daily ICC Brief at 07:00 UTC (runDailyBrief)
+[triggers]
+crons = ["*/15 * * * *", "0 7 * * *"]
+
+[[services]]
+binding = "BIAS_SAGE_SERVICE"
+service = "edgerelay-bias-sage"

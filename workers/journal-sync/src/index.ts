@@ -8,6 +8,52 @@ import {
 } from '@edgerelay/shared';
 import type { Env } from './types.js';
 import { verifyJournalHmac } from './validation.js';
+import { computeUserBiasStats } from './biasStatsAggregator.js';
+
+async function materializeUserBiasStats(
+  env: Env,
+  accountId: string,
+  now: number,
+): Promise<void> {
+  const ninetyDaysAgo = now - 90 * 24 * 60 * 60;
+
+  const userRow = await env.DB.prepare(
+    `SELECT user_id FROM accounts WHERE id = ?`,
+  ).bind(accountId).first<{ user_id: string }>();
+  if (!userRow) return;
+  const userId = userRow.user_id;
+
+  const tradesRes = await env.DB.prepare(
+    `SELECT a.user_id, t.symbol, t.time, COALESCE(t.profit, 0) AS profit, COALESCE(t.risk_reward_ratio, 0) AS risk_reward_ratio
+     FROM journal_trades t JOIN accounts a ON a.id = t.account_id
+     WHERE a.user_id = ? AND t.deal_entry IN ('out','inout') AND t.time >= ?`,
+  ).bind(userId, ninetyDaysAgo).all<{
+    user_id: string; symbol: string; time: number; profit: number; risk_reward_ratio: number;
+  }>();
+  const trades = tradesRes.results ?? [];
+  if (trades.length === 0) return;
+
+  const symbols = [...new Set(trades.map((t) => t.symbol))];
+  const placeholders = symbols.map(() => '?').join(',');
+  const phasesRes = await env.DB.prepare(
+    `SELECT symbol, captured_unix AS ts, (bias || '_' || phase) AS phase FROM bias_history
+     WHERE symbol IN (${placeholders}) AND captured_unix >= ?`,
+  ).bind(...symbols, ninetyDaysAgo).all<{ symbol: string; ts: number; phase: string }>();
+  const phases = phasesRes.results ?? [];
+
+  const stats = computeUserBiasStats(trades, phases, now);
+  if (stats.length === 0) return;
+
+  // Replace this user's stats atomically
+  const stmts: D1PreparedStatement[] = [
+    env.DB.prepare(`DELETE FROM user_bias_stats WHERE user_id = ?`).bind(userId),
+    ...stats.map((s) => env.DB.prepare(
+      `INSERT INTO user_bias_stats (user_id, symbol, icc_phase, n_trades, n_wins, total_r, last_trade_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(s.user_id, s.symbol, s.icc_phase, s.n_trades, s.n_wins, s.total_r, s.last_trade_at, s.updated_at)),
+  ];
+  await env.DB.batch(stmts);
+}
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -180,6 +226,14 @@ app.post('/v1/journal/sync', async (c) => {
       } catch {
         duplicates++;
       }
+    }
+
+    // Materialize per-user bias stats in background — only if any new trades synced.
+    if (synced > 0) {
+      c.executionCtx.waitUntil(
+        materializeUserBiasStats(c.env, payload.account_id, Math.floor(Date.now() / 1000))
+          .catch((e) => console.error('user_bias_stats materialization failed', (e as Error).message)),
+      );
     }
 
     return jsonResponse({ synced, duplicates, invalid }, 201);

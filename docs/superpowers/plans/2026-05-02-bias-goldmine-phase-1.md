@@ -17,6 +17,12 @@
 - The platform has no CI/CD — workers must be deployed manually with `wrangler deploy` from each worker directory.
 - All numeric times stored as Unix epoch seconds. Symbol display scaling already handled by `displayScale.ts` for indices; raw bias data stays unscaled in DB.
 
+**Schema corrections discovered during execution (use THESE, not the plan's earlier assumptions):**
+- `bias_history` is the source of truth for current bias state — there is NO `bias_state` table. Latest row per symbol is `(symbol, MAX(captured_unix))` with `interval='4h'`.
+- `bias_history` columns are `bias` (BULLISH/BEARISH/NEUTRAL) and `phase` (INDICATION/CORRECTION/CONTINUATION/NO_SETUP) — separate columns. The compound `icc_phase` string `BULLISH_INDICATION` is built via `bias || '_' || phase` SQL concat. Timestamp is `captured_unix`, not `ts`.
+- `users` does NOT have `timezone`, `watchlist`, or `last_seen_at`. Use `notification_preferences.timezone` for tz (default 'UTC'). Watchlist is hardcoded to the 5 ICC assets `['XAUUSD', 'NAS100', 'US30', 'EURUSD', 'GBPUSD']` (matches `workers/api-gateway/src/bias/fetcher.ts`). `pnpm-filter` for journal-sync uses the unscoped name `edgerelay-journal-sync`, not `@edgerelay/journal-sync`.
+- `bias_accuracy_daily` table does not exist — yesterday's accuracy is computed at runtime by `workers/api-gateway/src/bias/accuracy.ts`. For Phase 1, `buildPromptInputs` returns `yesterdayAccuracy: []` and defers this enrichment to a later iteration.
+
 ---
 
 ## Task 1: Migration `0023_bias_goldmine.sql`

@@ -53,7 +53,7 @@ async function generateAndStream(
       let full = '';
       try {
         for await (const chunk of callSageStream(messages, {
-          apiKey: env.ANTHROPIC_API_KEY,
+          ai: env.AI,
           model: env.SAGE_MODEL,
         })) {
           if (chunk.type === 'text' && chunk.text) {

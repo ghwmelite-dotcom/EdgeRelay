@@ -38,14 +38,15 @@ describe('buildAnchorMessages', () => {
     expect(m.user).toContain('"userStats": []');
   });
 
-  it('includes assistant prefill anchored on user name', () => {
+  it('embeds the start-instruction with user name in system prompt', () => {
     const m = buildAnchorMessages(baseInputs);
-    expect(m.assistantPrefill).toContain('Morning, Oz');
-    expect(m.assistantPrefill).toContain('<brief>');
+    expect(m.system).toContain('Morning, Oz.');
+    expect(m.system).toContain('Begin your response with');
   });
 
-  it('handles user with default name "Trader"', () => {
+  it('handles user with default name "Trader" in system start-instruction', () => {
     const m = buildAnchorMessages({ ...baseInputs, user: { ...baseInputs.user, name: 'Trader' } });
-    expect(m.assistantPrefill).toContain('Morning, Trader');
+    expect(m.system).toContain('Morning, Trader.');
+    expect(m.system).toContain('Begin your response with');
   });
 });

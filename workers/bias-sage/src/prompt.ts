@@ -4,11 +4,11 @@ import { SAGE_MENTOR_VOICE, SAGE_HARD_RULES } from './voiceSpec.js';
 export interface AnchorMessages {
   system: string;
   user: string;
-  assistantPrefill: string;
 }
 
 export function buildAnchorMessages(inputs: PromptInputs): AnchorMessages {
-  const system = `${SAGE_MENTOR_VOICE}\n\n${SAGE_HARD_RULES}`;
+  const startInstruction = `\n\nBegin your response with the literal text "<brief>" on its own line, then "Morning, ${inputs.user.name}." as the opening sentence. End with "</intent>" with nothing after.`;
+  const system = `${SAGE_MENTOR_VOICE}\n\n${SAGE_HARD_RULES}${startInstruction}`;
 
   const userPayload = {
     level: inputs.level,
@@ -26,6 +26,5 @@ export function buildAnchorMessages(inputs: PromptInputs): AnchorMessages {
   return {
     system,
     user: JSON.stringify(userPayload, null, 2),
-    assistantPrefill: `<brief>\nMorning, ${inputs.user.name}.`,
   };
 }

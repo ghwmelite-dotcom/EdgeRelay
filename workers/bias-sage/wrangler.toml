@@ -15,10 +15,10 @@ database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
 binding = "BIAS_SAGE"
 id = "REPLACE_AFTER_KV_CREATE"
 
+[ai]
+binding = "AI"
+
 [vars]
-SAGE_MODEL = "claude-sonnet-4-6"
+SAGE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 DELTA_DAILY_CAP = "4"
 N_PLATFORM_DIVERGENCE_THRESHOLD = "50"
-
-# Set via wrangler secret:
-# ANTHROPIC_API_KEY

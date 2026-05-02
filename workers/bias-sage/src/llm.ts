@@ -7,51 +7,42 @@ export interface LlmStreamChunk {
 }
 
 export interface CallSageOpts {
-  apiKey: string;
+  ai: Ai;
   model: string;
   maxTokens?: number;
 }
 
 /**
- * Calls Anthropic Messages API with streaming. Yields text chunks. The assistant
- * prefill is re-emitted as the first text chunk so downstream consumers see the
- * complete response wrapper (Anthropic streams only the deltas after the prefill,
- * but our intent parser needs the full <brief>...</brief><intent>...</intent>).
+ * Calls Cloudflare Workers AI with streaming. Yields text chunks as they arrive.
+ * Uses the OpenAI-compatible messages format. Returns the model's full response
+ * (including the <brief>...</brief><intent>...</intent> wrapper which the
+ * system prompt instructs the model to emit literally).
  */
 export async function* callSageStream(
   messages: AnchorMessages,
   opts: CallSageOpts,
 ): AsyncGenerator<LlmStreamChunk> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': opts.apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: opts.model,
-      max_tokens: opts.maxTokens ?? 800,
-      stream: true,
-      system: [
-        { type: 'text', text: messages.system, cache_control: { type: 'ephemeral' } },
-      ],
-      messages: [
-        { role: 'user', content: messages.user },
-        { role: 'assistant', content: messages.assistantPrefill },
-      ],
-    }),
-  });
-
-  if (!res.ok || !res.body) {
-    yield { type: 'error', error: `HTTP ${res.status}: ${await res.text()}` };
+  let stream: ReadableStream<Uint8Array>;
+  try {
+    const result = await opts.ai.run(
+      opts.model as Parameters<Ai['run']>[0],
+      {
+        messages: [
+          { role: 'system', content: messages.system },
+          { role: 'user', content: messages.user },
+        ],
+        max_tokens: opts.maxTokens ?? 800,
+        stream: true,
+      },
+    );
+    // env.AI.run with stream:true returns a ReadableStream when called this way.
+    stream = result as unknown as ReadableStream<Uint8Array>;
+  } catch (e) {
+    yield { type: 'error', error: (e as Error).message };
     return;
   }
 
-  // Re-emit the prefill so consumers get the full text including the opening <brief> tag.
-  yield { type: 'text', text: messages.assistantPrefill };
-
-  const reader = res.body.getReader();
+  const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
   while (true) {
@@ -65,12 +56,9 @@ export async function* callSageStream(
       const payload = line.slice(5).trim();
       if (!payload || payload === '[DONE]') continue;
       try {
-        const obj = JSON.parse(payload) as {
-          type: string;
-          delta?: { type: string; text?: string };
-        };
-        if (obj.type === 'content_block_delta' && obj.delta?.type === 'text_delta' && obj.delta.text) {
-          yield { type: 'text', text: obj.delta.text };
+        const obj = JSON.parse(payload) as { response?: string };
+        if (typeof obj.response === 'string' && obj.response.length > 0) {
+          yield { type: 'text', text: obj.response };
         }
       } catch {
         // skip malformed line

@@ -12,8 +12,15 @@ function makeEnv(kv: Map<string, string>): Env {
       get: async (k: string) => kv.get(k) ?? null,
       put: async (k: string, v: string) => { kv.set(k, v); },
     } as unknown as KVNamespace,
-    ANTHROPIC_API_KEY: 'sk-fake',
-    SAGE_MODEL: 'claude-sonnet-4-6',
+    AI: {
+      run: async () => {
+        // Default: empty stream — cache-hit tests don't trigger generation
+        return new ReadableStream({
+          start(controller) { controller.close(); },
+        });
+      },
+    } as unknown as Ai,
+    SAGE_MODEL: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     DELTA_DAILY_CAP: '4',
     N_PLATFORM_DIVERGENCE_THRESHOLD: '50',
   };

@@ -1,4 +1,5 @@
 import type { PromptInputs } from './inputs.js';
+import type { AnchorMessages } from './prompt.js';
 import { SAGE_MENTOR_VOICE } from './voiceSpec.js';
 
 export interface DeltaContext extends PromptInputs {
@@ -6,13 +7,7 @@ export interface DeltaContext extends PromptInputs {
   triggers: string[];
 }
 
-export interface DeltaMessages {
-  system: string;
-  user: string;
-  assistantPrefill: string;
-}
-
-export function buildDeltaMessages(ctx: DeltaContext): DeltaMessages {
+export function buildDeltaMessages(ctx: DeltaContext): AnchorMessages {
   const system = `${SAGE_MENTOR_VOICE}
 
 You are writing a SHORT delta update (2-3 sentences max, under 50 words). The trader already read your morning anchor; this is what changed since.
@@ -23,7 +18,8 @@ Hard rules:
 3. End with at most one Socratic question, italicized. May omit if redundant.
 4. Same intent JSON schema as the anchor: {"greenlit":[...],"skip":[...],"watch":[...],"hero_symbol":...}
 5. Never invent numbers. Never use "financial advice" / "guaranteed".
-`;
+
+Begin your response with the literal text "<delta>" on its own line. End with "</intent>" with nothing after.`;
 
   const userPayload = {
     anchor_brief_md: ctx.anchorBriefMd,
@@ -36,6 +32,5 @@ Hard rules:
   return {
     system,
     user: JSON.stringify(userPayload, null, 2),
-    assistantPrefill: `<delta>\n`,
   };
 }

@@ -136,7 +136,7 @@ async function pregenerateAnchor(env: Env, userId: string, now: number): Promise
   const messages = buildAnchorMessages(inputs);
   let full = '';
   for await (const chunk of callSageStream(messages, {
-    apiKey: env.ANTHROPIC_API_KEY,
+    ai: env.AI,
     model: env.SAGE_MODEL,
   })) {
     if (chunk.type === 'text' && chunk.text) full += chunk.text;
@@ -170,7 +170,7 @@ async function runDeltaGeneration(
   });
   let full = '';
   for await (const chunk of callSageStream(messages, {
-    apiKey: env.ANTHROPIC_API_KEY,
+    ai: env.AI,
     model: env.SAGE_MODEL,
     maxTokens: 250,
   })) {

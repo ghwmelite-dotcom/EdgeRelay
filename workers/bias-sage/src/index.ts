@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Env } from './types.js';
 import { handleAnchor } from './anchorHandler.js';
 import { handleDelta } from './deltaHandler.js';
+import { runWakeTimeScan, runDeltaScan } from './scheduler.js';
 
 export const app = new Hono<{ Bindings: Env }>();
 
@@ -17,7 +18,9 @@ app.get('/sage/delta', (c) =>
 
 export default {
   fetch: app.fetch,
-  async scheduled(_event: ScheduledEvent, _env: Env, _ctx: ExecutionContext): Promise<void> {
-    // Wake-time generation lands in Task 11.
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const now = Math.floor(Date.now() / 1000);
+    await runWakeTimeScan(env, now, ctx);
+    await runDeltaScan(env, now, ctx);
   },
 };

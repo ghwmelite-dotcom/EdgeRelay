@@ -1,4 +1,5 @@
-import { Sparkles } from 'lucide-react';
+import { Sparkles, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface AnchorBriefBandProps {
   briefMd: string;
@@ -8,6 +9,35 @@ interface AnchorBriefBandProps {
 }
 
 export function AnchorBriefBand({ briefMd, isStreaming, level, error }: AnchorBriefBandProps) {
+  // Anonymous users — show a clear "sign in to unlock" CTA instead of pretending
+  // to load forever. Sage requires auth so we can personalize and rate-limit.
+  if (error === 'not_authenticated') {
+    return (
+      <section className="glass-premium rounded-2xl p-5 sm:p-6 animate-fade-in-up">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={14} className="text-neon-purple" />
+          <span className="text-[10px] uppercase tracking-[0.18em] text-neon-purple font-bold">
+            Sage · Personalized Brief
+          </span>
+        </div>
+        <p className="text-slate-200 text-[13px] leading-[1.65] mb-3">
+          Every morning, Sage reads the bias engine and writes you a personalized briefing in
+          plain English — citing your own win-rate per ICC phase once you've journaled trades.
+        </p>
+        <p className="text-slate-400 text-[12px] leading-[1.55] mb-4">
+          <span className="text-neon-purple">Sign in</span> to unlock your morning brief, the
+          "since you last looked" delta updates, and journal-aware coaching.
+        </p>
+        <Link
+          to="/login"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-neon-purple/40 bg-neon-purple/15 px-4 py-2 text-[12px] font-semibold text-neon-purple hover:bg-neon-purple/25 transition-colors"
+        >
+          <LogIn size={12} />
+          Sign in for your brief
+        </Link>
+      </section>
+    );
+  }
   if (error) {
     return (
       <section className="rounded-2xl border border-neon-red/20 bg-neon-red/[0.04] p-5 animate-fade-in-up">

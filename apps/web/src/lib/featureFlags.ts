@@ -1,19 +1,17 @@
-import { useAuthStore } from '@/stores/auth';
+// Feature flag system. Phase 1 of the bias goldmine is now the default
+// experience for everyone. The gate is kept as a kill-switch + escape hatch:
+//   - ?legacy=1 in the URL → forces the old /bias page (for screenshot
+//     comparisons, debugging, or rollback if Sage is broken)
+//   - Set FORCE_LEGACY = true to disable V2 globally without redeploying
+//     hooks (kill switch).
 
-// Admin emails that have access to in-development features. Phase 1 of the
-// bias goldmine ships behind this gate. Hardcoded for now — a real flag system
-// (config-driven, server-side rules) is Phase 2+.
-const ADMIN_EMAILS = new Set<string>([
-  'oh84dev@gmail.com',
-  'ghwmelite@gmail.com',
-  'ohwpstudios@gmail.com',
-]);
+const FORCE_LEGACY = false;
 
 export function useFeatureFlag(name: 'bias_v2'): boolean {
-  const email = useAuthStore((s) => s.user?.email);
-  if (!email) return false;
-  if (name === 'bias_v2') {
-    return ADMIN_EMAILS.has(email.toLowerCase());
+  if (FORCE_LEGACY) return false;
+  if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('legacy')) {
+    return false;
   }
+  if (name === 'bias_v2') return true;
   return false;
 }

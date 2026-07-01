@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package, FileCode2 } from 'lucide-react';
+import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package, FileCode2, KeyRound, RefreshCw, Check, Copy } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { API_BASE } from '@/lib/constants';
+import { api } from '@/lib/api';
 import { useAccountsStore, type Account } from '@/stores/accounts';
 import { useAuthStore } from '@/stores/auth';
 
@@ -13,6 +14,24 @@ const SOURCE_ZIP_NAMES: Record<'master' | 'follower' | 'journal', string> = {
   follower: 'EdgeRelay_Follower_Source.zip',
   journal: 'TradeJournal_Sync_Source.zip',
 };
+
+/** Shared "where to find your credentials" callout, reused across the config steps. */
+const credentialsHint = (
+  <div className="flex items-start gap-2 rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 px-3 py-2.5">
+    <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-neon-cyan" />
+    <div className="space-y-1.5 text-xs text-slate-300">
+      <p className="font-semibold text-neon-cyan">Where to find these</p>
+      <p>
+        Open the{' '}
+        <a href="/accounts" className="text-neon-cyan hover:underline font-medium">Copier</a>{' '}
+        page. On each account card, your <strong>Account ID</strong> and <strong>API Key</strong> are shown with a one-tap <strong>Copy</strong> button.
+      </p>
+      <p>
+        Your <strong>API Secret</strong> is revealed <strong>only once</strong> &mdash; on the credentials screen shown immediately after you create the account. If you did not save it, click <strong>Regenerate keys</strong> on the account card to issue a fresh API Key + Secret (again shown once).
+      </p>
+    </div>
+  </div>
+);
 
 /* ------------------------------------------------------------------ */
 /*  Setup Guide Data                                                   */
@@ -38,7 +57,7 @@ const setupSteps: SetupStep[] = [
         </li>
         <li className="flex items-start gap-2">
           <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-neon-green" />
-          API Key and Secret from the Accounts page
+          API Key, API Secret and Account ID from the Copier page (see Step 4)
         </li>
       </ul>
     ),
@@ -139,7 +158,7 @@ const setupSteps: SetupStep[] = [
             <tbody>
               <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Key</td>
-                <td className="px-4 py-2.5 text-slate-300">Your API key from dashboard</td>
+                <td className="px-4 py-2.5 text-slate-300">From the Copier page (Copy button)</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">er_abc123...</td>
               </tr>
               <tr className="data-row border-b border-terminal-border/50">
@@ -155,11 +174,12 @@ const setupSteps: SetupStep[] = [
               <tr className="data-row">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">AccountID</td>
                 <td className="px-4 py-2.5 text-slate-300">Your master account ID</td>
-                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(from dashboard)</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(Copier page)</td>
               </tr>
             </tbody>
           </table>
         </div>
+        {credentialsHint}
       </div>
     ),
   },
@@ -262,6 +282,8 @@ const setupSteps: SetupStep[] = [
           </table>
         </div>
 
+        {credentialsHint}
+
         <div className="flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-neon-amber" />
           <p className="text-xs text-neon-amber">
@@ -316,7 +338,7 @@ const troubleshootingItems = [
   },
   {
     problem: 'Error 4060 in Experts tab',
-    solution: 'The URL is not whitelisted. Go to Tools &rarr; Options &rarr; Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
+    solution: 'The URL is not whitelisted. Go to Tools → Options → Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
   },
   {
     problem: "'Trade context busy' error",
@@ -370,6 +392,123 @@ function AccordionItem({
 /*  EA Download Card                                                   */
 /* ------------------------------------------------------------------ */
 
+function CredCopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={`Copy ${label}`}
+      className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] text-terminal-muted transition-colors hover:text-neon-cyan focus-ring"
+    >
+      {copied ? <Check size={12} className="text-neon-green" /> : <Copy size={12} />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
+
+function CredRow({ label, value, valueClass }: { label: string; value: string; valueClass: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="shrink-0 text-[10px] uppercase tracking-wider text-terminal-muted">{label}</span>
+      <div className="flex min-w-0 items-center gap-1">
+        <code className={`max-w-[150px] truncate font-mono-nums text-[11px] ${valueClass}`}>{value}</code>
+        <CredCopyButton text={value} label={label} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Inline EA credentials for a card's matching account: Account ID + API Key
+ * are always available from the account list; the API Secret is one-time, so
+ * we expose a Regenerate action that reveals a fresh Key + Secret once.
+ */
+function CredentialsPanel({ account }: { account: Account | undefined }) {
+  const fetchAccounts = useAccountsStore((s) => s.fetchAccounts);
+  const [revealed, setRevealed] = useState<{ api_key: string; api_secret: string } | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState<string | null>(null);
+
+  if (!account) {
+    return (
+      <div className="mt-4 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-3">
+        <div className="flex items-center gap-1.5">
+          <KeyRound size={12} className="text-terminal-muted" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-terminal-muted">EA Credentials</span>
+        </div>
+        <p className="mt-2 text-[11px] text-terminal-muted">
+          No account yet.{' '}
+          <a href="/accounts" className="text-neon-cyan hover:underline">Create one on the Copier page</a>{' '}
+          to generate your Account ID, API Key and Secret.
+        </p>
+      </div>
+    );
+  }
+
+  const handleRegenerate = async () => {
+    if (!window.confirm(`Regenerate API keys for "${account.alias}"?\n\nThe current API Key and Secret stop working immediately - any EA already using them must be updated with the new values.`)) return;
+    setRegenError(null);
+    setRegenerating(true);
+    const res = await api.post<{ id: string; api_key: string; api_secret: string }>(`/accounts/${account.id}/regenerate-keys`);
+    if (res.data) {
+      setRevealed({ api_key: res.data.api_key, api_secret: res.data.api_secret });
+      await fetchAccounts();
+    } else {
+      setRegenError(res.error?.message ?? 'Could not regenerate keys. Please try again.');
+    }
+    setRegenerating(false);
+  };
+
+  return (
+    <div className="mt-4 space-y-2 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-3">
+      <div className="flex items-center gap-1.5">
+        <KeyRound size={12} className="text-neon-cyan/60" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-terminal-muted">EA Credentials</span>
+        <span className="ml-auto max-w-[90px] truncate text-[10px] text-terminal-muted" title={account.alias}>{account.alias}</span>
+      </div>
+
+      <CredRow label="Account ID" value={account.id} valueClass="text-neon-cyan" />
+      <CredRow label="API Key" value={revealed?.api_key ?? account.api_key} valueClass="text-terminal-text" />
+
+      {revealed ? (
+        <>
+          <CredRow label="API Secret" value={revealed.api_secret} valueClass="text-neon-amber" />
+          <p className="text-[10px] text-neon-amber">Copy the secret now &mdash; it is shown only this once.</p>
+        </>
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-terminal-muted">API Secret</span>
+          <span className="text-[10px] italic text-terminal-muted">shown once at creation</span>
+        </div>
+      )}
+
+      <div className="pt-1">
+        <button
+          type="button"
+          onClick={handleRegenerate}
+          disabled={regenerating}
+          className="inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-[11px] text-terminal-muted transition-colors hover:text-neon-cyan focus-ring disabled:opacity-50"
+        >
+          <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} />
+          {regenerating ? 'Regenerating...' : revealed ? 'Regenerate again' : 'Regenerate to reveal secret'}
+        </button>
+      </div>
+
+      {regenError && <p className="text-[10px] text-neon-red">{regenError}</p>}
+    </div>
+  );
+}
+
 function EADownloadCard({
   type,
   accounts,
@@ -398,7 +537,7 @@ function EADownloadCard({
 
   const handleDownload = async () => {
     if (!matchingAccount) {
-      setError(`Create a ${type} account first on the Accounts page.`);
+      setError(`Create a ${type} account first on the Copier page.`);
       return;
     }
 
@@ -480,7 +619,7 @@ function EADownloadCard({
           </h3>
           <p className="text-sm text-slate-400">
             {isJournal
-              ? 'Install on any MT5 account. Syncs every trade to your journal with zero drops &mdash; real-time capture + history catch-up.'
+              ? 'Install on any MT5 account. Syncs every trade to your journal with zero drops — real-time capture + history catch-up.'
               : isMaster
               ? 'Install on your master MT5 account. Captures and sends trade signals to the edge network.'
               : 'Install on each follower account. Receives signals and executes trades automatically.'}
@@ -516,6 +655,8 @@ function EADownloadCard({
           Source (.mq5)
         </Button>
       </div>
+
+      <CredentialsPanel account={matchingAccount} />
 
       {error && (
         <div className="mt-3 flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2">

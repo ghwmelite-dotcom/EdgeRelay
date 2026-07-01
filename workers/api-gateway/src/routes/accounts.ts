@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { EA_SOURCE } from '../generated/ea-source.js';
+import { createZip, type ZipEntry } from '../lib/zip.js';
 
 const accounts = new Hono<{ Bindings: Env }>();
 
@@ -655,6 +657,137 @@ accounts.get('/ea-package', async (c) => {
     headers: {
       'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="TradeMetrics_EA_Package.zip"',
+      'Cache-Control': 'private, max-age=3600',
+    },
+  });
+});
+
+// ── EA source bundles ───────────────────────────────────────────
+// Each bundle ships the EA plus the transitive closure of the .mqh
+// includes it needs to compile (from the #include graph). MT5's own
+// Trade\Trade.mqh ships with the terminal and is intentionally omitted.
+type EaSourceType = 'master' | 'follower' | 'journal';
+
+const EA_BUNDLES: Record<EaSourceType, { ea: string; includes: string[]; title: string }> = {
+  master: {
+    ea: 'EdgeRelay_Master.mq5',
+    title: 'TradeMetrics Master EA',
+    includes: [
+      'EdgeRelay_Common.mqh',
+      'EdgeRelay_Crypto.mqh',
+      'EdgeRelay_Http.mqh',
+      'EdgeRelay_Queue.mqh',
+      'EdgeRelay_Display.mqh',
+      'EdgeRelay_JournalSync.mqh',
+      'EdgeRelay_JournalQueue.mqh',
+    ],
+  },
+  follower: {
+    ea: 'EdgeRelay_Follower.mq5',
+    title: 'TradeMetrics Follower EA',
+    includes: [
+      'EdgeRelay_Common.mqh',
+      'EdgeRelay_Crypto.mqh',
+      'EdgeRelay_Http.mqh',
+      'EdgeRelay_Equity.mqh',
+      'EdgeRelay_PropGuard.mqh',
+      'EdgeRelay_PropGuardDisplay.mqh',
+      'EdgeRelay_JsonParser.mqh',
+    ],
+  },
+  journal: {
+    ea: 'TradeJournal_Sync.mq5',
+    title: 'TradeJournal Sync EA',
+    includes: [
+      'EdgeRelay_Common.mqh',
+      'EdgeRelay_Crypto.mqh',
+      'EdgeRelay_Http.mqh',
+      'EdgeRelay_JournalSync.mqh',
+      'EdgeRelay_JournalQueue.mqh',
+    ],
+  },
+};
+
+function buildSourceReadme(bundle: { ea: string; includes: string[]; title: string }): string {
+  return [
+    `${bundle.title} — MQL5 Source`,
+    '='.repeat(bundle.title.length + 15),
+    '',
+    'This archive contains the full MQL5 source so you can inspect, audit, or',
+    'modify the EA and compile it yourself in MetaEditor.',
+    '',
+    'INSTALL',
+    '-------',
+    'In MT5: File -> Open Data Folder, then copy:',
+    '',
+    `  Experts\\${bundle.ea}`,
+    '    ->  MQL5\\Experts\\',
+    '',
+    '  Include\\*.mqh',
+    '    ->  MQL5\\Include\\',
+    '',
+    'COMPILE',
+    '-------',
+    '1. Restart MT5 or right-click the Navigator -> Refresh.',
+    `2. Open ${bundle.ea} in MetaEditor and press F7 (Compile).`,
+    '3. Drag the compiled EA from the Navigator onto a chart.',
+    '',
+    'The Include (.mqh) files are REQUIRED — without them in MQL5\\Include\\',
+    'the EA will not compile.',
+    '',
+    'Configuration parameters and WebRequest whitelist URLs are documented on',
+    'the Downloads & Setup page in TradeMetrics Pro.',
+    '',
+  ].join('\n');
+}
+
+// ── GET /accounts/ea-source/:type — Download compilable .mq5 source ──
+// Ships the EA source + its required includes as a MT5-structured ZIP.
+// Authenticated (source carries no per-user credentials), so no account
+// ownership check is required.
+accounts.get('/ea-source/:type', (c) => {
+  const type = c.req.param('type') as EaSourceType;
+  const bundle = EA_BUNDLES[type];
+
+  if (!bundle) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'VALIDATION_ERROR', message: 'Type must be master, follower or journal' } },
+      400,
+    );
+  }
+
+  const entries: ZipEntry[] = [];
+
+  const eaSource = EA_SOURCE[bundle.ea];
+  if (eaSource === undefined) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'INTERNAL_ERROR', message: 'EA source unavailable.' } },
+      500,
+    );
+  }
+  entries.push({ name: `Experts/${bundle.ea}`, data: eaSource });
+
+  for (const include of bundle.includes) {
+    const src = EA_SOURCE[include];
+    if (src === undefined) {
+      return c.json<ApiResponse>(
+        { data: null, error: { code: 'INTERNAL_ERROR', message: `Missing include: ${include}` } },
+        500,
+      );
+    }
+    entries.push({ name: `Include/${include}`, data: src });
+  }
+
+  entries.push({ name: 'README.txt', data: buildSourceReadme(bundle) });
+
+  const zip = createZip(entries);
+  const filename = `${bundle.ea.replace(/\.mq5$/, '')}_Source.zip`;
+
+  return new Response(zip, {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': String(zip.length),
       'Cache-Control': 'private, max-age=3600',
     },
   });

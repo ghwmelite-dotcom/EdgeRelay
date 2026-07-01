@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "embed:ea": "node scripts/embed-ea-source.mjs",
+    "prebuild": "npm run embed:ea",
+    "predev": "npm run embed:ea",
+    "predeploy": "npm run embed:ea",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit"

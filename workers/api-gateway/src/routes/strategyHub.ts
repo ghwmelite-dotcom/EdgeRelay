@@ -1013,11 +1013,6 @@ strategyHub.post('/generate-custom', async (c) => {
     );
   }
 
-  // Fetch master account for magic number
-  const masterAccount = await c.env.DB.prepare(
-    `SELECT id, api_key FROM accounts WHERE user_id = ? AND role = 'master' LIMIT 1`,
-  ).bind(userId).first<{ id: string; api_key: string }>();
-
   const magicNumber = magicFromSlug(`${userId}:custom:${body.name}`);
 
   // Build AI prompt for signal logic generation
@@ -1255,7 +1250,7 @@ function generateStrategyInputs(indicators: string[]): string {
   return lines.length > 0 ? lines.join('\n') : '// No additional strategy parameters';
 }
 
-function generateFallbackSignal(indicators: string[], entryConditions: string): string {
+function generateFallbackSignal(_indicators: string[], _entryConditions: string): string {
   // Generate a basic MA crossover as fallback
   return `// Fallback signal logic — customize in MetaEditor
 static int maFastHandle = INVALID_HANDLE;

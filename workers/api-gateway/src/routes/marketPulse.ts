@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
 
 export const marketPulse = new Hono<{ Bindings: Env }>();
@@ -23,10 +22,10 @@ marketPulse.get('/calendar', async (c) => {
   // Compute events by currency for heat map
   const byCurrency: Record<string, { high: number; medium: number; total: number }> = {};
   for (const e of (results || []) as Array<{ currency: string; impact: string }>) {
-    if (!byCurrency[e.currency]) byCurrency[e.currency] = { high: 0, medium: 0, total: 0 };
-    byCurrency[e.currency].total++;
-    if (e.impact === 'high') byCurrency[e.currency].high++;
-    else byCurrency[e.currency].medium++;
+    const bucket = byCurrency[e.currency] ?? (byCurrency[e.currency] = { high: 0, medium: 0, total: 0 });
+    bucket.total++;
+    if (e.impact === 'high') bucket.high++;
+    else bucket.medium++;
   }
 
   return new Response(JSON.stringify({ data: { events: results || [], byCurrency }, error: null }), {

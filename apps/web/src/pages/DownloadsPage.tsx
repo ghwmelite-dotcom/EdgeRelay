@@ -50,7 +50,7 @@ const setupSteps: SetupStep[] = [
         <p className="text-sm text-slate-300">Enable WebRequest in your MT5 terminal:</p>
         <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
           <li>
-            Go to <span className="font-mono-nums text-neon-cyan">Tools \u2192 Options \u2192 Expert Advisors</span>
+            Go to <span className="font-mono-nums text-neon-cyan">Tools &rarr; Options &rarr; Expert Advisors</span>
           </li>
           <li>
             Check <span className="font-mono-nums text-neon-cyan">"Allow WebRequest for listed URL"</span>
@@ -203,16 +203,100 @@ const setupSteps: SetupStep[] = [
     ),
   },
   {
-    title: 'Step 6: Verify Connection',
+    title: 'Step 6: Install & Configure TradeJournal Sync EA',
     content: (
-      <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
-        <li>
-          Check the on-chart display panel \u2014 <span className="text-neon-green">green dot</span> = connected
-        </li>
-        <li>Send a test trade on master account</li>
-        <li>Verify it appears in the Signal Log on the dashboard</li>
-        <li>Check follower MT5 for the copied trade</li>
-      </ol>
+      <div className="space-y-3">
+        <div className="flex items-start gap-2 rounded-xl border border-neon-purple/20 bg-neon-purple/5 px-3 py-2">
+          <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-neon-purple" />
+          <p className="text-xs text-slate-300">
+            The TradeJournal Sync EA is <strong>independent of copy trading</strong> &mdash; attach it to <strong>any</strong> MT5 account (run it standalone; no master or follower needed). It captures every trade on that account &mdash; in real time, plus a one-time history catch-up &mdash; and streams them to your dashboard Journal.
+          </p>
+        </div>
+
+        <p className="text-sm text-slate-300">
+          Install it exactly like the other EAs (<span className="font-mono-nums text-neon-cyan">TradeJournal_Sync.mq5</span> plus the same Include files from Step 3), then compile and drag it onto <strong>one chart per account</strong>. A single instance captures the whole account &mdash; you do not need it on every symbol.
+        </p>
+
+        <p className="text-sm text-slate-300">Set the following input parameters when attaching the EA:</p>
+        <div className="glass rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-terminal-surface/80">
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Parameter</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Description</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Example / Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Key</td>
+                <td className="px-4 py-2.5 text-slate-300">API key from the Accounts page <span className="text-neon-amber">(required)</span></td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">er_abc123...</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Secret</td>
+                <td className="px-4 py-2.5 text-slate-300">API secret <span className="text-neon-amber">(required)</span></td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(shown once at creation)</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Endpoint</td>
+                <td className="px-4 py-2.5 text-slate-300">Journal sync server</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400 break-all">https://edgerelay-journal-sync.ghwmelite.workers.dev</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">AccountID</td>
+                <td className="px-4 py-2.5 text-slate-300">The account to journal <span className="text-neon-amber">(required)</span></td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(from dashboard)</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">SyncIntervalSeconds</td>
+                <td className="px-4 py-2.5 text-slate-300">History catch-up scan interval (seconds)</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">60</td>
+              </tr>
+              <tr className="data-row">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">HeartbeatIntervalMs</td>
+                <td className="px-4 py-2.5 text-slate-300">Connection heartbeat interval (ms)</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">30000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-neon-amber" />
+          <p className="text-xs text-neon-amber">
+            <strong>API_Key</strong>, <strong>API_Secret</strong>, and <strong>AccountID</strong> are required &mdash; the EA refuses to start without them. Make sure the <span className="font-mono-nums">edgerelay-journal-sync</span> URL from Step 2 is whitelisted under WebRequest.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: 'Step 7: Verify Connection',
+    content: (
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider mb-2">Master / Follower EAs</p>
+          <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
+            <li>
+              Check the on-chart display panel &mdash; <span className="text-neon-green">green dot</span> = connected
+            </li>
+            <li>Send a test trade on master account</li>
+            <li>Verify it appears in the Signal Log on the dashboard</li>
+            <li>Check follower MT5 for the copied trade</li>
+          </ol>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider mb-2">TradeJournal Sync EA</p>
+          <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
+            <li>
+              This EA has <strong>no on-chart panel</strong> &mdash; open the <span className="font-mono-nums text-neon-cyan">Experts</span> tab and look for <span className="font-mono-nums text-neon-purple">[Journal]</span> heartbeat log lines
+            </li>
+            <li>Place or close a trade on the account</li>
+            <li>Confirm it appears in your dashboard <strong>Journal</strong> &mdash; prior history is backfilled on the first run</li>
+          </ol>
+        </div>
+      </div>
     ),
   },
 ];
@@ -232,7 +316,7 @@ const troubleshootingItems = [
   },
   {
     problem: 'Error 4060 in Experts tab',
-    solution: 'The URL is not whitelisted. Go to Tools \u2192 Options \u2192 Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
+    solution: 'The URL is not whitelisted. Go to Tools &rarr; Options &rarr; Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
   },
   {
     problem: "'Trade context busy' error",
@@ -350,7 +434,7 @@ function EADownloadCard({
     }
   };
 
-  // Source ZIP is generic (no per-user credentials) — available to any
+  // Source ZIP is generic (no per-user credentials) - available to any
   // signed-in user without needing a matching account created first.
   const handleSourceDownload = async () => {
     setError(null);
@@ -396,7 +480,7 @@ function EADownloadCard({
           </h3>
           <p className="text-sm text-slate-400">
             {isJournal
-              ? 'Install on any MT5 account. Syncs every trade to your journal with zero drops — real-time capture + history catch-up.'
+              ? 'Install on any MT5 account. Syncs every trade to your journal with zero drops &mdash; real-time capture + history catch-up.'
               : isMaster
               ? 'Install on your master MT5 account. Captures and sends trade signals to the edge network.'
               : 'Install on each follower account. Receives signals and executes trades automatically.'}
@@ -569,7 +653,7 @@ export function DownloadsPage() {
           <div className="flex-1">
             <h3 className="font-display text-lg font-bold text-white">Complete EA Package</h3>
             <p className="text-sm text-terminal-muted mt-1">
-              Everything you need in one ZIP — 3 Expert Advisors, 11 Include libraries, and the Setup Script.
+              Everything you need in one ZIP &mdash; 3 Expert Advisors, 11 Include libraries, and the Setup Script.
               Extract directly into your MT5 Data Folder.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">

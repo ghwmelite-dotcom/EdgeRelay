@@ -1,11 +1,14 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Trash2, AlertTriangle } from 'lucide-react';
 import { useAccountsStore } from '@/stores/accounts';
 import { useJournalStore, type JournalFilters } from '@/stores/journal';
 import { EquityCurve } from '@/components/journal/EquityCurve';
 import { TradeFilters } from '@/components/journal/TradeFilters';
 import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 
 /* ------------------------------------------------------------------ */
 /*  Formatting helpers                                                 */
@@ -73,7 +76,7 @@ function SkeletonRow({ delay = 0 }: { delay?: number }) {
       className="border-b border-terminal-border/50 animate-fade-in-up"
       style={{ animationDelay: `${delay}ms` }}
     >
-      {Array.from({ length: 8 }).map((_, j) => (
+      {Array.from({ length: 9 }).map((_, j) => (
         <td key={j} className="px-3 py-3">
           <div className="skeleton h-4 w-16 rounded" />
         </td>
@@ -105,11 +108,26 @@ export function JournalPage() {
     fetchAll,
     fetchTrades,
     fetchMoreTrades,
+    deleteTrade,
   } = useJournalStore();
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const setSelectedAccountId = useCallback(
     (id: string) => useJournalStore.setState({ selectedAccountId: id }),
     [],
+  );
+
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+
+  const handleDeleteRow = useCallback(
+    async (dealTicket: number) => {
+      if (!selectedAccountId) return;
+      if (!window.confirm('Delete this trade from your journal? This cannot be undone.')) return;
+      await deleteTrade(selectedAccountId, dealTicket);
+      fetchAll(selectedAccountId);
+    },
+    [selectedAccountId, deleteTrade, fetchAll],
   );
 
   // Infinite scroll sentinel
@@ -189,13 +207,26 @@ export function JournalPage() {
         <h1 className="text-3xl font-black tracking-tight text-white font-display">
           Trade Journal
         </h1>
-        <div className="w-64">
-          <Select
-            label="Account"
-            options={accountOptions}
-            value={selectedAccountId ?? ''}
-            onChange={(e) => setSelectedAccountId(e.target.value)}
-          />
+        <div className="flex items-end gap-2">
+          <div className="w-64">
+            <Select
+              label="Account"
+              options={accountOptions}
+              value={selectedAccountId ?? ''}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+            />
+          </div>
+          {selectedAccountId && (
+            <Button
+              variant="danger"
+              size="md"
+              onClick={() => setDeleteOpen(true)}
+              title="Delete journal trades for this account"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+          )}
         </div>
       </div>
 
@@ -425,6 +456,7 @@ export function JournalPage() {
                     <Th align="right">Profit</Th>
                     <Th align="right">Pips</Th>
                     <Th align="right">Duration</Th>
+                    <Th align="right"><span className="sr-only">Actions</span></Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -484,6 +516,19 @@ export function JournalPage() {
                         <td className="px-3 py-2.5 text-right font-mono-nums text-terminal-muted text-xs">
                           {formatDuration(trade.duration_seconds)}
                         </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRow(trade.deal_ticket);
+                            }}
+                            className="rounded p-1 text-terminal-muted transition-colors hover:text-neon-red focus-ring"
+                            title="Delete trade"
+                            aria-label="Delete trade"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -502,6 +547,16 @@ export function JournalPage() {
           </div>
         )}
       </section>
+
+      <DeleteJournalModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        accountId={selectedAccountId}
+        accountAlias={selectedAccount?.alias ?? ''}
+        onDeleted={() => {
+          if (selectedAccountId) fetchAll(selectedAccountId);
+        }}
+      />
     </div>
   );
 }
@@ -509,6 +564,148 @@ export function JournalPage() {
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
+
+function DeleteJournalModal({
+  open,
+  onClose,
+  accountId,
+  accountAlias,
+  onDeleted,
+}: {
+  open: boolean;
+  onClose: () => void;
+  accountId: string | null;
+  accountAlias: string;
+  onDeleted: () => void;
+}) {
+  const deleteTrades = useJournalStore((s) => s.deleteTrades);
+  const [mode, setMode] = useState<'date' | 'all'>('date');
+  const [beforeDate, setBeforeDate] = useState('');
+  const [confirmText, setConfirmText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  const close = () => {
+    setMode('date');
+    setBeforeDate('');
+    setConfirmText('');
+    setError(null);
+    setResult(null);
+    setBusy(false);
+    onClose();
+  };
+
+  const handleDelete = async () => {
+    if (!accountId) return;
+    setError(null);
+    let filters: JournalFilters | undefined;
+    if (mode === 'date') {
+      if (!beforeDate) {
+        setError('Pick a cutoff date first.');
+        return;
+      }
+      const cutoff = Math.floor(new Date(`${beforeDate}T00:00:00Z`).getTime() / 1000);
+      filters = { to: cutoff - 1 };
+    } else {
+      if (confirmText.trim() !== accountAlias) {
+        setError(`Type the account name "${accountAlias}" exactly to confirm.`);
+        return;
+      }
+      filters = undefined;
+    }
+    setBusy(true);
+    const deleted = await deleteTrades(accountId, filters);
+    setBusy(false);
+    if (deleted === null) {
+      setError('Delete failed. Please try again.');
+      return;
+    }
+    setResult(`Deleted ${deleted} trade${deleted === 1 ? '' : 's'}.`);
+    onDeleted();
+  };
+
+  return (
+    <Modal open={open} onClose={close} title="Delete journal trades">
+      {result ? (
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-neon-green/30 bg-neon-green/5 p-4 text-sm text-slate-200">
+            {result}
+          </div>
+          <Button variant="secondary" className="w-full" onClick={close}>
+            Done
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode('date')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                mode === 'date' ? 'bg-neon-cyan/15 text-neon-cyan' : 'text-terminal-muted hover:text-slate-200'
+              }`}
+            >
+              Before a date
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('all')}
+              className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+                mode === 'all' ? 'bg-neon-red/15 text-neon-red' : 'text-terminal-muted hover:text-slate-200'
+              }`}
+            >
+              Clear entire journal
+            </button>
+          </div>
+
+          {mode === 'date' ? (
+            <div className="space-y-2">
+              <p className="text-sm text-slate-300">
+                Permanently delete every trade dated <strong>before</strong> this day:
+              </p>
+              <Input type="date" value={beforeDate} onChange={(e) => setBeforeDate(e.target.value)} />
+              <p className="text-xs text-terminal-muted">
+                Cutoff is interpreted in UTC. Example: pick <span className="font-mono-nums">2026-06-01</span> to remove
+                everything before June 2026.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 rounded-2xl border border-neon-red/30 bg-neon-red/5 p-4">
+                <AlertTriangle size={18} className="mt-0.5 shrink-0 text-neon-red" />
+                <p className="text-sm text-slate-300">
+                  This permanently deletes <strong>every</strong> trade for{' '}
+                  <span className="font-semibold text-white">{accountAlias}</span>. This cannot be undone.
+                </p>
+              </div>
+              <p className="text-sm text-slate-300">
+                Type <span className="font-mono-nums text-neon-red">{accountAlias}</span> to confirm:
+              </p>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={accountAlias}
+              />
+            </div>
+          )}
+
+          {error && <p className="text-xs text-neon-red">{error}</p>}
+
+          <div className="flex gap-3">
+            <Button variant="secondary" className="flex-1" onClick={close}>
+              Cancel
+            </Button>
+            <Button variant="danger" className="flex-1" isLoading={busy} onClick={handleDelete}>
+              <Trash2 size={14} />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
 
 function MiniStat({
   label,

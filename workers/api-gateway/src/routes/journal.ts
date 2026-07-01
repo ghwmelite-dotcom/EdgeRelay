@@ -467,3 +467,76 @@ journal.get('/stats/:accountId/daily', async (c) => {
     error: null,
   });
 });
+
+// ── DELETE /trades/:accountId — Bulk delete (filter-aware) ──────
+// No filters = clear the entire journal for the account. Same filter
+// params as the GET list, so "delete what you're viewing" works. Scoped
+// to an owned account; a user can only ever touch their own trades.
+
+journal.delete('/trades/:accountId', async (c) => {
+  const accountId = c.req.param('accountId');
+  const userId = c.get('userId');
+
+  const owns = await verifyAccountOwnership(c.env.DB, accountId, userId);
+  if (!owns) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'FORBIDDEN', message: 'Account not found or not owned by user' } },
+      403,
+    );
+  }
+
+  const symbol = c.req.query('symbol');
+  const direction = c.req.query('direction');
+  const sessionTag = c.req.query('session_tag');
+  const magicNumber = c.req.query('magic_number');
+  const from = c.req.query('from');
+  const to = c.req.query('to');
+
+  const conditions: string[] = ['account_id = ?'];
+  const bindings: unknown[] = [accountId];
+  if (symbol) { conditions.push('symbol = ?'); bindings.push(symbol); }
+  if (direction) { conditions.push('direction = ?'); bindings.push(direction); }
+  if (sessionTag) { conditions.push('session_tag = ?'); bindings.push(sessionTag); }
+  if (magicNumber) { conditions.push('magic_number = ?'); bindings.push(parseInt(magicNumber, 10)); }
+  if (from) { conditions.push('time >= ?'); bindings.push(parseInt(from, 10)); }
+  if (to) { conditions.push('time <= ?'); bindings.push(parseInt(to, 10)); }
+
+  const result = await c.env.DB.prepare(
+    `DELETE FROM journal_trades WHERE ${conditions.join(' AND ')}`,
+  )
+    .bind(...bindings)
+    .run();
+
+  return c.json<ApiResponse>({ data: { deleted: result.meta.changes }, error: null });
+});
+
+// ── DELETE /trades/:accountId/:dealTicket — Single trade ────────
+
+journal.delete('/trades/:accountId/:dealTicket', async (c) => {
+  const accountId = c.req.param('accountId');
+  const dealTicket = parseInt(c.req.param('dealTicket'), 10);
+  const userId = c.get('userId');
+
+  const owns = await verifyAccountOwnership(c.env.DB, accountId, userId);
+  if (!owns) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'FORBIDDEN', message: 'Account not found or not owned by user' } },
+      403,
+    );
+  }
+
+  const result = await c.env.DB.prepare(
+    'DELETE FROM journal_trades WHERE account_id = ? AND deal_ticket = ?',
+  )
+    .bind(accountId, dealTicket)
+    .run();
+
+  if (result.meta.changes === 0) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Trade not found' } },
+      404,
+    );
+  }
+
+  return c.json<ApiResponse>({ data: { deleted: result.meta.changes }, error: null });
+});

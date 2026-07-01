@@ -52,6 +52,7 @@ interface AccountsState {
     master_account_id?: string;
   }) => Promise<Account | null>;
   deleteAccount: (id: string) => Promise<boolean>;
+  purgeAccount: (id: string) => Promise<boolean>;
 }
 
 export const useAccountsStore = create<AccountsState>()((set, get) => ({
@@ -85,6 +86,16 @@ export const useAccountsStore = create<AccountsState>()((set, get) => ({
       set({ accounts: get().accounts.filter((a) => a.id !== id) });
       return true;
     }
+    return false;
+  },
+
+  purgeAccount: async (id) => {
+    const res = await api.del<{ purged: boolean }>(`/accounts/${id}/purge`);
+    if (!res.error) {
+      set({ accounts: get().accounts.filter((a) => a.id !== id) });
+      return true;
+    }
+    set({ error: res.error?.message ?? 'Failed to permanently delete account' });
     return false;
   },
 }));

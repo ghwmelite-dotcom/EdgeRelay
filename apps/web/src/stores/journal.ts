@@ -100,6 +100,8 @@ interface JournalState {
   fetchTradeDetail: (accountId: string, dealTicket: number) => Promise<void>;
   fetchAll: (accountId: string) => Promise<void>;
   setFilters: (filters: Partial<JournalFilters>) => void;
+  deleteTrades: (accountId: string, filters?: JournalFilters) => Promise<number | null>;
+  deleteTrade: (accountId: string, dealTicket: number) => Promise<boolean>;
   reset: () => void;
 }
 
@@ -246,6 +248,32 @@ export const useJournalStore = create<JournalState>()((set, get) => ({
 
   setFilters: (filters: Partial<JournalFilters>) => {
     set({ filters: { ...get().filters, ...filters } });
+  },
+
+  deleteTrades: async (accountId: string, filters?: JournalFilters) => {
+    const qs = filters ? buildDateParams(filters) : '';
+    // buildDateParams only carries from/to; add the remaining filters too.
+    const params = new URLSearchParams(qs.startsWith('?') ? qs.slice(1) : qs);
+    if (filters?.symbol) params.set('symbol', filters.symbol);
+    if (filters?.direction) params.set('direction', filters.direction);
+    if (filters?.session_tag) params.set('session_tag', filters.session_tag);
+    const query = params.toString();
+    const res = await api.del<{ deleted: number }>(
+      `/journal/trades/${accountId}${query ? `?${query}` : ''}`,
+    );
+    if (res.data) return res.data.deleted;
+    set({ error: res.error?.message ?? 'Failed to delete trades' });
+    return null;
+  },
+
+  deleteTrade: async (accountId: string, dealTicket: number) => {
+    const res = await api.del<{ deleted: number }>(`/journal/trades/${accountId}/${dealTicket}`);
+    if (!res.error) {
+      set({ trades: get().trades.filter((t) => t.deal_ticket !== dealTicket) });
+      return true;
+    }
+    set({ error: res.error?.message ?? 'Failed to delete trade' });
+    return false;
   },
 
   reset: () => {

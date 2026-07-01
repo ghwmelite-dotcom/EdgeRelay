@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package } from 'lucide-react';
+import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package, FileCode2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { API_BASE } from '@/lib/constants';
 import { useAccountsStore, type Account } from '@/stores/accounts';
 import { useAuthStore } from '@/stores/auth';
+
+/** Server-side ZIP filenames, keyed by EA card type. */
+const SOURCE_ZIP_NAMES: Record<'master' | 'follower' | 'journal', string> = {
+  master: 'EdgeRelay_Master_Source.zip',
+  follower: 'EdgeRelay_Follower_Source.zip',
+  journal: 'TradeJournal_Sync_Source.zip',
+};
 
 /* ------------------------------------------------------------------ */
 /*  Setup Guide Data                                                   */
@@ -286,6 +294,7 @@ function EADownloadCard({
   accounts: Account[];
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [sourceDownloading, setSourceDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = useAuthStore((s) => s.token);
 
@@ -341,6 +350,40 @@ function EADownloadCard({
     }
   };
 
+  // Source ZIP is generic (no per-user credentials) — available to any
+  // signed-in user without needing a matching account created first.
+  const handleSourceDownload = async () => {
+    setError(null);
+    setSourceDownloading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/accounts/ea-source/${type}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        const msg = (json as { error?: { message?: string } })?.error?.message || 'Source download failed';
+        setError(msg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = SOURCE_ZIP_NAMES[type];
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSourceDownloading(false);
+    }
+  };
+
   return (
     <Card hover className="flex flex-col">
       <div className="flex items-start gap-4">
@@ -366,7 +409,7 @@ function EADownloadCard({
         <span className="text-xs text-slate-500 font-mono-nums">{isJournal ? '~38 KB' : isMaster ? '~45 KB' : '~52 KB'}</span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-2">
         <Button
           variant={isMaster || isJournal ? 'primary' : 'secondary'}
           size="md"
@@ -376,6 +419,17 @@ function EADownloadCard({
         >
           <Download className="h-4 w-4" />
           Download .ex5
+        </Button>
+        <Button
+          variant="ghost"
+          size="md"
+          isLoading={sourceDownloading}
+          onClick={handleSourceDownload}
+          className="w-full"
+          title="Full MQL5 source + required include files, ready to compile in MetaEditor"
+        >
+          <FileCode2 className="h-4 w-4" />
+          Source (.mq5)
         </Button>
       </div>
 

@@ -568,6 +568,45 @@ accounts.delete('/:id', async (c) => {
   return c.json<ApiResponse>({ data: { id: accountId, deactivated: true }, error: null });
 });
 
+// ── DELETE /accounts/:id/purge — Hard delete account + all its data ──
+// Unlike the soft delete above (which only sets is_active = false), this
+// permanently removes the account and every row that references it. Runs
+// as an atomic batch: if any statement fails, nothing is deleted.
+accounts.delete('/:id/purge', async (c) => {
+  const userId = c.get('userId');
+  const accountId = c.req.param('id');
+
+  // Verify ownership first — a user may only purge their own account.
+  const owned = await c.env.DB.prepare('SELECT id FROM accounts WHERE id = ? AND user_id = ?')
+    .bind(accountId, userId)
+    .first();
+
+  if (!owned) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Account not found' } },
+      404,
+    );
+  }
+
+  const db = c.env.DB;
+  await db.batch([
+    db.prepare('DELETE FROM journal_trades WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM symbol_mappings WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM follower_config WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM prop_rules WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM daily_stats WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM blocked_trades WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM firm_templates WHERE account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM signals WHERE master_account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM executions WHERE follower_account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM provider_profiles WHERE master_account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM marketplace_subscriptions WHERE follower_account_id = ?').bind(accountId),
+    db.prepare('DELETE FROM accounts WHERE id = ? AND user_id = ?').bind(accountId, userId),
+  ]);
+
+  return c.json<ApiResponse>({ data: { id: accountId, purged: true }, error: null });
+});
+
 // ── POST /accounts/:id/regenerate-keys ──────────────────────────
 accounts.post('/:id/regenerate-keys', async (c) => {
   const userId = c.get('userId');

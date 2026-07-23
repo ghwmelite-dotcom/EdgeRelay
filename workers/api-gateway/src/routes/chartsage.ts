@@ -78,6 +78,15 @@ chartsage.post('/analyze-live', async (c) => {
   });
 });
 
+// POST /chartsage/analyze-crypto { symbol?: string } — top-15 scan when omitted
+chartsage.post('/analyze-crypto', async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { symbol?: string };
+  return relay(c, '/analyze-crypto', {
+    method: 'POST',
+    body: JSON.stringify(body.symbol ? { symbol: body.symbol } : {}),
+  });
+});
+
 // GET /chartsage/signals?limit=30
 chartsage.get('/signals', (c) =>
   relay(c, `/signals?limit=${encodeURIComponent(c.req.query('limit') || '30')}`),

@@ -8,6 +8,7 @@ import {
   Loader2,
   RefreshCw,
   Zap,
+  Bitcoin,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -67,6 +68,31 @@ interface StatsResponse {
   by_confidence: StatsBucket[];
 }
 
+interface CryptoSignal {
+  symbol: string;
+  direction: 'LONG' | 'SHORT';
+  grade: 'A' | 'B';
+  score: number;
+  entry: number;
+  sl: number;
+  tp1: number;
+  tp2: number;
+  rr_to_tp1: number;
+  confluence_tags: string[];
+  invalidation: string;
+}
+
+interface CryptoScanResult {
+  scanned: number;
+  emitted: CryptoSignal[];
+  errors: string[];
+}
+
+const fmtPrice = (x: number) =>
+  x >= 1
+    ? x.toLocaleString('en-US', { maximumFractionDigits: 2 })
+    : Number(x.toPrecision(6)).toString();
+
 /* ------------------------------------------------------------------ */
 /*  Small pieces                                                       */
 /* ------------------------------------------------------------------ */
@@ -125,6 +151,7 @@ export function ChartSagePage() {
   const [rows, setRows] = useState<SignalRow[]>([]);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [cryptoScan, setCryptoScan] = useState<CryptoScanResult | null>(null);
 
   const loadFeed = useCallback(async () => {
     const [sigRes, statsRes] = await Promise.all([
@@ -149,6 +176,19 @@ export function ChartSagePage() {
       return;
     }
     setSignal(res.data);
+    loadFeed();
+  };
+
+  const scanCrypto = async () => {
+    setAnalyzing('CRYPTO');
+    setError(null);
+    const res = await api.post<CryptoScanResult>('/chartsage/analyze-crypto', {});
+    setAnalyzing(null);
+    if (res.error || !res.data) {
+      setError(res.error?.message || 'Crypto scan failed');
+      return;
+    }
+    setCryptoScan(res.data);
     loadFeed();
   };
 
@@ -225,7 +265,7 @@ export function ChartSagePage() {
             real candles → probability → ATR trade plan
           </span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           {SYMBOLS.map(({ key, label, sub, icon: Icon }) => (
             <button
               key={key}
@@ -243,6 +283,20 @@ export function ChartSagePage() {
               {analyzing === key && <Loader2 className="h-4 w-4 animate-spin text-neon-cyan" />}
             </button>
           ))}
+          <button
+            onClick={scanCrypto}
+            disabled={analyzing !== null}
+            className="group flex items-center gap-3 rounded-xl border border-terminal-border/60 bg-terminal-card/40 px-4 py-3.5 text-left transition-all duration-200 hover:border-neon-amber/40 hover:bg-neon-amber/5 hover:shadow-[0_0_20px_#ffb80015] disabled:opacity-50 focus-ring"
+          >
+            <span className="rounded-lg border border-neon-amber/20 bg-neon-amber/10 p-2 text-neon-amber">
+              <Bitcoin className="h-5 w-5" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-slate-200">Crypto scan</span>
+              <span className="block text-xs text-terminal-muted">top-15 confluence</span>
+            </span>
+            {analyzing === 'CRYPTO' && <Loader2 className="h-4 w-4 animate-spin text-neon-amber" />}
+          </button>
         </div>
         {error && <p className="mt-3 text-sm text-neon-red">{error}</p>}
       </Card>
@@ -274,6 +328,47 @@ export function ChartSagePage() {
             <p className="mt-2 text-xs text-terminal-muted">
               Outcome auto-grades from the live feed when TP or SL is hit — 5-min checks, 4h time-stop.
             </p>
+          )}
+        </Card>
+      )}
+
+      {/* Crypto scan results */}
+      {cryptoScan && (
+        <Card variant="elevated">
+          <div className="flex items-center justify-between border-b border-terminal-border/40 pb-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-200">
+              <Bitcoin className="h-4 w-4 text-neon-amber" /> Crypto confluence scan
+            </div>
+            <span className="text-xs text-terminal-muted">
+              {cryptoScan.scanned} scanned · {cryptoScan.emitted.length} emitted
+            </span>
+          </div>
+          {cryptoScan.emitted.length === 0 ? (
+            <p className="pt-3 text-sm text-terminal-muted">
+              No A/B-grade confluence setups this scan — the six-pillar stack stayed silent.
+              That is the filter working, not a bug.
+            </p>
+          ) : (
+            <div className="divide-y divide-terminal-border/30">
+              {cryptoScan.emitted.map((s) => (
+                <div key={s.symbol + s.direction} className="py-3">
+                  <div className="flex items-center justify-between">
+                    <DirectionMark direction={s.direction} />
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm text-slate-200">{s.symbol}</span>
+                      <Badge variant={s.grade === 'A' ? 'amber' : 'muted'}>
+                        Grade {s.grade} · {s.score}/100
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="mt-2 font-mono text-xs tabular-nums text-slate-300">
+                    Entry {fmtPrice(s.entry)} · SL {fmtPrice(s.sl)} · TP1 {fmtPrice(s.tp1)} · TP2 {fmtPrice(s.tp2)} · R:R {s.rr_to_tp1}
+                  </div>
+                  <div className="mt-1.5 text-xs text-slate-400">{s.confluence_tags.join(' + ')}</div>
+                  <div className="mt-1 text-xs text-terminal-muted">{s.invalidation}</div>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
       )}

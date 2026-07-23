@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { useNotificationStore } from '@/stores/notifications';
+import { BiasAlertsCard } from '@/components/bias/BiasAlertsCard';
 
 /* ------------------------------------------------------------------ */
 /*  Toggle Switch                                                      */
@@ -563,6 +564,9 @@ export function SettingsPage() {
           </div>
         )}
       </Card>
+
+      {/* ---- ICC Bias Alerts ---- */}
+      <BiasAlertsCard telegramConnected={telegramConnected} />
 
       {/* ---- Danger Zone ---- */}
       <Card

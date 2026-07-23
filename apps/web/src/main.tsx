@@ -5,14 +5,22 @@ import './app.css';
 
 import { useAuthStore } from '@/stores/auth';
 import { InstallPrompt } from '@/components/ui/InstallPrompt';
+import { checkSessionFreshness } from '@/lib/sessionCheck';
+import { BiasAlertBasket } from '@/components/bias/BiasAlertBasket';
 
 const FounderDashboardPage = React.lazy(() => import('@/pages/FounderDashboardPage').then(m => ({ default: m.FounderDashboardPage })));
 
-// Lightweight page view tracker
+// Lightweight page view tracker + session freshness guard
 function PageTracker() {
   const location = useLocation();
   const user = useAuthStore(s => s.user);
   useEffect(() => {
+    // Verify stored JWT hasn't expired. If it has, clear stale auth state
+    // so BackBreadcrumb + ProtectedRoute route correctly on next click.
+    // Cheap (client-side decode, no network) so running on every route
+    // change is fine.
+    checkSessionFreshness();
+
     // Track page view
     const base = import.meta.env.PROD ? 'https://edgerelay-api.ghwmelite.workers.dev' : '';
     fetch(`${base}/v1/analytics/track`, {
@@ -40,6 +48,7 @@ const LandingPage = React.lazy(() => import('@/pages/LandingPage').then(m => ({ 
 const DashboardPage = React.lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AccountsPage = React.lazy(() => import('@/pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const SignalLogPage = React.lazy(() => import('@/pages/SignalLogPage').then(m => ({ default: m.SignalLogPage })));
+const ChartSagePage = React.lazy(() => import('@/pages/ChartSagePage').then(m => ({ default: m.ChartSagePage })));
 const BillingPage = React.lazy(() => import('@/pages/BillingPage').then(m => ({ default: m.BillingPage })));
 const BillingCallbackPage = React.lazy(() => import('@/pages/BillingCallbackPage').then(m => ({ default: m.BillingCallbackPage })));
 const DownloadsPage = React.lazy(() => import('@/pages/DownloadsPage').then(m => ({ default: m.DownloadsPage })));
@@ -76,6 +85,10 @@ const PipCalculatorPage = React.lazy(() => import('@/pages/tools/PipCalculatorPa
 const PositionSizeCalculatorPage = React.lazy(() => import('@/pages/tools/PositionSizeCalculatorPage').then(m => ({ default: m.PositionSizeCalculatorPage })));
 const RiskRewardCalculatorPage = React.lazy(() => import('@/pages/tools/RiskRewardCalculatorPage').then(m => ({ default: m.RiskRewardCalculatorPage })));
 const ICCStudioPage = React.lazy(() => import('@/pages/ICCStudioPage').then(m => ({ default: m.ICCStudioPage })));
+const BiasEnginePage = React.lazy(() => import('@/pages/BiasEnginePage').then(m => ({ default: m.BiasEnginePage })));
+const BiasAssetPage = React.lazy(() => import('@/pages/BiasAssetPage').then(m => ({ default: m.BiasAssetPage })));
+const TrackRecordPage = React.lazy(() => import('@/pages/TrackRecordPage').then(m => ({ default: m.TrackRecordPage })));
+const BiasBacktestPage = React.lazy(() => import('@/pages/BiasBacktestPage').then(m => ({ default: m.BiasBacktestPage })));
 const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m => ({ default: m.TradeGoldPage })));
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
@@ -124,12 +137,26 @@ function ReferralCapture() {
   return null;
 }
 
+/** Global floating bell icon — top-right of viewport, shown on every
+ *  route including public pages like /bias/:symbol. Component internally
+ *  returns null when the user isn't signed in, so anonymous visitors
+ *  still see nothing. z-index sits below modal backdrops (50) so dialogs
+ *  still cover it if needed. */
+function GlobalAlertBasket() {
+  return (
+    <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-30 pointer-events-auto">
+      <BiasAlertBasket />
+    </div>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
       <ReferralCapture />
       <InstallPrompt />
       <PageTracker />
+      <GlobalAlertBasket />
       <Suspense fallback={
         <div className="flex items-center justify-center min-h-screen bg-terminal-bg">
           <div className="flex items-center gap-3 text-terminal-muted">
@@ -156,6 +183,10 @@ function App() {
         <Route path="/pass-prop-firm-challenge" element={<PropFirmChallengePage />} />
         <Route path="/markets" element={<MarketPulsePage />} />
         <Route path="/icc-studio" element={<ICCStudioPage />} />
+        <Route path="/bias" element={<BiasEnginePage />} />
+        <Route path="/bias/backtest" element={<BiasBacktestPage />} />
+        <Route path="/bias/:symbol" element={<BiasAssetPage />} />
+        <Route path="/track-record" element={<TrackRecordPage />} />
         <Route path="/tools/pip-calculator" element={<PipCalculatorPage />} />
         <Route path="/tools/position-size-calculator" element={<PositionSizeCalculatorPage />} />
         <Route path="/tools/risk-reward-calculator" element={<RiskRewardCalculatorPage />} />
@@ -177,6 +208,7 @@ function App() {
           <Route path="/risk" element={<RiskDashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/signals" element={<SignalLogPage />} />
+          <Route path="/chartsage" element={<ChartSagePage />} />
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/journal/:accountId/:dealTicket" element={<JournalTradeDetailPage />} />
           <Route path="/app/firms" element={<FirmDirectoryPage />} />

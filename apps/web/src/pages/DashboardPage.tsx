@@ -34,6 +34,7 @@ import { MarketIntelWidget } from '@/components/dashboard/MarketIntelWidget';
 import { CommunityPulseWidget } from '@/components/dashboard/CommunityPulseWidget';
 import { FlightCheckWidget } from '@/components/dashboard/FlightCheckWidget';
 import { StrategyGenomeWidget } from '@/components/dashboard/StrategyGenomeWidget';
+import { MarketBiasStrip } from '@/components/dashboard/MarketBiasStrip';
 import { useJournalStore } from '@/stores/journal';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
@@ -726,6 +727,9 @@ export function DashboardPage() {
         <MarketHoursWidget />
         <MarketIntelWidget />
       </div>
+
+      {/* ── ICC Market Bias Strip (4H) ────────────────────────── */}
+      <MarketBiasStrip />
 
       {/* ── Pre-Trade Flight Check ────────────────────────────── */}
       <FlightCheckWidget />

@@ -499,6 +499,7 @@ export interface NotificationPreferences {
   morning_brief: boolean;
   news_alerts: boolean;
   session_alerts: boolean;
+  icc_brief: boolean;
 }
 
 export interface TelegramStatus {

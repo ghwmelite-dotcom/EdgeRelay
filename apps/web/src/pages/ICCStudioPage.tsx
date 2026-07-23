@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Play, Pause, SkipForward, RotateCcw, ChevronRight, TrendingUp,
   TrendingDown, X as XIcon, Eye, EyeOff, Clock, CheckCircle2,
-  ArrowUp, ArrowDown, Crosshair, Sparkles, Flame, ScanSearch,
-  Volume2, VolumeX, Keyboard, Bookmark,
+  ArrowUp, ArrowDown, Crosshair, Sparkles, Flame, ScanSearch, ArrowLeft,
+  Volume2, VolumeX, Keyboard, Bookmark, Zap, BookOpen, Lock, GraduationCap, Shield,
 } from 'lucide-react';
 import { useICCStudioStore, type ICCMark } from '@/stores/iccStudio';
 import { ICCTimeframeGrid } from '@/components/practice/icc/ICCTimeframeGrid';
@@ -19,12 +19,21 @@ import { ICCKeyboardHelp } from '@/components/practice/icc/ICCKeyboardHelp';
 import { ICCBookmarkList, type BookmarkEntry } from '@/components/practice/icc/ICCBookmarks';
 import { ICCRecommendations } from '@/components/practice/icc/ICCRecommendations';
 import { ICCSessionSummary } from '@/components/practice/icc/ICCSessionSummary';
+import { ICCFlashDrills } from '@/components/practice/icc/ICCFlashDrills';
+import { ICCPatternLibrary } from '@/components/practice/icc/ICCPatternLibrary';
+import { ICCLessonLibrary } from '@/components/practice/icc/ICCLessonLibrary';
+import { ICCRulesCards } from '@/components/practice/icc/ICCRulesCards';
+import { ICCComparisonView } from '@/components/practice/icc/ICCComparisonView';
+import { ICCMistakeReplay } from '@/components/practice/icc/ICCMistakeReplay';
+import { ICCGuidedWalkthrough } from '@/components/practice/icc/ICCGuidedWalkthrough';
+import { ICCCommentary } from '@/components/practice/icc/ICCCommentary';
+import { getGatingInfo } from '@/lib/icc-gating';
 import { useICCKeyboardShortcuts } from '@/hooks/useICCKeyboardShortcuts';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { playTick, playTradeOpen, playTradeClose, playSuccess, playFail, playBookmark, isMuted, toggleMute } from '@/lib/icc-sounds';
 import { ICC_SCENARIOS } from '@/data/icc-scenarios';
 import { scoreICCAttempt } from '@/lib/icc-scoring-engine';
-import { Layout, Columns2, Square } from 'lucide-react';
+import { Layout, Columns2, Square, Compass } from 'lucide-react';
 import { type Timeframe } from '@/lib/icc-candle-generator';
 import { calculatePnl, getPipMultiplier } from '@/lib/chart-simulator-engine';
 
@@ -41,6 +50,16 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 export function ICCStudioPage() {
   const store = useICCStudioStore();
+  // Asset deep-link (e.g., ?asset=XAUUSD from the Bias Engine) — filters
+  // the scenario picker to instruments matching the query. Keeps the two
+  // tools feeling like one product.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const assetFilter = (searchParams.get('asset') || '').toUpperCase() || null;
+  const clearAssetFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('asset');
+    setSearchParams(next);
+  };
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [slPips, setSlPips] = useState('25');
   const [tpPips, setTpPips] = useState('50');
@@ -64,6 +83,13 @@ export function ICCStudioPage() {
   const [bookmarks, setBookmarks] = useState<BookmarkEntry[]>([]);
   // Enhancement 4: Mobile
   const isMobile = useMediaQuery('(max-width: 767px)');
+  // Mastery features
+  const [showFlashDrills, setShowFlashDrills] = useState(false);
+  const [showPatternLibrary, setShowPatternLibrary] = useState(false);
+  const [showLessons, setShowLessons] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [guidedMode, setGuidedMode] = useState(false);
+  const [commentaryEnabled, setCommentaryEnabled] = useState(true);
 
   const handleTutorialComplete = () => {
     setShowTutorial(false);
@@ -160,23 +186,69 @@ export function ICCStudioPage() {
             <h1 className="text-2xl font-bold text-white font-display">ICC Practice Studio</h1>
           </div>
           <p className="text-sm text-terminal-muted">Master Indication, Correction, Continuation across 4 timeframes. Practice on high-volume assets during optimal sessions.</p>
+
+          {/* Cross-link into the live Bias Engine — turns training into a
+              closed loop: practice the pattern, then read it live. */}
+          <Link
+            to={assetFilter ? `/bias/${assetFilter.toLowerCase()}` : '/bias'}
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-neon-cyan/25 bg-neon-cyan/[0.05] px-3 py-1.5 text-[11px] font-semibold text-neon-cyan hover:bg-neon-cyan/15 transition-colors"
+          >
+            <Compass size={12} />
+            See live 4H + 1H bias
+            {assetFilter ? ` on ${assetFilter}` : ' on 5 assets'}
+            <ChevronRight size={11} />
+          </Link>
         </div>
 
         {/* Mode selector */}
         <div className="animate-fade-in-up flex gap-2 flex-wrap" style={{ animationDelay: '40ms' }}>
           <button onClick={() => setShowTutorial(true)}
-            className="flex items-center gap-2 rounded-xl border border-neon-amber/25 bg-neon-amber/[0.06] px-4 py-2.5 text-[12px] font-semibold text-neon-amber hover:bg-neon-amber/10 transition-all cursor-pointer">
-            <Sparkles size={14} /> Replay Tutorial
+            className="flex items-center gap-2 rounded-xl border border-neon-amber/25 bg-neon-amber/[0.06] px-3 py-2 text-[11px] font-semibold text-neon-amber hover:bg-neon-amber/10 transition-all cursor-pointer">
+            <Sparkles size={13} /> Tutorial
+          </button>
+          <button onClick={() => { setShowFlashDrills(!showFlashDrills); setShowPatternLibrary(false); setShowLessons(false); setShowRules(false); }}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition-all cursor-pointer ${
+              showFlashDrills ? 'border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan' : 'border-neon-cyan/25 bg-neon-cyan/[0.06] text-neon-cyan hover:bg-neon-cyan/10'
+            }`}>
+            <Zap size={13} /> Flash Drills
+          </button>
+          <button onClick={() => { setShowPatternLibrary(!showPatternLibrary); setShowFlashDrills(false); setShowLessons(false); setShowRules(false); }}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition-all cursor-pointer ${
+              showPatternLibrary ? 'border-neon-purple/40 bg-neon-purple/15 text-neon-purple' : 'border-neon-purple/25 bg-neon-purple/[0.06] text-neon-purple hover:bg-neon-purple/10'
+            }`}>
+            <BookOpen size={13} /> Patterns
+          </button>
+          <button onClick={() => { setShowLessons(!showLessons); setShowFlashDrills(false); setShowPatternLibrary(false); setShowRules(false); }}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition-all cursor-pointer ${
+              showLessons ? 'border-neon-green/40 bg-neon-green/15 text-neon-green' : 'border-neon-green/25 bg-neon-green/[0.06] text-neon-green hover:bg-neon-green/10'
+            }`}>
+            <GraduationCap size={13} /> Lessons
+          </button>
+          <button onClick={() => { setShowRules(!showRules); setShowFlashDrills(false); setShowPatternLibrary(false); setShowLessons(false); }}
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition-all cursor-pointer ${
+              showRules ? 'border-neon-amber/40 bg-neon-amber/15 text-neon-amber' : 'border-neon-amber/25 bg-neon-amber/[0.06] text-neon-amber hover:bg-neon-amber/10'
+            }`}>
+            <Shield size={13} /> Rules
           </button>
           <button onClick={() => setShowStreak(!showStreak)}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[12px] font-semibold transition-all cursor-pointer ${
-              showStreak
-                ? 'border-neon-amber/40 bg-neon-amber/15 text-neon-amber'
-                : 'border-neon-amber/25 bg-neon-amber/[0.06] text-neon-amber hover:bg-neon-amber/10'
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-semibold transition-all cursor-pointer ${
+              showStreak ? 'border-neon-amber/40 bg-neon-amber/15 text-neon-amber' : 'border-neon-amber/25 bg-neon-amber/[0.06] text-neon-amber hover:bg-neon-amber/10'
             }`}>
-            <Flame size={14} /> Streak Challenge
+            <Flame size={13} /> Streak
           </button>
         </div>
+
+        {/* Flash Drills */}
+        {showFlashDrills && <ICCFlashDrills onClose={() => setShowFlashDrills(false)} />}
+
+        {/* Lessons Library */}
+        {showLessons && <ICCLessonLibrary onClose={() => setShowLessons(false)} />}
+
+        {/* Rules Cards */}
+        {showRules && <ICCRulesCards onClose={() => setShowRules(false)} />}
+
+        {/* Pattern Library */}
+        {showPatternLibrary && <ICCPatternLibrary onClose={() => setShowPatternLibrary(false)} />}
 
         {/* Streak Challenge Panel */}
         {showStreak && <ICCStreakChallenge onClose={() => setShowStreak(false)} />}
@@ -206,33 +278,124 @@ export function ICCStudioPage() {
           </div>
         </div>
 
-        {/* Scenarios */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {ICC_SCENARIOS.map((s, i) => {
-            const dc = DIFFICULTY_COLORS[s.difficulty] || '#00e5ff';
-            return (
-              <button key={s.id} onClick={() => store.selectScenario(s)}
-                className="animate-fade-in-up text-left rounded-2xl border border-terminal-border/40 bg-terminal-card/20 overflow-hidden hover:border-terminal-border-hover transition-all cursor-pointer group"
-                style={{ animationDelay: `${i * 60}ms` }}>
-                <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${dc}60, ${dc}20, transparent)` }} />
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono-nums text-[11px] font-bold text-white">{s.instrument}</span>
-                      <span className="rounded-full border px-2 py-0.5 font-mono-nums text-[9px]" style={{ borderColor: `${dc}30`, color: dc }}>{s.difficulty}</span>
-                    </div>
-                    <div className="flex items-center gap-1 font-mono-nums text-[9px] text-terminal-muted">
-                      <Clock size={10} /> {s.session}
-                    </div>
-                  </div>
-                  <h3 className="font-display text-base font-semibold text-white group-hover:text-neon-cyan transition-colors">{s.name}</h3>
-                  <p className="mt-1 text-[11px] text-terminal-muted">{s.description}</p>
-                  <p className="mt-2 text-[10px] text-slate-500 italic">{s.sessionHours}</p>
+        {/* How It Works — Step by Step Workflow */}
+        <div className="animate-fade-in-up rounded-2xl border border-neon-green/20 bg-neon-green/[0.03] p-5" style={{ animationDelay: '80ms' }}>
+          <h3 className="text-sm font-semibold text-white mb-3">How It Works — Your Workflow</h3>
+          <div className="space-y-3">
+            {[
+              { step: '1', title: 'Pick a scenario below', desc: 'Start with a green "beginner" card. Each scenario is a real market situation frozen in time.', color: '#00ff9d' },
+              { step: '2', title: 'Analyze the 4H chart first', desc: 'Decide the bias — is the trend bullish or bearish? Click "Bullish" or "Bearish" in the marking toolbar.', color: '#b18cff' },
+              { step: '3', title: 'Mark the Indication on 1H', desc: 'Switch to the 1H tab. Click "Indication" in the toolbar, then tap the start and end candles of the impulse move.', color: '#00e5ff' },
+              { step: '4', title: 'Mark the Correction on 15M', desc: 'Switch to 15M. Click "Correction", then tap the start and end of the pullback.', color: '#ffb800' },
+              { step: '5', title: 'Mark the Continuation on 5M', desc: 'Switch to 5M. Click "Continuation", then tap the candle where price resumes the trend — this is your entry.', color: '#00ff9d' },
+              { step: '6', title: 'Press Play and trade it', desc: 'Hit the play button to advance candles. Place a BUY or SELL when you see your entry. Set your SL and TP.', color: '#00e5ff' },
+              { step: '7', title: 'Get scored', desc: 'When the session ends, you\'ll see your grade (A-F) across 5 dimensions. AI Coach gives personalized feedback.', color: '#b18cff' },
+            ].map(s => (
+              <div key={s.step} className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-mono-nums text-[11px] font-bold" style={{ backgroundColor: `${s.color}15`, color: s.color, border: `1px solid ${s.color}30` }}>{s.step}</div>
+                <div>
+                  <p className="text-[12px] font-semibold text-white">{s.title}</p>
+                  <p className="text-[10px] text-terminal-muted mt-0.5">{s.desc}</p>
                 </div>
-              </button>
-            );
-          })}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 rounded-lg border border-neon-green/15 bg-neon-green/[0.04] px-3 py-2">
+            <p className="text-[10px] text-slate-400"><span className="text-neon-green font-semibold">Pro tip:</span> Press <kbd className="inline-flex items-center justify-center min-w-[18px] h-4 rounded border border-terminal-border/30 bg-terminal-bg/80 px-1 font-mono-nums text-[8px] text-neon-cyan mx-0.5">?</kbd> anytime inside the studio to see all keyboard shortcuts. Toggle <span className="text-neon-purple">Ghost Mode</span> (eye icon) to see the correct answer overlaid on the chart.</p>
+          </div>
         </div>
+
+        {/* Scenarios */}
+        {!showFlashDrills && !showPatternLibrary && !showLessons && !showRules && (
+        <div>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-white">Choose a Scenario</h3>
+              {assetFilter && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-neon-cyan/40 bg-neon-cyan/10 px-2 py-0.5 text-[10px] font-semibold text-neon-cyan">
+                  <Compass size={10} />
+                  From live bias · {assetFilter}
+                  <button
+                    onClick={clearAssetFilter}
+                    className="ml-0.5 opacity-70 hover:opacity-100 cursor-pointer"
+                    aria-label="Clear asset filter"
+                  >
+                    <XIcon size={10} />
+                  </button>
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setGuidedMode(!guidedMode)}
+                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer transition-all ${
+                  guidedMode ? 'bg-neon-green/15 border border-neon-green/30 text-neon-green' : 'border border-terminal-border/20 text-terminal-muted hover:text-white'
+                }`}>
+                <GraduationCap size={11} /> {guidedMode ? 'Guided Mode' : 'Free Practice'}
+              </button>
+            </div>
+          </div>
+          {assetFilter && !ICC_SCENARIOS.some((s) => s.instrument === assetFilter) && (
+            <p className="mb-3 text-[11px] text-terminal-muted rounded-lg border border-terminal-border/30 bg-terminal-bg/60 px-3 py-2">
+              No scenarios for <span className="font-mono-nums font-bold text-slate-200">{assetFilter}</span> yet — the closest training fit is shown first.
+              <button onClick={clearAssetFilter} className="ml-2 text-neon-cyan underline underline-offset-2 hover:no-underline cursor-pointer">Show all</button>
+            </p>
+          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            {[...ICC_SCENARIOS].sort((a, b) => {
+              if (!assetFilter) return 0;
+              const aMatch = a.instrument === assetFilter ? 0 : 1;
+              const bMatch = b.instrument === assetFilter ? 0 : 1;
+              return aMatch - bMatch;
+            }).map((s, i) => {
+              const dc = DIFFICULTY_COLORS[s.difficulty] || '#00e5ff';
+              // "START HERE" tracks the original-order first scenario so that
+              // reordering by asset filter doesn't mislead new users into
+              // starting on an advanced scenario they're not ready for.
+              const originalIndex = ICC_SCENARIOS.findIndex((o) => o.id === s.id);
+              const isFirstBeginner = originalIndex === 0;
+              const matchesAsset = assetFilter !== null && s.instrument === assetFilter;
+              const gating = getGatingInfo(s.difficulty);
+              return (
+                <button key={s.id}
+                  onClick={() => !gating.locked && store.selectScenario(s)}
+                  disabled={gating.locked}
+                  className={`animate-fade-in-up text-left rounded-2xl border overflow-hidden transition-all group relative ${
+                    gating.locked ? 'border-terminal-border/20 opacity-60 cursor-not-allowed' :
+                    matchesAsset ? 'border-neon-cyan/40 ring-1 ring-neon-cyan/20 cursor-pointer hover:border-neon-cyan/60' :
+                    isFirstBeginner ? 'border-neon-green/40 ring-1 ring-neon-green/20 cursor-pointer hover:border-terminal-border-hover' : 'border-terminal-border/40 bg-terminal-card/20 cursor-pointer hover:border-terminal-border-hover'
+                  }`}
+                  style={{ animationDelay: `${i * 60}ms` }}>
+                  <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${dc}60, ${dc}20, transparent)` }} />
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono-nums text-[11px] font-bold text-white">{s.instrument}</span>
+                        <span className="rounded-full border px-2 py-0.5 font-mono-nums text-[9px]" style={{ borderColor: `${dc}30`, color: dc }}>{s.difficulty}</span>
+                        {isFirstBeginner && !gating.locked && (
+                          <span className="rounded-full bg-neon-green/15 border border-neon-green/30 px-2 py-0.5 font-mono-nums text-[8px] font-bold text-neon-green animate-pulse">START HERE</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 font-mono-nums text-[9px] text-terminal-muted">
+                        {gating.locked ? <Lock size={10} className="text-terminal-muted" /> : <Clock size={10} />}
+                        {gating.locked ? `${gating.achieved}/${gating.needed} B+` : s.session}
+                      </div>
+                    </div>
+                    <h3 className={`font-display text-base font-semibold ${gating.locked ? 'text-terminal-muted' : 'text-white group-hover:text-neon-cyan'} transition-colors`}>{s.name}</h3>
+                    <p className="mt-1 text-[11px] text-terminal-muted">{s.description}</p>
+                    {gating.locked ? (
+                      <p className="mt-2 text-[10px] text-terminal-muted flex items-center gap-1">
+                        <Lock size={9} /> Score B+ on {gating.needed} {gating.prerequisite} scenarios to unlock
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-[10px] text-slate-500 italic">{s.sessionHours}</p>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        )}
       </div>
     );
   }
@@ -264,6 +427,13 @@ export function ICCStudioPage() {
             <span className="text-neon-cyan">{scenario.name}</span>
           </nav>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => { store.reset(); store.selectScenario(undefined!); setStreakRecorded(false); setDrawings([]); setBookmarks([]); }}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-terminal-border/30 text-terminal-muted hover:text-neon-cyan hover:border-neon-cyan/30 transition-all cursor-pointer"
+              title="Back to scenario selection"
+            >
+              <ArrowLeft size={14} />
+            </button>
             <h2 className="font-display text-lg font-bold text-white">{scenario.instrument}</h2>
             <span className="font-mono-nums text-[11px] text-terminal-muted">{scenario.session}</span>
             <span className="font-mono-nums text-[11px] text-neon-cyan">{progress}%</span>
@@ -383,6 +553,14 @@ export function ICCStudioPage() {
         onCreateDrawing={(drawing) => setDrawings(d => [...d, drawing])}
       />
 
+      {/* Real-Time AI Commentary */}
+      <ICCCommentary
+        candles={store.candles}
+        visibleCounts={{ '4H': store.getVisibleCount('4H'), '1H': store.getVisibleCount('1H'), '15M': store.getVisibleCount('15M'), '5M': store.getVisibleCount('5M') }}
+        tickCount={store.tickCount}
+        enabled={commentaryEnabled && !store.isFinished}
+      />
+
       {/* ICC Marking Toolbar */}
       <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap rounded-xl border border-terminal-border/30 bg-terminal-card/20 px-2 sm:px-3 py-2">
         <span className="font-mono-nums text-[9px] uppercase tracking-wider text-terminal-muted mr-1 hidden sm:inline">Mark:</span>
@@ -496,44 +674,93 @@ export function ICCStudioPage() {
           })}
         </div>
 
-        {/* Stats */}
-        <div className="rounded-xl border border-terminal-border/30 bg-terminal-card/20 p-3 space-y-2">
-          <p className="font-mono-nums text-[9px] uppercase tracking-widest text-terminal-muted">Session Stats</p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Trades', value: String(stats.totalTrades), color: 'text-white' },
-              { label: 'Win Rate', value: `${stats.winRate}%`, color: stats.winRate >= 50 ? 'text-neon-green' : 'text-neon-red' },
-              { label: 'P&L', value: `${stats.totalPnl >= 0 ? '+' : ''}$${stats.totalPnl}`, color: stats.totalPnl >= 0 ? 'text-neon-green' : 'text-neon-red' },
-              { label: 'Avg R:R', value: `${stats.avgRR}R`, color: 'text-neon-cyan' },
-            ].map(s => (
-              <div key={s.label} className="rounded-lg bg-terminal-bg/50 p-2 text-center">
-                <p className={`font-mono-nums text-sm font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-[8px] text-terminal-muted">{s.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ICC marks summary */}
-          <div className="space-y-1 pt-1">
-            <p className="font-mono-nums text-[9px] uppercase tracking-widest text-terminal-muted">ICC Marks</p>
-            <div className="flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${store.biasSelection ? 'bg-neon-cyan' : 'bg-terminal-border/40'}`} />
-              <span className="text-[10px] text-terminal-muted">Bias: {store.biasSelection || '—'}</span>
-            </div>
-            {['indication', 'correction', 'continuation'].map(type => {
-              const mark = store.marks.find(m => m.type === type);
-              const colors: Record<string, string> = { indication: '#00e5ff', correction: '#ffb800', continuation: '#00ff9d' };
+        {/* Workflow Checklist / Guided Walkthrough + Stats */}
+        <div className="rounded-xl border border-terminal-border/30 bg-terminal-card/20 p-3 space-y-3">
+          {/* Guided Walkthrough replaces checklist when active */}
+          {guidedMode && scenario ? (
+            <ICCGuidedWalkthrough
+              marks={store.marks}
+              biasSelection={store.biasSelection}
+              answer={scenario.answer}
+              tradesTaken={stats.totalTrades}
+              isFinished={store.isFinished}
+              onSwitchTimeframe={(tf) => store.setActiveTimeframe(tf)}
+              onPausePlayback={() => { if (store.isPlaying) store.togglePlayback(); }}
+              onShowGhost={(show) => { if (show !== store.showGhost) store.toggleGhost(); }}
+            />
+          ) : (
+          /* Live Workflow Checklist */
+          <div>
+            <p className="font-mono-nums text-[9px] uppercase tracking-widest text-terminal-muted mb-2">Your Next Step</p>
+            {(() => {
+              const hasBias = !!store.biasSelection;
+              const hasInd = store.marks.some(m => m.type === 'indication');
+              const hasCor = store.marks.some(m => m.type === 'correction');
+              const hasCon = store.marks.some(m => m.type === 'continuation');
+              const hasTrade = stats.totalTrades > 0;
+              const steps = [
+                { done: hasBias, label: 'Set bias (4H)', hint: 'Look at the 4H chart. Is it trending up or down? Click Bullish or Bearish above.', tf: '4H', color: '#b18cff' },
+                { done: hasInd, label: 'Mark indication (1H)', hint: 'Switch to 1H tab. Click "Indication", then tap the start and end candle of the impulse move.', tf: '1H', color: '#00e5ff' },
+                { done: hasCor, label: 'Mark correction (15M)', hint: 'Switch to 15M. Click "Correction", then tap the start and end of the pullback.', tf: '15M', color: '#ffb800' },
+                { done: hasCon, label: 'Mark continuation (5M)', hint: 'Switch to 5M. Click "Continuation", then tap the candle where price resumes trend.', tf: '5M', color: '#00ff9d' },
+                { done: hasTrade, label: 'Place a trade', hint: 'Set your SL & TP pips, then click BUY or SELL. Press Play to advance candles.', tf: '', color: '#00e5ff' },
+              ];
+              // Find the current active step (first incomplete)
+              const activeIdx = steps.findIndex(s => !s.done);
               return (
-                <div key={type} className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: mark ? colors[type] : '#151d2880' }} />
-                  <span className="text-[10px] text-terminal-muted capitalize">{type}: {mark ? `${mark.timeframe} [${mark.startIndex}-${mark.endIndex}]` : '—'}</span>
+                <div className="space-y-1.5">
+                  {steps.map((s, i) => {
+                    const isActive = i === activeIdx;
+                    const isPast = i < activeIdx || (activeIdx === -1);
+                    return (
+                      <div key={s.label} className={`rounded-lg px-2.5 py-1.5 transition-all ${isActive ? 'bg-terminal-bg/80 border border-terminal-border/30' : ''}`}>
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full" style={{
+                            backgroundColor: s.done ? `${s.color}20` : isActive ? `${s.color}10` : '#151d2830',
+                            border: `1.5px solid ${s.done ? s.color : isActive ? `${s.color}60` : '#151d2850'}`,
+                          }}>
+                            {s.done && <CheckCircle2 size={10} style={{ color: s.color }} />}
+                            {isActive && <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: s.color }} />}
+                          </div>
+                          <span className={`text-[10px] font-medium ${s.done ? 'text-slate-500 line-through' : isActive ? 'text-white' : 'text-terminal-muted'}`}>{s.label}</span>
+                          {s.tf && isActive && <span className="font-mono-nums text-[8px] rounded px-1 py-0.5" style={{ color: s.color, backgroundColor: `${s.color}12`, border: `1px solid ${s.color}25` }}>{s.tf}</span>}
+                        </div>
+                        {isActive && <p className="text-[9px] text-slate-400 mt-1 ml-6 leading-relaxed">{s.hint}</p>}
+                      </div>
+                    );
+                  })}
+                  {activeIdx === -1 && !store.isFinished && (
+                    <div className="rounded-lg bg-neon-green/[0.06] border border-neon-green/20 px-2.5 py-2 text-center">
+                      <p className="text-[10px] text-neon-green font-semibold">All steps complete!</p>
+                      <p className="text-[9px] text-terminal-muted mt-0.5">Press Play to advance candles and watch your trade.</p>
+                    </div>
+                  )}
                 </div>
               );
-            })}
+            })()}
+          </div>
+          )}
+
+          {/* Session Stats */}
+          <div>
+            <p className="font-mono-nums text-[9px] uppercase tracking-widest text-terminal-muted mb-1.5">Session Stats</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Trades', value: String(stats.totalTrades), color: 'text-white' },
+                { label: 'Win Rate', value: `${stats.winRate}%`, color: stats.winRate >= 50 ? 'text-neon-green' : 'text-neon-red' },
+                { label: 'P&L', value: `${stats.totalPnl >= 0 ? '+' : ''}$${stats.totalPnl}`, color: stats.totalPnl >= 0 ? 'text-neon-green' : 'text-neon-red' },
+                { label: 'Avg R:R', value: `${stats.avgRR}R`, color: 'text-neon-cyan' },
+              ].map(s => (
+                <div key={s.label} className="rounded-lg bg-terminal-bg/50 p-2 text-center">
+                  <p className={`font-mono-nums text-sm font-bold ${s.color}`}>{s.value}</p>
+                  <p className="text-[8px] text-terminal-muted">{s.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           {store.isFinished && (
-            <div className="mt-2 text-center">
+            <div className="text-center">
               <p className="text-[10px] text-terminal-muted mb-2">Session complete — see score below</p>
             </div>
           )}
@@ -574,6 +801,20 @@ export function ICCStudioPage() {
             totalPnl={stats.totalPnl}
             onRetry={() => { store.reset(); setStreakRecorded(false); setDrawings([]); setBookmarks([]); }}
             onNextScenario={() => { store.reset(); store.selectScenario(undefined!); setStreakRecorded(false); setDrawings([]); setBookmarks([]); }}
+          />
+
+          {/* Mistake Replay — for weak dimensions */}
+          <ICCMistakeReplay
+            score={scoreICCAttempt(store.marks, store.biasSelection, scenario.answer, stats.totalTrades, stats.totalPnl)}
+            scenario={scenario}
+            candles={store.candles}
+          />
+
+          {/* Side-by-Side Comparison */}
+          <ICCComparisonView
+            marks={store.marks}
+            biasSelection={store.biasSelection}
+            answer={scenario.answer}
           />
 
           {/* Session Summary Card */}

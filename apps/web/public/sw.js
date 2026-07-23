@@ -1,7 +1,12 @@
 // TradeMetrics Pro Service Worker
-// Caches Academy lessons, static assets, and app shell for offline access
+// 1. Caches Academy lessons, static assets, and app shell for offline access
+// 2. Handles Web Push notifications for the ICC Bias Engine
+//
+// Bumping the version invalidates the cache and forces re-activation in
+// every client, which is what we want after adding the push handlers —
+// ensures old registered copies of sw.js without push support get replaced.
 
-const CACHE_NAME = 'tm-pro-v1';
+const CACHE_NAME = 'tm-pro-v2';
 const APP_SHELL = [
   '/',
   '/academy',
@@ -80,4 +85,47 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+});
+
+// ── Web Push — ICC Bias Engine notifications ─────────────────
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let data;
+  try { data = event.data.json(); }
+  catch { data = { title: 'TradeMetrics Pro', body: event.data.text() }; }
+
+  const title = data.title || 'TradeMetrics Pro';
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/icon-192.png',
+    badge: data.badge || '/favicon-32x32.png',
+    tag: data.tag || 'bias-alert',
+    renotify: true,
+    requireInteraction: false,
+    data: { url: data.url || 'https://trademetricspro.com/bias' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || 'https://trademetricspro.com/bias';
+
+  event.waitUntil((async () => {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      try {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.origin === new URL(targetUrl).origin) {
+          await client.focus();
+          if ('navigate' in client) await client.navigate(targetUrl);
+          return;
+        }
+      } catch { /* ignore */ }
+    }
+    if (self.clients.openWindow) {
+      await self.clients.openWindow(targetUrl);
+    }
+  })());
 });

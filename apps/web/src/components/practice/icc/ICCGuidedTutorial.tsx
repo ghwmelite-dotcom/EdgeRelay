@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   ArrowRight, ArrowLeft, CheckCircle2, Eye, TrendingUp,
-  TrendingDown, Clock, Target, ChevronRight, Sparkles,
+  TrendingDown, Clock, Target, ChevronRight, Sparkles, Play, Pause,
+  Maximize2,
 } from 'lucide-react';
 
 interface Props {
@@ -162,16 +163,36 @@ export function ICCGuidedTutorial({ onComplete, onSkip }: Props) {
   // Simple visual indicators per step
   const VISUALS: Record<string, React.ReactNode> = {
     intro: (
-      <div className="flex items-center justify-center gap-4 py-4">
-        {['Indication', 'Correction', 'Continuation'].map((label, i) => (
-          <div key={label} className="flex flex-col items-center gap-2">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl border text-lg font-black"
-              style={{ borderColor: ['#00e5ff30', '#ffb80030', '#00ff9d30'][i], backgroundColor: ['#00e5ff10', '#ffb80010', '#00ff9d10'][i], color: ['#00e5ff', '#ffb800', '#00ff9d'][i] }}>
-              {i + 1}
+      <div className="space-y-4">
+        <div className="flex items-center justify-center gap-4 py-4">
+          {['Indication', 'Correction', 'Continuation'].map((label, i) => (
+            <div key={label} className="flex flex-col items-center gap-2">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl border text-lg font-black"
+                style={{ borderColor: ['#00e5ff30', '#ffb80030', '#00ff9d30'][i], backgroundColor: ['#00e5ff10', '#ffb80010', '#00ff9d10'][i], color: ['#00e5ff', '#ffb800', '#00ff9d'][i] }}>
+                {i + 1}
+              </div>
+              <span className="text-[10px] font-semibold" style={{ color: ['#00e5ff', '#ffb800', '#00ff9d'][i] }}>{label}</span>
             </div>
-            <span className="text-[10px] font-semibold" style={{ color: ['#00e5ff', '#ffb800', '#00ff9d'][i] }}>{label}</span>
+          ))}
+        </div>
+        {/* Video lesson */}
+        <div className="rounded-xl border border-neon-cyan/20 overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-neon-cyan/10 px-3 py-2 bg-neon-cyan/[0.04]">
+            <Play size={12} className="text-neon-cyan" />
+            <span className="text-[11px] font-semibold text-white">ICC Trading 101 — Video Lesson</span>
+            <span className="font-mono-nums text-[9px] text-terminal-muted ml-auto">Watch before practicing</span>
           </div>
-        ))}
+          <video
+            controls
+            preload="metadata"
+            className="w-full bg-black"
+            style={{ maxHeight: 320 }}
+            poster=""
+          >
+            <source src="https://pub-9ca7d2a471044afab4c94d1734abd027.r2.dev/videos/icc-trading-101.mp4" type="video/mp4" />
+            Your browser does not support video playback.
+          </video>
+        </div>
       </div>
     ),
     trend: (

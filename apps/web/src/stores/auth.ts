@@ -89,10 +89,31 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
-// Restore API token from persisted state on module load
+// Restore API token from persisted state on module load, but only if the
+// JWT is still unexpired. Running this check synchronously before React
+// mounts prevents a brief render with stale `isAuthenticated=true` that
+// would cause BackBreadcrumb/ProtectedRoute to route users into the
+// login flow only to bounce them back.
 const persisted = useAuthStore.getState();
 if (persisted.token) {
-  api.setToken(persisted.token);
+  let valid = false;
+  try {
+    const parts = persisted.token.split('.');
+    if (parts.length === 3) {
+      const b64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+      const payload = JSON.parse(atob(padded)) as { exp?: number };
+      const nowSec = Math.floor(Date.now() / 1000);
+      valid = !payload.exp || payload.exp > nowSec;
+    }
+  } catch { /* malformed → invalid */ }
+  if (valid) {
+    api.setToken(persisted.token);
+  } else {
+    // Expired or malformed — clear stale state silently so the UI renders
+    // the logged-out experience from the first paint.
+    useAuthStore.setState({ user: null, token: null, isAuthenticated: false });
+  }
 }
 
 // Wire auto-refresh callbacks

@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shield, ShieldCheck, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Brain, Heart, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown, Gift, GraduationCap, Users } from 'lucide-react';
+import { LayoutDashboard, Shield, ShieldCheck, AlertTriangle, ArrowLeftRight, Activity, BookOpen, Building2, Dice5, Download, BarChart3, Brain, Heart, Gauge, Settings, CreditCard, LogOut, Menu, X, Send, ExternalLink, Loader2, Store, FlaskConical, Radio, Crown, Gift, GraduationCap, Users, CandlestickChart } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { Badge } from '@/components/ui/Badge';
 import { useNotificationStore } from '@/stores/notifications';
+// NOTE: BiasAlertBasket is mounted globally in main.tsx so it shows on
+// public routes too (e.g. /bias/:symbol). Don't re-mount it here or it
+// would render twice for protected pages.
 
 const ADMIN_EMAILS = ['oh84dev@gmail.com'];
 
@@ -20,6 +23,7 @@ const NAV_GROUPS = [
       { label: 'Command Center', icon: Shield, to: '/command-center' },
       { label: 'Risk Monitor', icon: AlertTriangle, to: '/risk' },
       { label: 'Signal Log', icon: Activity, to: '/signals' },
+      { label: 'ChartSage', icon: CandlestickChart, to: '/chartsage' },
       { label: 'Discipline', icon: Brain, to: '/discipline' },
       { label: 'Community', icon: Users, to: '/community' },
       { label: 'Sage Counselor', icon: Heart, to: '/counselor', highlight: true, highlightColor: 'purple' },
@@ -327,6 +331,8 @@ export function AppLayout() {
             <span className="text-neon-cyan font-black glow-text-cyan logo-shimmer">METRICS</span>
             <span className="ml-1 text-xs font-semibold text-terminal-muted uppercase tracking-widest">Pro</span>
           </span>
+          {/* BiasAlertBasket mounts globally in main.tsx — appears in the
+              fixed top-right slot on all routes including public ones. */}
         </header>
 
         {/* Page content */}

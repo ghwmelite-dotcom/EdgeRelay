@@ -17,6 +17,17 @@
   <url><loc>https://trademetricspro.com/trade-indices</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://trademetricspro.com/trade-oil</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 
+  <!-- ICC Market Bias Engine — per-asset pages -->
+  <url><loc>https://trademetricspro.com/bias</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/bias/xauusd</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/bias/eurusd</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/bias/gbpusd</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/bias/nas100</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/bias/us30</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/track-record</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://trademetricspro.com/bias/backtest</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://trademetricspro.com/icc-studio</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+
   <!-- Blog Posts -->
   <url><loc>https://trademetricspro.com/blog/pass-prop-firm-challenge-guide</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://trademetricspro.com/blog/backtesting-guide-2026</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>

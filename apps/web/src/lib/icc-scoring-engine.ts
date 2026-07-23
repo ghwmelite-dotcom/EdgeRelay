@@ -23,7 +23,7 @@ export interface ICCScore {
   overallFeedback: string;
 }
 
-function overlapPercentage(a: [number, number], b: [number, number]): number {
+export function overlapPercentage(a: [number, number], b: [number, number]): number {
   const start = Math.max(a[0], b[0]);
   const end = Math.min(a[1], b[1]);
   if (start > end) return 0;

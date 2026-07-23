@@ -612,7 +612,7 @@ ExecutionResult ExecuteSignal(Signal &signal, double lot)
    execResult.error_message   = "";
    execResult.retcode         = 0;
 
-   string comment = COMMENT_PREFIX + signal.signal_id;
+   string comment = COMMENT_PREFIX + IntegerToString(signal.ticket) + ":" + signal.signal_id;
 
    switch(signal.action)
      {
@@ -755,10 +755,12 @@ ExecutionResult ExecuteModify(Signal &signal)
    execResult.error_message   = "";
    execResult.retcode         = 0;
 
-   //--- Find position
+   //--- Find position: try magic → master ticket in comment → signal_id in comment
    ulong posTicket = FindPositionByMagic(signal.magic_number);
    if(posTicket == 0)
-      posTicket = FindPositionByComment(COMMENT_PREFIX + IntegerToString(signal.ticket));
+      posTicket = FindPositionByMasterTicket(signal.ticket);
+   if(posTicket == 0)
+      posTicket = FindPositionByComment(COMMENT_PREFIX + signal.signal_id);
 
    if(posTicket == 0)
      {
@@ -821,10 +823,12 @@ ExecutionResult ExecuteClose(Signal &signal)
    execResult.error_message   = "";
    execResult.retcode         = 0;
 
-   //--- Find position
+   //--- Find position: try magic → master ticket in comment → signal_id in comment
    ulong posTicket = FindPositionByMagic(signal.magic_number);
    if(posTicket == 0)
-      posTicket = FindPositionByComment(COMMENT_PREFIX + IntegerToString(signal.ticket));
+      posTicket = FindPositionByMasterTicket(signal.ticket);
+   if(posTicket == 0)
+      posTicket = FindPositionByComment(COMMENT_PREFIX + signal.signal_id);
 
    if(posTicket == 0)
      {
@@ -903,10 +907,12 @@ ExecutionResult ExecutePartialClose(Signal &signal)
    execResult.error_message   = "";
    execResult.retcode         = 0;
 
-   //--- Find position
+   //--- Find position: try magic → master ticket in comment → signal_id in comment
    ulong posTicket = FindPositionByMagic(signal.magic_number);
    if(posTicket == 0)
-      posTicket = FindPositionByComment(COMMENT_PREFIX + IntegerToString(signal.ticket));
+      posTicket = FindPositionByMasterTicket(signal.ticket);
+   if(posTicket == 0)
+      posTicket = FindPositionByComment(COMMENT_PREFIX + signal.signal_id);
 
    if(posTicket == 0)
      {
@@ -1360,6 +1366,30 @@ ulong FindPositionByComment(string tag)
 
       string comment = PositionGetString(POSITION_COMMENT);
       if(StringFind(comment, tag) >= 0)
+         return ticket;
+     }
+
+   return 0;
+  }
+
+//+------------------------------------------------------------------+
+//| Find position by master ticket embedded in comment (ER:ticket:…)  |
+//+------------------------------------------------------------------+
+ulong FindPositionByMasterTicket(long masterTicket)
+  {
+   if(masterTicket == 0)
+      return 0;
+
+   string tag = COMMENT_PREFIX + IntegerToString(masterTicket) + ":";
+
+   for(int i = PositionsTotal() - 1; i >= 0; i--)
+     {
+      ulong ticket = PositionGetTicket(i);
+      if(ticket == 0)
+         continue;
+
+      string comment = PositionGetString(POSITION_COMMENT);
+      if(StringFind(comment, tag) == 0)
          return ticket;
      }
 

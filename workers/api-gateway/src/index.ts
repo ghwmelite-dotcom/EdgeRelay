@@ -24,11 +24,18 @@ import { admin } from './routes/admin.js';
 import { referral } from './routes/referral.js';
 import { counselor } from './routes/counselor.js';
 import { marketPulse } from './routes/marketPulse.js';
-import { social } from './routes/social.js';
 import { bias } from './routes/bias.js';
 import { biasSage } from './routes/biasSage.js';
+import { orb } from './routes/orb.js';
+import { biasAlerts } from './routes/biasAlerts.js';
+import { pushConfig, pushSubscriptions } from './routes/pushSubscriptions.js';
+import { runBiasCron } from './bias/cron.js';
+import { runDailyBrief } from './bias/brief.js';
+import { runOrbCron } from './orb/cron.js';
+import { social } from './routes/social.js';
 import { founderAnalytics } from './routes/founderAnalytics.js';
 import { academy } from './routes/academy.js';
+import { chartsage } from './routes/chartsage.js';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -107,6 +114,10 @@ app.route('/v1/strategy-hub', strategyHubPublic);
 app.route('/v1/market-pulse', marketPulse);
 app.route('/v1/bias/sage', biasSage);
 app.route('/v1/bias', bias);
+app.route('/v1/orb', orb);
+// Note: mounted at /v1/push-config to avoid collision with the protected
+// /v1/push/* routes mounted below.
+app.route('/v1/push-config', pushConfig);
 app.route('/v1/social', social); // Public social feed (GET /feed is open, POST requires auth via social.ts)
 app.post('/v1/analytics/track', async (c) => {
   // Public tracking endpoint — fire-and-forget
@@ -139,7 +150,10 @@ protectedApp.route('/analytics', analytics);
 protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
+protectedApp.route('/bias-alerts', biasAlerts);
+protectedApp.route('/push', pushSubscriptions);
 protectedApp.route('/academy', academy);
+protectedApp.route('/chartsage', chartsage);
 protectedApp.route('/founder-analytics', founderAnalytics);
 // social routes mounted publicly above (auth checked per-endpoint in social.ts)
 
@@ -153,4 +167,23 @@ app.notFound((c) => {
   );
 });
 
-export default app;
+// Scheduled handler runs every 15 min — see wrangler.toml [[triggers]].
+// Keeps the bias engine history table up to date and drives phase-change
+// Telegram alerts. Fetch-time requests remain fully independent.
+export default {
+  fetch: app.fetch,
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    // Dispatch on cron expression so we don't conflate the two triggers.
+    if (controller.cron === '0 7 * * *') {
+      await runDailyBrief(env, ctx);
+    } else {
+      // Both the ICC bias cron and the ORB cron run on the */15 schedule.
+      // They share the same tick but do independent work against D1 +
+      // Twelve Data KV cache, so we fire them in parallel.
+      await Promise.all([
+        runBiasCron(env, ctx),
+        runOrbCron(env, ctx),
+      ]);
+    }
+  },
+} satisfies ExportedHandler<Env>;

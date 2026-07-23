@@ -1,10 +1,37 @@
 import { useState, useEffect } from 'react';
-import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package } from 'lucide-react';
+import { Upload, Download, BookOpen, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Package, FileCode2, KeyRound, RefreshCw, Check, Copy } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { API_BASE } from '@/lib/constants';
+import { api } from '@/lib/api';
 import { useAccountsStore, type Account } from '@/stores/accounts';
 import { useAuthStore } from '@/stores/auth';
+
+/** Server-side ZIP filenames, keyed by EA card type. */
+const SOURCE_ZIP_NAMES: Record<'master' | 'follower' | 'journal', string> = {
+  master: 'EdgeRelay_Master_Source.zip',
+  follower: 'EdgeRelay_Follower_Source.zip',
+  journal: 'TradeJournal_Sync_Source.zip',
+};
+
+/** Shared "where to find your credentials" callout, reused across the config steps. */
+const credentialsHint = (
+  <div className="flex items-start gap-2 rounded-xl border border-neon-cyan/20 bg-neon-cyan/5 px-3 py-2.5">
+    <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-neon-cyan" />
+    <div className="space-y-1.5 text-xs text-slate-300">
+      <p className="font-semibold text-neon-cyan">Where to find these</p>
+      <p>
+        Open the{' '}
+        <a href="/accounts" className="text-neon-cyan hover:underline font-medium">Copier</a>{' '}
+        page. On each account card, your <strong>Account ID</strong> and <strong>API Key</strong> are shown with a one-tap <strong>Copy</strong> button.
+      </p>
+      <p>
+        Your <strong>API Secret</strong> is revealed <strong>only once</strong> &mdash; on the credentials screen shown immediately after you create the account. If you did not save it, click <strong>Regenerate keys</strong> on the account card to issue a fresh API Key + Secret (again shown once).
+      </p>
+    </div>
+  </div>
+);
 
 /* ------------------------------------------------------------------ */
 /*  Setup Guide Data                                                   */
@@ -30,7 +57,7 @@ const setupSteps: SetupStep[] = [
         </li>
         <li className="flex items-start gap-2">
           <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-neon-green" />
-          API Key and Secret from the Accounts page
+          API Key, API Secret and Account ID from the Copier page (see Step 4)
         </li>
       </ul>
     ),
@@ -42,7 +69,7 @@ const setupSteps: SetupStep[] = [
         <p className="text-sm text-slate-300">Enable WebRequest in your MT5 terminal:</p>
         <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
           <li>
-            Go to <span className="font-mono-nums text-neon-cyan">Tools \u2192 Options \u2192 Expert Advisors</span>
+            Go to <span className="font-mono-nums text-neon-cyan">Tools &rarr; Options &rarr; Expert Advisors</span>
           </li>
           <li>
             Check <span className="font-mono-nums text-neon-cyan">"Allow WebRequest for listed URL"</span>
@@ -131,7 +158,7 @@ const setupSteps: SetupStep[] = [
             <tbody>
               <tr className="data-row border-b border-terminal-border/50">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Key</td>
-                <td className="px-4 py-2.5 text-slate-300">Your API key from dashboard</td>
+                <td className="px-4 py-2.5 text-slate-300">From the Copier page (Copy button)</td>
                 <td className="px-4 py-2.5 font-mono-nums text-slate-400">er_abc123...</td>
               </tr>
               <tr className="data-row border-b border-terminal-border/50">
@@ -147,11 +174,12 @@ const setupSteps: SetupStep[] = [
               <tr className="data-row">
                 <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">AccountID</td>
                 <td className="px-4 py-2.5 text-slate-300">Your master account ID</td>
-                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(from dashboard)</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(Copier page)</td>
               </tr>
             </tbody>
           </table>
         </div>
+        {credentialsHint}
       </div>
     ),
   },
@@ -195,16 +223,102 @@ const setupSteps: SetupStep[] = [
     ),
   },
   {
-    title: 'Step 6: Verify Connection',
+    title: 'Step 6: Install & Configure TradeJournal Sync EA',
     content: (
-      <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
-        <li>
-          Check the on-chart display panel \u2014 <span className="text-neon-green">green dot</span> = connected
-        </li>
-        <li>Send a test trade on master account</li>
-        <li>Verify it appears in the Signal Log on the dashboard</li>
-        <li>Check follower MT5 for the copied trade</li>
-      </ol>
+      <div className="space-y-3">
+        <div className="flex items-start gap-2 rounded-xl border border-neon-purple/20 bg-neon-purple/5 px-3 py-2">
+          <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-neon-purple" />
+          <p className="text-xs text-slate-300">
+            The TradeJournal Sync EA is <strong>independent of copy trading</strong> &mdash; attach it to <strong>any</strong> MT5 account (run it standalone; no master or follower needed). It captures every trade on that account &mdash; in real time, plus a one-time history catch-up &mdash; and streams them to your dashboard Journal.
+          </p>
+        </div>
+
+        <p className="text-sm text-slate-300">
+          Install it exactly like the other EAs (<span className="font-mono-nums text-neon-cyan">TradeJournal_Sync.mq5</span> plus the same Include files from Step 3), then compile and drag it onto <strong>one chart per account</strong>. A single instance captures the whole account &mdash; you do not need it on every symbol.
+        </p>
+
+        <p className="text-sm text-slate-300">Set the following input parameters when attaching the EA:</p>
+        <div className="glass rounded-2xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-terminal-surface/80">
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Parameter</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Description</th>
+                <th className="px-4 py-2.5 text-left text-[10px] font-medium uppercase tracking-[0.15em] text-terminal-muted">Example / Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Key</td>
+                <td className="px-4 py-2.5 text-slate-300">API key from the Accounts page <span className="text-neon-amber">(required)</span></td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">er_abc123...</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Secret</td>
+                <td className="px-4 py-2.5 text-slate-300">API secret <span className="text-neon-amber">(required)</span></td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(shown once at creation)</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">API_Endpoint</td>
+                <td className="px-4 py-2.5 text-slate-300">Journal sync server</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400 break-all">https://edgerelay-journal-sync.ghwmelite.workers.dev</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">AccountID</td>
+                <td className="px-4 py-2.5 text-slate-300">The account to journal <span className="text-neon-amber">(required)</span></td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">(from dashboard)</td>
+              </tr>
+              <tr className="data-row border-b border-terminal-border/50">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">SyncIntervalSeconds</td>
+                <td className="px-4 py-2.5 text-slate-300">History catch-up scan interval (seconds)</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">60</td>
+              </tr>
+              <tr className="data-row">
+                <td className="px-4 py-2.5 font-mono-nums text-neon-cyan">HeartbeatIntervalMs</td>
+                <td className="px-4 py-2.5 text-slate-300">Connection heartbeat interval (ms)</td>
+                <td className="px-4 py-2.5 font-mono-nums text-slate-400">30000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {credentialsHint}
+
+        <div className="flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-neon-amber" />
+          <p className="text-xs text-neon-amber">
+            <strong>API_Key</strong>, <strong>API_Secret</strong>, and <strong>AccountID</strong> are required &mdash; the EA refuses to start without them. Make sure the <span className="font-mono-nums">edgerelay-journal-sync</span> URL from Step 2 is whitelisted under WebRequest.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: 'Step 7: Verify Connection',
+    content: (
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider mb-2">Master / Follower EAs</p>
+          <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
+            <li>
+              Check the on-chart display panel &mdash; <span className="text-neon-green">green dot</span> = connected
+            </li>
+            <li>Send a test trade on master account</li>
+            <li>Verify it appears in the Signal Log on the dashboard</li>
+            <li>Check follower MT5 for the copied trade</li>
+          </ol>
+        </div>
+        <div>
+          <p className="text-xs font-semibold text-terminal-muted uppercase tracking-wider mb-2">TradeJournal Sync EA</p>
+          <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
+            <li>
+              This EA has <strong>no on-chart panel</strong> &mdash; open the <span className="font-mono-nums text-neon-cyan">Experts</span> tab and look for <span className="font-mono-nums text-neon-purple">[Journal]</span> heartbeat log lines
+            </li>
+            <li>Place or close a trade on the account</li>
+            <li>Confirm it appears in your dashboard <strong>Journal</strong> &mdash; prior history is backfilled on the first run</li>
+          </ol>
+        </div>
+      </div>
     ),
   },
 ];
@@ -224,7 +338,7 @@ const troubleshootingItems = [
   },
   {
     problem: 'Error 4060 in Experts tab',
-    solution: 'The URL is not whitelisted. Go to Tools \u2192 Options \u2192 Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
+    solution: 'The URL is not whitelisted. Go to Tools → Options → Expert Advisors and add https://signal.edgerelay.io to the allowed URLs.',
   },
   {
     problem: "'Trade context busy' error",
@@ -278,6 +392,123 @@ function AccordionItem({
 /*  EA Download Card                                                   */
 /* ------------------------------------------------------------------ */
 
+function CredCopyButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={`Copy ${label}`}
+      className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] text-terminal-muted transition-colors hover:text-neon-cyan focus-ring"
+    >
+      {copied ? <Check size={12} className="text-neon-green" /> : <Copy size={12} />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
+
+function CredRow({ label, value, valueClass }: { label: string; value: string; valueClass: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="shrink-0 text-[10px] uppercase tracking-wider text-terminal-muted">{label}</span>
+      <div className="flex min-w-0 items-center gap-1">
+        <code className={`max-w-[150px] truncate font-mono-nums text-[11px] ${valueClass}`}>{value}</code>
+        <CredCopyButton text={value} label={label} />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Inline EA credentials for a card's matching account: Account ID + API Key
+ * are always available from the account list; the API Secret is one-time, so
+ * we expose a Regenerate action that reveals a fresh Key + Secret once.
+ */
+function CredentialsPanel({ account }: { account: Account | undefined }) {
+  const fetchAccounts = useAccountsStore((s) => s.fetchAccounts);
+  const [revealed, setRevealed] = useState<{ api_key: string; api_secret: string } | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenError, setRegenError] = useState<string | null>(null);
+
+  if (!account) {
+    return (
+      <div className="mt-4 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-3">
+        <div className="flex items-center gap-1.5">
+          <KeyRound size={12} className="text-terminal-muted" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-terminal-muted">EA Credentials</span>
+        </div>
+        <p className="mt-2 text-[11px] text-terminal-muted">
+          No account yet.{' '}
+          <a href="/accounts" className="text-neon-cyan hover:underline">Create one on the Copier page</a>{' '}
+          to generate your Account ID, API Key and Secret.
+        </p>
+      </div>
+    );
+  }
+
+  const handleRegenerate = async () => {
+    if (!window.confirm(`Regenerate API keys for "${account.alias}"?\n\nThe current API Key and Secret stop working immediately - any EA already using them must be updated with the new values.`)) return;
+    setRegenError(null);
+    setRegenerating(true);
+    const res = await api.post<{ id: string; api_key: string; api_secret: string }>(`/accounts/${account.id}/regenerate-keys`);
+    if (res.data) {
+      setRevealed({ api_key: res.data.api_key, api_secret: res.data.api_secret });
+      await fetchAccounts();
+    } else {
+      setRegenError(res.error?.message ?? 'Could not regenerate keys. Please try again.');
+    }
+    setRegenerating(false);
+  };
+
+  return (
+    <div className="mt-4 space-y-2 rounded-xl border border-terminal-border/40 bg-terminal-bg/30 p-3">
+      <div className="flex items-center gap-1.5">
+        <KeyRound size={12} className="text-neon-cyan/60" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-terminal-muted">EA Credentials</span>
+        <span className="ml-auto max-w-[90px] truncate text-[10px] text-terminal-muted" title={account.alias}>{account.alias}</span>
+      </div>
+
+      <CredRow label="Account ID" value={account.id} valueClass="text-neon-cyan" />
+      <CredRow label="API Key" value={revealed?.api_key ?? account.api_key} valueClass="text-terminal-text" />
+
+      {revealed ? (
+        <>
+          <CredRow label="API Secret" value={revealed.api_secret} valueClass="text-neon-amber" />
+          <p className="text-[10px] text-neon-amber">Copy the secret now &mdash; it is shown only this once.</p>
+        </>
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-terminal-muted">API Secret</span>
+          <span className="text-[10px] italic text-terminal-muted">shown once at creation</span>
+        </div>
+      )}
+
+      <div className="pt-1">
+        <button
+          type="button"
+          onClick={handleRegenerate}
+          disabled={regenerating}
+          className="inline-flex items-center gap-1.5 rounded-lg px-1 py-0.5 text-[11px] text-terminal-muted transition-colors hover:text-neon-cyan focus-ring disabled:opacity-50"
+        >
+          <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} />
+          {regenerating ? 'Regenerating...' : revealed ? 'Regenerate again' : 'Regenerate to reveal secret'}
+        </button>
+      </div>
+
+      {regenError && <p className="text-[10px] text-neon-red">{regenError}</p>}
+    </div>
+  );
+}
+
 function EADownloadCard({
   type,
   accounts,
@@ -286,6 +517,7 @@ function EADownloadCard({
   accounts: Account[];
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [sourceDownloading, setSourceDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = useAuthStore((s) => s.token);
 
@@ -305,7 +537,7 @@ function EADownloadCard({
 
   const handleDownload = async () => {
     if (!matchingAccount) {
-      setError(`Create a ${type} account first on the Accounts page.`);
+      setError(`Create a ${type} account first on the Copier page.`);
       return;
     }
 
@@ -341,6 +573,40 @@ function EADownloadCard({
     }
   };
 
+  // Source ZIP is generic (no per-user credentials) - available to any
+  // signed-in user without needing a matching account created first.
+  const handleSourceDownload = async () => {
+    setError(null);
+    setSourceDownloading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/accounts/ea-source/${type}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        const msg = (json as { error?: { message?: string } })?.error?.message || 'Source download failed';
+        setError(msg);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = SOURCE_ZIP_NAMES[type];
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSourceDownloading(false);
+    }
+  };
+
   return (
     <Card hover className="flex flex-col">
       <div className="flex items-start gap-4">
@@ -366,7 +632,7 @@ function EADownloadCard({
         <span className="text-xs text-slate-500 font-mono-nums">{isJournal ? '~38 KB' : isMaster ? '~45 KB' : '~52 KB'}</span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-2">
         <Button
           variant={isMaster || isJournal ? 'primary' : 'secondary'}
           size="md"
@@ -377,7 +643,20 @@ function EADownloadCard({
           <Download className="h-4 w-4" />
           Download .ex5
         </Button>
+        <Button
+          variant="ghost"
+          size="md"
+          isLoading={sourceDownloading}
+          onClick={handleSourceDownload}
+          className="w-full"
+          title="Full MQL5 source + required include files, ready to compile in MetaEditor"
+        >
+          <FileCode2 className="h-4 w-4" />
+          Source (.mq5)
+        </Button>
       </div>
+
+      <CredentialsPanel account={matchingAccount} />
 
       {error && (
         <div className="mt-3 flex items-start gap-2 rounded-xl border border-neon-amber/20 bg-neon-amber/5 px-3 py-2">
@@ -515,7 +794,7 @@ export function DownloadsPage() {
           <div className="flex-1">
             <h3 className="font-display text-lg font-bold text-white">Complete EA Package</h3>
             <p className="text-sm text-terminal-muted mt-1">
-              Everything you need in one ZIP — 3 Expert Advisors, 11 Include libraries, and the Setup Script.
+              Everything you need in one ZIP &mdash; 3 Expert Advisors, 11 Include libraries, and the Setup Script.
               Extract directly into your MT5 Data Folder.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">

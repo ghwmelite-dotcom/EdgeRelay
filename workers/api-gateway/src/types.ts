@@ -29,6 +29,9 @@ export interface Env {
   /** JWT expiry in hours */
   JWT_EXPIRY_HOURS: string;
 
+  /** ChartSage worker shared secret (set via wrangler secret) */
+  CHARTSAGE_API_KEY: string;
+
   /** Workers AI binding */
   AI: Ai;
 
@@ -38,9 +41,27 @@ export interface Env {
   /** Google OAuth client secret (set via wrangler secret) */
   GOOGLE_CLIENT_SECRET: string;
 
+  /** Twelve Data API key for 4H candle fetches (set via wrangler secret) */
+  TWELVE_DATA_KEY?: string;
+
+  /** Public Telegram channel chat_id for A+ SETUP broadcasts. If unset,
+   *  the broadcast is a no-op — all other alerts still fire. */
+  PUBLIC_ALERT_CHAT_ID?: string;
+
+  /** VAPID public key (base64url-encoded raw EC point) served to the
+   *  browser when registering a push subscription. */
+  VAPID_PUBLIC_KEY: string;
+
+  /** VAPID JWT `sub` claim — mailto or https URL identifying the
+   *  application owner. Required by Mozilla's autopush service. */
+  VAPID_SUBJECT: string;
+
+  /** VAPID private key JWK `d` value, base64url. Used to sign the
+   *  authorization JWT attached to each push request. */
+  VAPID_PRIVATE_KEY?: string;
+
   /** Service binding to the bias-sage worker (Sage anchor/delta SSE endpoints) */
   BIAS_SAGE_SERVICE: Fetcher;
-
 }
 
 export interface JwtPayload {

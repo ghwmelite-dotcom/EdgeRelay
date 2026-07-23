@@ -604,28 +604,53 @@ function DeleteConfirmModal({
   account: Account | null;
 }) {
   const deleteAccount = useAccountsStore((s) => s.deleteAccount);
+  const purgeAccount = useAccountsStore((s) => s.purgeAccount);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
+  const [purgeMode, setPurgeMode] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleDelete = async () => {
+  const close = () => {
+    setPurgeMode(false);
+    setConfirmText('');
+    setError(null);
+    onClose();
+  };
+
+  const handleDeactivate = async () => {
     if (!account) return;
     setIsDeleting(true);
     await deleteAccount(account.id);
     setIsDeleting(false);
-    onClose();
+    close();
+  };
+
+  const handlePurge = async () => {
+    if (!account) return;
+    if (confirmText.trim() !== account.alias) {
+      setError(`Type the account name "${account.alias}" exactly to confirm.`);
+      return;
+    }
+    setError(null);
+    setIsPurging(true);
+    const ok = await purgeAccount(account.id);
+    setIsPurging(false);
+    if (ok) close();
+    else setError('Could not permanently delete. Please try again.');
   };
 
   if (!account) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Delete Account">
+    <Modal open={open} onClose={close} title="Delete Account">
       <div className="space-y-5">
         <div className="flex items-start gap-3 rounded-2xl border border-neon-red/30 bg-neon-red/5 p-4">
           <AlertTriangle size={18} className="text-neon-red mt-0.5 shrink-0" />
           <div className="text-sm text-slate-300">
             <p>
-              Are you sure you want to delete{' '}
-              <span className="font-semibold text-white">{account.alias}</span>? This action
-              cannot be undone.
+              Deactivate <span className="font-semibold text-white">{account.alias}</span>? It stops
+              trading and is removed from your list; its data is retained.
             </p>
             {account.role === 'master' && (
               <p className="mt-2 text-neon-red">
@@ -636,13 +661,46 @@ function DeleteConfirmModal({
         </div>
 
         <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>
+          <Button variant="secondary" className="flex-1" onClick={close}>
             Cancel
           </Button>
-          <Button variant="danger" className="flex-1" isLoading={isDeleting} onClick={handleDelete}>
+          <Button variant="danger" className="flex-1" isLoading={isDeleting} onClick={handleDeactivate}>
             <Trash2 size={14} />
-            Delete
+            Deactivate
           </Button>
+        </div>
+
+        <div className="border-t border-terminal-border/50 pt-4">
+          {!purgeMode ? (
+            <button
+              type="button"
+              onClick={() => setPurgeMode(true)}
+              className="text-xs text-terminal-muted transition-colors hover:text-neon-red focus-ring rounded"
+            >
+              Or permanently erase this account and all its data&hellip;
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-300">
+                <span className="font-semibold text-neon-red">Permanent delete.</span> This erases the
+                account and <strong>all</strong> its data &mdash; journal trades, signals, executions,
+                symbol mappings and settings. It cannot be undone or restored.
+              </p>
+              <p className="text-sm text-slate-300">
+                Type <span className="font-mono-nums text-neon-red">{account.alias}</span> to confirm:
+              </p>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder={account.alias}
+              />
+              {error && <p className="text-xs text-neon-red">{error}</p>}
+              <Button variant="danger" className="w-full" isLoading={isPurging} onClick={handlePurge}>
+                <Trash2 size={14} />
+                Permanently delete everything
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

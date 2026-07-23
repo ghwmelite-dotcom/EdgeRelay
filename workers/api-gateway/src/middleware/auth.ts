@@ -48,54 +48,66 @@ async function signJwt(payload: JwtPayload, secret: string): Promise<string> {
 }
 
 export async function verifyJwt(token: string, secret: string): Promise<JwtPayload | null> {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
+  // Wrap the whole flow — malformed b64 segments (e.g. "a.b.c") make
+  // atob() throw, and an unmarshalled payload can make JSON.parse throw.
+  // Either case is "invalid token" → return null so the middleware
+  // cleanly responds 401, not 500 via the global error handler.
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
 
-  const [headerB64, payloadB64, signatureB64] = parts as [string, string, string];
-  const signingInput = `${headerB64}.${payloadB64}`;
-  const signature = base64UrlDecode(signatureB64);
+    const [headerB64, payloadB64, signatureB64] = parts as [string, string, string];
+    const signingInput = `${headerB64}.${payloadB64}`;
+    const signature = base64UrlDecode(signatureB64);
 
-  const key = await getSigningKey(secret);
-  const encoder = new TextEncoder();
-  const valid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(signingInput));
+    const key = await getSigningKey(secret);
+    const encoder = new TextEncoder();
+    const valid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(signingInput));
 
-  if (!valid) return null;
+    if (!valid) return null;
 
-  const payloadStr = new TextDecoder().decode(base64UrlDecode(payloadB64));
-  const payload = JSON.parse(payloadStr) as JwtPayload;
+    const payloadStr = new TextDecoder().decode(base64UrlDecode(payloadB64));
+    const payload = JSON.parse(payloadStr) as JwtPayload;
 
-  // Check expiration
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp && payload.exp < now) return null;
+    // Check expiration
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) return null;
 
-  return payload;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 /** Verify JWT signature but IGNORE expiration — for token refresh */
 export async function verifyJwtIgnoreExpiry(token: string, secret: string): Promise<JwtPayload | null> {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
 
-  const headerB64 = parts[0]!;
-  const payloadB64 = parts[1]!;
-  const signatureB64 = parts[2]!;
-  const signingInput = `${headerB64}.${payloadB64}`;
-  const signature = base64UrlDecode(signatureB64);
+    const headerB64 = parts[0]!;
+    const payloadB64 = parts[1]!;
+    const signatureB64 = parts[2]!;
+    const signingInput = `${headerB64}.${payloadB64}`;
+    const signature = base64UrlDecode(signatureB64);
 
-  const key = await getSigningKey(secret);
-  const encoder = new TextEncoder();
-  const valid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(signingInput));
+    const key = await getSigningKey(secret);
+    const encoder = new TextEncoder();
+    const valid = await crypto.subtle.verify('HMAC', key, signature, encoder.encode(signingInput));
 
-  if (!valid) return null;
+    if (!valid) return null;
 
-  const payloadStr = new TextDecoder().decode(base64UrlDecode(payloadB64));
-  const payload = JSON.parse(payloadStr) as JwtPayload;
+    const payloadStr = new TextDecoder().decode(base64UrlDecode(payloadB64));
+    const payload = JSON.parse(payloadStr) as JwtPayload;
 
-  // Allow expired tokens up to 30 days old for refresh
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp && payload.exp < now - 30 * 24 * 3600) return null;
+    // Allow expired tokens up to 30 days old for refresh
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now - 30 * 24 * 3600) return null;
 
-  return payload;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 // ── Token Generation ────────────────────────────────────────────

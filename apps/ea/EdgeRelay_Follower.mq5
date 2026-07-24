@@ -102,7 +102,7 @@ struct EquityGuardResult
 //| Constants                                                         |
 //+------------------------------------------------------------------+
 #define MAX_SIGNALS_PER_POLL  50
-#define HTTP_TIMEOUT          5000
+#define HTTP_TIMEOUT          30000
 #define COMMENT_PREFIX        "ER:"
 
 //+------------------------------------------------------------------+

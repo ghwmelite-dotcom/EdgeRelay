@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" width="1200" height="850" fill="none">
+  <defs>
+    <linearGradient id="abg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070b16"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="abrand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <marker id="arrowC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#00e5ff"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#00ff9d"/>
+    </marker>
+    <marker id="arrowDim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 Z" fill="#4d6484"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="850" rx="16" fill="url(#abg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="849" rx="15.5" fill="none" stroke="#1b2740"/>
+
+  <text x="600" y="46" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="24" fill="#e6eefc">EdgeRelay — System Architecture</text>
+  <text x="600" y="72" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="13" fill="#7f95b5">Everything runs on Cloudflare's edge — nine Workers, one Durable Object, zero servers to rent.</text>
+
+  <!-- ═══════════ SIGNAL PLANE ═══════════ -->
+  <text x="60" y="112" font-family="'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="12" letter-spacing="2" fill="#00e5ff">SIGNAL PLANE</text>
+  <line x1="180" y1="107" x2="1140" y2="107" stroke="#16223c" stroke-width="1"/>
+
+  <!-- Master EA -->
+  <rect x="60" y="150" width="176" height="96" rx="12" fill="#0b1428" stroke="#00e5ff" stroke-width="1.5"/>
+  <text x="148" y="182" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="14" fill="#e6eefc">MT5 Terminal</text>
+  <text x="148" y="204" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#00e5ff">EdgeRelay_Master.mq5</text>
+  <text x="148" y="226" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11" fill="#7f95b5">captures every trade</text>
+
+  <!-- Arrow master -> ingestion -->
+  <line x1="236" y1="198" x2="318" y2="198" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrowC)"/>
+  <text x="277" y="182" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#8fa6c8">HMAC-SHA256</text>
+  <text x="277" y="216" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#8fa6c8">HTTPS POST</text>
+
+  <!-- Signal ingestion -->
+  <rect x="324" y="150" width="196" height="96" rx="12" fill="#0b1428" stroke="#00e5ff" stroke-width="1.5"/>
+  <text x="422" y="182" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="14" fill="#e6eefc">signal-ingestion</text>
+  <text x="422" y="204" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#7f95b5">validate · deduplicate</text>
+  <text x="422" y="226" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#7f95b5">rate-limit via KV</text>
+
+  <!-- Arrow ingestion -> DO -->
+  <line x1="520" y1="198" x2="602" y2="198" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrowC)"/>
+  <text x="561" y="182" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#8fa6c8">route</text>
+
+  <!-- AccountRelay DO -->
+  <rect x="608" y="138" width="232" height="120" rx="12" fill="#0e1830" stroke="url(#abrand)" stroke-width="2"/>
+  <text x="724" y="170" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="15" fill="#e6eefc">AccountRelay</text>
+  <text x="724" y="190" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#00ff9d">Durable Object — per-account state</text>
+  <text x="724" y="214" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#7f95b5">equity guard · lot sizing</text>
+  <text x="724" y="234" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#7f95b5">symbol mapping · follow rules</text>
+
+  <!-- Fan-out arrows -->
+  <path d="M 840 168 C 880 150 890 142 916 138" fill="none" stroke="#00ff9d" stroke-width="2" marker-end="url(#arrowG)"/>
+  <line x1="840" y1="198" x2="916" y2="198" stroke="#00ff9d" stroke-width="2" marker-end="url(#arrowG)"/>
+  <path d="M 840 228 C 880 246 890 254 916 258" fill="none" stroke="#00ff9d" stroke-width="2" marker-end="url(#arrowG)"/>
+  <text x="878" y="120" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#8fa6c8">long-poll / push</text>
+
+  <!-- Followers -->
+  <g>
+    <rect x="922" y="110" width="218" height="56" rx="10" fill="#0b1428" stroke="#00ff9d" stroke-width="1.2" stroke-opacity="0.75"/>
+    <circle cx="944" cy="138" r="5" fill="#00ff9d"/>
+    <text x="960" y="134" font-family="'Segoe UI', system-ui, sans-serif" font-size="12.5" fill="#e6eefc">Follower EA — account 1</text>
+    <text x="960" y="152" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">EdgeRelay_Follower.mq5</text>
+  </g>
+  <g>
+    <rect x="922" y="170" width="218" height="56" rx="10" fill="#0b1428" stroke="#00ff9d" stroke-width="1.2" stroke-opacity="0.75"/>
+    <circle cx="944" cy="198" r="5" fill="#00e5ff"/>
+    <text x="960" y="194" font-family="'Segoe UI', system-ui, sans-serif" font-size="12.5" fill="#e6eefc">Follower EA — account 2</text>
+    <text x="960" y="212" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">prop firm · personal · …</text>
+  </g>
+  <g>
+    <rect x="922" y="230" width="218" height="56" rx="10" fill="#0b1428" stroke="#00ff9d" stroke-width="1.2" stroke-opacity="0.75"/>
+    <circle cx="944" cy="258" r="5" fill="#00ff9d"/>
+    <text x="960" y="254" font-family="'Segoe UI', system-ui, sans-serif" font-size="12.5" fill="#e6eefc">Follower EA — account N</text>
+    <text x="960" y="272" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">scales to hundreds</text>
+  </g>
+
+  <!-- Execution reports return path -->
+  <path d="M 1031 286 L 1031 320 L 422 320 L 422 246" fill="none" stroke="#4d6484" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowDim)"/>
+  <text x="726" y="312" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#6d84a6">execution reports → trade history in D1</text>
+
+  <!-- ═══════════ CONTROL PLANE ═══════════ -->
+  <text x="60" y="392" font-family="'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="12" letter-spacing="2" fill="#00e5ff">CONTROL PLANE</text>
+  <line x1="190" y1="387" x2="1140" y2="387" stroke="#16223c" stroke-width="1"/>
+
+  <!-- Web app -->
+  <rect x="60" y="430" width="216" height="100" rx="12" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+  <text x="168" y="460" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="14" fill="#e6eefc">apps/web — React 18 PWA</text>
+  <text x="168" y="482" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#7f95b5">Vite · Tailwind CSS · lightweight-charts</text>
+  <text x="168" y="502" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#00e5ff">Cloudflare Pages</text>
+
+  <!-- PWA <-> gateway -->
+  <line x1="276" y1="472" x2="356" y2="472" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrowC)" marker-start="url(#arrowC)"/>
+  <text x="316" y="456" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#8fa6c8">REST · JWT</text>
+
+  <!-- API gateway -->
+  <rect x="362" y="420" width="248" height="120" rx="12" fill="#0e1830" stroke="#00e5ff" stroke-width="1.5"/>
+  <text x="486" y="450" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="14.5" fill="#e6eefc">api-gateway — Hono</text>
+  <text x="486" y="472" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#7f95b5">auth · accounts · signals · journal</text>
+  <text x="486" y="492" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#7f95b5">PropGuard · marketplace · strategy hub</text>
+  <text x="486" y="512" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="11.5" fill="#7f95b5">billing (Paystack) · referrals · analytics</text>
+
+  <!-- Gateway -> DO binding (dashed up) -->
+  <path d="M 560 420 L 680 258" fill="none" stroke="#4d6484" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrowDim)"/>
+  <text x="590" y="330" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#6d84a6">DO binding</text>
+
+  <!-- Data stores -->
+  <g>
+    <rect x="680" y="420" width="212" height="52" rx="10" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="708" y="451" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="13" fill="#e6eefc">D1 — edgerelay-db</text>
+    <text x="836" y="451" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">17 migrations</text>
+  </g>
+  <g>
+    <rect x="680" y="488" width="212" height="52" rx="10" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="708" y="519" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="13" fill="#e6eefc">KV</text>
+    <text x="808" y="519" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">sessions · rate limit</text>
+  </g>
+  <g>
+    <rect x="928" y="420" width="212" height="52" rx="10" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="956" y="451" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="13" fill="#e6eefc">R2</text>
+    <text x="1056" y="451" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">EA files · logs</text>
+  </g>
+  <g>
+    <rect x="928" y="488" width="212" height="52" rx="10" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="956" y="519" font-family="'Segoe UI', system-ui, sans-serif" font-weight="600" font-size="13" fill="#e6eefc">Workers AI</text>
+    <text x="1064" y="519" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#7f95b5">AI insights</text>
+  </g>
+
+  <!-- Gateway to stores -->
+  <path d="M 610 446 L 680 446" fill="none" stroke="#00e5ff" stroke-width="1.8" marker-end="url(#arrowC)"/>
+  <path d="M 610 494 L 610 514 L 680 514" fill="none" stroke="#00e5ff" stroke-width="1.8" marker-end="url(#arrowC)"/>
+  <path d="M 645 446 L 645 446" fill="none" stroke="none"/>
+  <line x1="892" y1="446" x2="928" y2="446" stroke="#00e5ff" stroke-width="1.8" marker-end="url(#arrowC)"/>
+  <line x1="892" y1="514" x2="928" y2="514" stroke="#00e5ff" stroke-width="1.8" marker-end="url(#arrowC)"/>
+
+  <!-- ═══════════ AUTOMATION ═══════════ -->
+  <text x="60" y="620" font-family="'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="12" letter-spacing="2" fill="#00e5ff">AUTOMATION — SCHEDULED WORKERS</text>
+  <line x1="380" y1="615" x2="1140" y2="615" stroke="#16223c" stroke-width="1"/>
+
+  <g font-family="'Segoe UI', system-ui, sans-serif">
+    <rect x="60" y="648" width="200" height="88" rx="12" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="160" y="678" text-anchor="middle" font-weight="600" font-size="13.5" fill="#e6eefc">news-fetcher</text>
+    <text x="160" y="700" text-anchor="middle" font-size="11" fill="#7f95b5">market news, every 15 min</text>
+    <text x="160" y="720" text-anchor="middle" font-size="11" fill="#00ff9d">cron */15 * * * *</text>
+
+    <rect x="284" y="648" width="200" height="88" rx="12" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="384" y="678" text-anchor="middle" font-weight="600" font-size="13.5" fill="#e6eefc">tos-monitor</text>
+    <text x="384" y="700" text-anchor="middle" font-size="11" fill="#7f95b5">prop-firm ToS changes</text>
+    <text x="384" y="720" text-anchor="middle" font-size="11" fill="#00ff9d">cron 0 */6 * * *</text>
+
+    <rect x="508" y="648" width="200" height="88" rx="12" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="608" y="678" text-anchor="middle" font-weight="600" font-size="13.5" fill="#e6eefc">provider-stats</text>
+    <text x="608" y="700" text-anchor="middle" font-size="11" fill="#7f95b5">signal-provider rollups</text>
+    <text x="608" y="720" text-anchor="middle" font-size="11" fill="#00ff9d">cron 0 * * * *</text>
+
+    <rect x="732" y="648" width="200" height="88" rx="12" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="832" y="678" text-anchor="middle" font-weight="600" font-size="13.5" fill="#e6eefc">notification-digest</text>
+    <text x="832" y="700" text-anchor="middle" font-size="11" fill="#7f95b5">alert digests, top of hour</text>
+    <text x="832" y="720" text-anchor="middle" font-size="11" fill="#00ff9d">cron * * * * *</text>
+
+    <rect x="956" y="648" width="184" height="88" rx="12" fill="#0b1428" stroke="#1e2f52" stroke-width="1.5"/>
+    <text x="1048" y="678" text-anchor="middle" font-weight="600" font-size="13.5" fill="#e6eefc">telegram-bot</text>
+    <text x="1048" y="700" text-anchor="middle" font-size="11" fill="#7f95b5">webhook commands</text>
+    <text x="1048" y="720" text-anchor="middle" font-size="11" fill="#00e5ff">alerts → traders</text>
+  </g>
+
+  <!-- Up arrows from automation to D1 / users -->
+  <path d="M 160 648 L 160 580 L 660 580 L 700 545" fill="none" stroke="#4d6484" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arrowDim)"/>
+  <path d="M 608 648 L 608 585 L 720 545" fill="none" stroke="#4d6484" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arrowDim)"/>
+  <path d="M 1048 648 L 1048 580 L 900 545" fill="none" stroke="#4d6484" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arrowDim)"/>
+  <text x="430" y="572" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="10.5" fill="#6d84a6">write to D1 · notify traders</text>
+
+  <!-- Footer strip -->
+  <rect x="60" y="776" width="1080" height="44" rx="10" fill="#0b1428" stroke="#1e2f52" stroke-width="1"/>
+  <circle cx="90" cy="798" r="5" fill="#00e5ff"/>
+  <text x="106" y="803" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#8fa6c8">Signal path</text>
+  <circle cx="200" cy="798" r="5" fill="#00ff9d"/>
+  <text x="216" y="803" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#8fa6c8">Follower delivery</text>
+  <circle cx="348" cy="798" r="5" fill="#4d6484"/>
+  <text x="364" y="803" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#8fa6c8">Async / scheduled</text>
+  <text x="1140" y="803" text-anchor="end" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" fill="#5f7396">plus: journal-sync worker · shared types package · MQL5 EAs</text>
+</svg>

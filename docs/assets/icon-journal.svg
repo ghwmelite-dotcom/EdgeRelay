@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" fill="none">
+  <defs>
+    <linearGradient id="jbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1428"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="jbrand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <radialGradient id="jglow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="160" rx="24" fill="url(#jbg)"/>
+  <rect x="0.5" y="0.5" width="159" height="159" rx="23.5" fill="none" stroke="#1e2f52"/>
+  <rect width="160" height="160" rx="24" fill="url(#jglow)"/>
+  <!-- chart frame -->
+  <rect x="40" y="40" width="80" height="72" rx="8" fill="none" stroke="#28405f" stroke-width="2"/>
+  <line x1="40" y1="64" x2="120" y2="64" stroke="#1b2740" stroke-width="1.5"/>
+  <line x1="40" y1="88" x2="120" y2="88" stroke="#1b2740" stroke-width="1.5"/>
+  <!-- candlesticks -->
+  <line x1="58" y1="50" x2="58" y2="100" stroke="#00ff9d" stroke-width="2"/>
+  <rect x="53" y="62" width="10" height="24" rx="2" fill="#00ff9d"/>
+  <line x1="78" y1="56" x2="78" y2="104" stroke="#00e5ff" stroke-width="2"/>
+  <rect x="73" y="70" width="10" height="22" rx="2" fill="#00e5ff"/>
+  <line x1="98" y1="44" x2="98" y2="92" stroke="url(#jbrand)" stroke-width="2"/>
+  <rect x="93" y="52" width="10" height="26" rx="2" fill="url(#jbrand)"/>
+  <text x="80" y="140" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600" fill="#8fa6c8">Trade Journal</text>
+</svg>

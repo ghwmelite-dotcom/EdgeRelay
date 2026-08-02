@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" fill="none">
+  <defs>
+    <linearGradient id="sbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1428"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="sbrand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <radialGradient id="sglow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#00ff9d" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#00ff9d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="160" rx="24" fill="url(#sbg)"/>
+  <rect x="0.5" y="0.5" width="159" height="159" rx="23.5" fill="none" stroke="#1e2f52"/>
+  <rect width="160" height="160" rx="24" fill="url(#sglow)"/>
+  <!-- shield -->
+  <path d="M 80 34 L 112 46 L 112 82 C 112 102 98 116 80 124 C 62 116 48 102 48 82 L 48 46 Z" fill="none" stroke="url(#sbrand)" stroke-width="3" stroke-linejoin="round"/>
+  <!-- equity curve inside -->
+  <path d="M 60 92 L 70 80 L 78 86 L 90 68 L 100 74" fill="none" stroke="#00ff9d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="100" cy="74" r="3.5" fill="#00e5ff"/>
+  <text x="80" y="146" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600" fill="#8fa6c8">PropGuard</text>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" fill="none">
+  <defs>
+    <linearGradient id="gbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1428"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="gbrand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <radialGradient id="gglow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="160" rx="24" fill="url(#gbg)"/>
+  <rect x="0.5" y="0.5" width="159" height="159" rx="23.5" fill="none" stroke="#1e2f52"/>
+  <rect width="160" height="160" rx="24" fill="url(#gglow)"/>
+  <!-- globe -->
+  <circle cx="80" cy="78" r="40" fill="none" stroke="url(#gbrand)" stroke-width="2.5"/>
+  <ellipse cx="80" cy="78" rx="18" ry="40" fill="none" stroke="#00e5ff" stroke-width="1.5" stroke-opacity="0.6"/>
+  <line x1="40" y1="78" x2="120" y2="78" stroke="#00e5ff" stroke-width="1.5" stroke-opacity="0.6"/>
+  <path d="M 48 56 A 40 40 0 0 0 112 56" fill="none" stroke="#00e5ff" stroke-width="1.5" stroke-opacity="0.45"/>
+  <path d="M 48 100 A 40 40 0 0 1 112 100" fill="none" stroke="#00e5ff" stroke-width="1.5" stroke-opacity="0.45"/>
+  <!-- PoP nodes -->
+  <circle cx="105" cy="52" r="4" fill="#00ff9d"/>
+  <circle cx="56" cy="66" r="4" fill="#00ff9d"/>
+  <circle cx="96" cy="102" r="4" fill="#00e5ff"/>
+  <circle cx="63" cy="98" r="4" fill="#00e5ff"/>
+  <text x="80" y="140" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600" fill="#8fa6c8">300+ Edge PoPs</text>
+</svg>

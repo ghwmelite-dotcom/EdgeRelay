@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" fill="none">
+  <defs>
+    <linearGradient id="bbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1428"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="bbrand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <radialGradient id="bglow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#00ff9d" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#00ff9d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="160" rx="24" fill="url(#bbg)"/>
+  <rect x="0.5" y="0.5" width="159" height="159" rx="23.5" fill="none" stroke="#1e2f52"/>
+  <rect width="160" height="160" rx="24" fill="url(#bglow)"/>
+  <!-- paper plane -->
+  <path d="M 40 78 L 120 44 L 92 116 L 76 88 Z" fill="none" stroke="url(#bbrand)" stroke-width="3" stroke-linejoin="round"/>
+  <line x1="76" y1="88" x2="120" y2="44" stroke="#00e5ff" stroke-width="2" stroke-opacity="0.7"/>
+  <line x1="76" y1="88" x2="70" y2="106" stroke="#00e5ff" stroke-width="2" stroke-opacity="0.7"/>
+  <!-- notification dot -->
+  <circle cx="116" cy="46" r="7" fill="#00ff9d"/>
+  <circle cx="116" cy="46" r="11" fill="none" stroke="#00ff9d" stroke-width="1.5" stroke-opacity="0.4"/>
+  <text x="80" y="140" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600" fill="#8fa6c8">Telegram Alerts</text>
+</svg>

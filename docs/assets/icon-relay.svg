@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" fill="none">
+  <defs>
+    <linearGradient id="rbg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c1428"/>
+      <stop offset="100%" stop-color="#0a0f1e"/>
+    </linearGradient>
+    <linearGradient id="rbrand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e5ff"/>
+      <stop offset="100%" stop-color="#00ff9d"/>
+    </linearGradient>
+    <radialGradient id="rglow" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00e5ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="160" height="160" rx="24" fill="url(#rbg)"/>
+  <rect x="0.5" y="0.5" width="159" height="159" rx="23.5" fill="none" stroke="#1e2f52"/>
+  <rect width="160" height="160" rx="24" fill="url(#rglow)"/>
+  <!-- relay arcs -->
+  <path d="M 96 48 A 40 40 0 0 1 96 112" fill="none" stroke="#00e5ff" stroke-width="4" stroke-linecap="round" stroke-opacity="0.5"/>
+  <path d="M 108 60 A 26 26 0 0 1 108 100" fill="none" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" stroke-opacity="0.3"/>
+  <!-- bolt -->
+  <path d="M 84 46 L 100 46 L 89 68 L 104 68 L 76 102 L 84 74 L 70 74 Z" fill="url(#rbrand)"/>
+  <text x="80" y="140" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="12" font-weight="600" fill="#8fa6c8">Edge Copying</text>
+</svg>

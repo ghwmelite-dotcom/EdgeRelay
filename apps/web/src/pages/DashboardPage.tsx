@@ -44,10 +44,10 @@ interface ApiSignal {
   master_account_id: string;
   sequence_num: number;
   action: string;
-  order_type: string;
+  order_type: string | null;
   symbol: string;
-  volume: number;
-  price: number;
+  volume: number | null;
+  price: number | null;
   received_at: string;
 }
 
@@ -896,10 +896,10 @@ export function DashboardPage() {
                         <ActionLabel action={normalizeAction(sig.action)} />
                       </td>
                       <td className="px-5 py-3.5 text-right font-mono-nums text-slate-200 font-semibold">
-                        {sig.volume.toFixed(2)}
+                        {sig.volume?.toFixed(2) ?? '—'}
                       </td>
                       <td className="px-5 py-3.5 text-right font-mono-nums text-slate-400">
-                        {sig.price.toFixed(sig.price > 100 ? 2 : 5)}
+                        {sig.price == null ? '—' : sig.price.toFixed(sig.price > 100 ? 2 : 5)}
                       </td>
                     </tr>
                   ))

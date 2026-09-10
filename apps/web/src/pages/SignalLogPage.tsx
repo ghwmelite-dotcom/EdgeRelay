@@ -24,10 +24,10 @@ interface ApiSignal {
   master_account_id: string;
   sequence_num: number;
   action: string;
-  order_type: string;
+  order_type: string | null;
   symbol: string;
-  volume: number;
-  price: number;
+  volume: number | null;
+  price: number | null;
   sl: number | null;
   tp: number | null;
   magic_number: number;
@@ -447,13 +447,13 @@ export function SignalLogPage() {
                           <ActionBadge action={displayAction} />
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
-                          {signal.volume.toFixed(2)}
+                          {signal.volume?.toFixed(2) ?? '—'}
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono-nums text-slate-200">
-                          {signal.price.toLocaleString(undefined, {
+                          {signal.price?.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 5,
-                          })}
+                          }) ?? '—'}
                         </td>
                         <td className="px-3 py-2.5 text-right font-mono-nums text-terminal-muted text-xs">
                           {signal.sl != null && signal.tp != null

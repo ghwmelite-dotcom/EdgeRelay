@@ -41,7 +41,7 @@ export default {
     const now = new Date();
 
     // Pre-event alerts (every minute)
-    await checkPreEventAlerts(env, ctx);
+    await checkPreEventAlerts(env);
 
     // Breaking news push (every minute — major market-moving headlines only)
     await checkBreakingNews(env);
@@ -63,7 +63,7 @@ export default {
 
 };
 
-async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<void> {
+async function checkPreEventAlerts(env: Env): Promise<void> {
   const now = new Date();
 
   // Find HIGH-impact events starting in 30±1 or 5±1 minutes
@@ -75,7 +75,8 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
     const { results: events } = await env.DB.prepare(
       `SELECT id, event_name, currency, event_time, forecast, previous
        FROM news_events
-       WHERE impact = 'high' AND event_time >= ? AND event_time <= ?`,
+       WHERE impact = 'high' AND datetime(event_time) >= datetime(?) AND datetime(event_time) <= datetime(?)
+       GROUP BY event_name, currency, datetime(event_time)`,
     )
       .bind(windowStart, windowEnd)
       .all<{
@@ -91,16 +92,17 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
 
     // ── Post to @edgerelay channel (once per event) ──
     for (const event of events) {
-      const channelDedupKey = `channel-alert:${event.id}:${minutesBefore}`;
+      const channelDedupKey = `channel-alert:${escapeHtml(event.currency)}:${escapeHtml(event.event_name)}:${new Date(event.event_time).toISOString()}:${minutesBefore}`;
       const channelSent = await env.BOT_STATE.get(channelDedupKey);
       if (!channelSent && env.TELEGRAM_CHANNEL_ID) {
         const emoji = minutesBefore === 30 ? '⚠️' : '🚨';
         const label = minutesBefore === 30 ? 'Heads Up' : 'Imminent';
-        const forecastInfo = event.forecast ? ` (forecast: ${event.forecast})` : '';
-        const previousInfo = event.previous ? `\nPrevious: ${event.previous}` : '';
-        const msg = `${emoji} <b>${label}: ${event.event_name}</b> in ${minutesBefore} min${forecastInfo}${previousInfo}\n\n🏷 Currency: ${event.currency}\n🕐 Time: ${event.event_time}`;
-        ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg));
-        await env.BOT_STATE.put(channelDedupKey, '1', { expirationTtl: 3600 });
+        const forecastInfo = event.forecast ? ` (forecast: ${escapeHtml(event.forecast)})` : '';
+        const previousInfo = event.previous ? `\nPrevious: ${escapeHtml(event.previous)}` : '';
+        const msg = `${emoji} <b>${label}: ${escapeHtml(event.event_name)}</b> in ${minutesBefore} min${forecastInfo}${previousInfo}\n\n🏷 Currency: ${escapeHtml(event.currency)}\n🕐 Time: ${new Date(event.event_time).toISOString()} UTC`;
+        if (await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg)) {
+          await env.BOT_STATE.put(channelDedupKey, '1', { expirationTtl: 3600 });
+        }
       }
     }
 
@@ -113,7 +115,7 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
 
     for (const event of events) {
       for (const user of users) {
-        const dedupKey = `alert-sent:${user.user_id}:${event.id}:${minutesBefore}`;
+        const dedupKey = `alert-sent:${user.user_id}:${escapeHtml(event.currency)}:${escapeHtml(event.event_name)}:${new Date(event.event_time).toISOString()}:${minutesBefore}`;
         const alreadySent = await env.BOT_STATE.get(dedupKey);
         if (alreadySent) continue;
 
@@ -129,12 +131,13 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
 
         const emoji = minutesBefore === 30 ? '⚠️' : '🚨';
         const label = minutesBefore === 30 ? 'Heads Up' : 'Imminent';
-        const forecastInfo = event.forecast ? ` (forecast: ${event.forecast})` : '';
+        const forecastInfo = event.forecast ? ` (forecast: ${escapeHtml(event.forecast)})` : '';
 
-        const msg = `${emoji} <b>${label}: ${event.event_name}</b> in ${minutesBefore} min${forecastInfo}\n\nCurrency: ${event.currency}\nTime: ${event.event_time}`;
+        const msg = `${emoji} <b>${label}: ${escapeHtml(event.event_name)}</b> in ${minutesBefore} min${forecastInfo}\n\nCurrency: ${escapeHtml(event.currency)}\nTime: ${new Date(event.event_time).toISOString()} UTC`;
 
-        ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
-        await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 3600 });
+        if (await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg)) {
+          await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 3600 });
+        }
       }
     }
   }
@@ -345,7 +348,7 @@ async function formatMorningBrief(db: D1Database, now: Date, ai?: Env['AI']): Pr
   const { results: events } = await db
     .prepare(
       `SELECT event_name, currency, event_time, forecast FROM news_events
-       WHERE impact = 'high' AND DATE(event_time) = ? ORDER BY event_time`,
+       WHERE impact = 'high' AND DATE(event_time) = ? GROUP BY event_name, currency, datetime(event_time) ORDER BY datetime(event_time)`,
     )
     .bind(today)
     .all<{ event_name: string; currency: string; event_time: string; forecast: string | null }>();
@@ -365,7 +368,7 @@ async function formatMorningBrief(db: D1Database, now: Date, ai?: Env['AI']): Pr
   if (events && events.length > 0) {
     lines.push('', `⚡ ${events.length} high-impact event${events.length > 1 ? 's' : ''} today:`);
     for (const e of events) {
-      const time = e.event_time.slice(11, 16);
+      const time = new Date(e.event_time).toISOString().slice(11, 16);
       const forecast = e.forecast ? ` (forecast: ${e.forecast})` : '';
       lines.push(`• ${time} UTC — ${e.event_name}${forecast}`);
     }

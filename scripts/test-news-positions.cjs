@@ -91,6 +91,18 @@ async function send(body, signingBody = body, headers = {}) { return app.request
  assert.equal(values.get('news-push:owner:major0'),'1'); assert.equal(values.get('news-channel:major0'),'1');
  for (const message of messages) {assert.ok(message.text.includes('US CPI')); assert.ok(!message.text.includes('Food Price'));}
  const count = messages.length; await digest.scheduled({},env,ctx); assert.equal(messages.length,count);
+ // Offset timestamps representing the same release must alert once, at the UTC instant.
+ const releaseTime = new RealDate(fixed.getTime()+5*60_000);
+ const offsetTime = new RealDate(releaseTime.getTime()-4*3600_000).toISOString().slice(0,19)+'-04:00';
+ const addEvent = db.prepare("INSERT INTO news_events VALUES (?, 'Nonfarm Payrolls', 'USD', 'high', ?, '180K', '150K', NULL)");
+ addEvent.run('nfp-a',offsetTime); addEvent.run('nfp-b',releaseTime.toISOString());
+ const reminderStart=messages.length; delivered=false;
+ await digest.scheduled({},env,ctx); assert.equal(messages.length-reminderStart,2);
+ delivered=true; await digest.scheduled({},env,ctx); assert.equal(messages.length-reminderStart,4);
+ await digest.scheduled({},env,ctx); assert.equal(messages.length-reminderStart,4);
+ for (const msg of messages.slice(reminderStart)) {assert.ok(msg.text.includes('Nonfarm Payrolls'));assert.ok(msg.text.includes('in 5 min'));}
+ const imminent=await (await app.request('/news/check?minutes=6',{},env)).json(); assert.equal(imminent.data.blocked,true);
+ console.log('PASS offset-aware NFP reminders, duplicate-event suppression, delivery retry and imminent check');
  global.Date = RealDate;
  console.log('PASS dashboard/calendar filtering; Telegram channel+DM major-only, retry after failure, and dedup (no real messages sent)');
  db.close();

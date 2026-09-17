@@ -1,6 +1,6 @@
 # Major news and live positions
 
-The dashboard and Telegram digest share a conservative major-news classifier: NFP, CPI, FOMC decisions/published materials and comparable major economic releases or central-bank decisions. General geopolitical, company and commodity headlines are excluded. Routine analysis, previews and unsupported speculation are excluded. High-impact calendar events cover the major currencies, including JPY. This headline-based rule set may miss ambiguous reports; it does not predict price direction or guarantee impact. Existing trade, risk and account alerts remain governed by their existing preferences.
+The dashboard and Telegram digest share a conservative major-news classifier: NFP, CPI, FOMC decisions/published materials and comparable major economic releases or central-bank decisions. General geopolitical, company and commodity headlines are excluded. Routine analysis, previews and unsupported speculation are excluded. High-impact calendar events cover the major currencies, including JPY. Calendar queries and 30/5-minute reminders normalize timezone offsets and collapse duplicate releases; failed reminder delivery can retry. This headline-based rule set may miss ambiguous reports; it does not predict price direction or guarantee impact. Existing trade, risk and account alerts remain governed by their existing preferences.
 
 ## MT5 update required
 

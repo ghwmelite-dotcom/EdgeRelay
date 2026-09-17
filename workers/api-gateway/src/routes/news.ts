@@ -7,7 +7,7 @@ export const news = new Hono<{ Bindings: Env }>();
 // GET /calendar â€” upcoming high-impact news events
 news.get('/calendar', async (c) => {
   const currencies = c.req.query('currency')?.split(',') ?? ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNY'];
-  const from = c.req.query('from') ?? new Date().toISOString().split('T')[0];
+  const from = c.req.query('from') ?? new Date().toISOString();
   const to =
     c.req.query('to') ??
     (() => {
@@ -20,9 +20,10 @@ news.get('/calendar', async (c) => {
   const result = await c.env.DB.prepare(
     `SELECT * FROM news_events
      WHERE currency IN (${placeholders})
-       AND event_time >= ? AND event_time <= ?
+       AND datetime(event_time) >= datetime(?) AND datetime(event_time) <= datetime(?)
        AND impact = 'high'
-     ORDER BY event_time ASC`,
+     GROUP BY event_name, currency, datetime(event_time)
+     ORDER BY datetime(event_time) ASC`,
   )
     .bind(...currencies, from, to + 'T23:59:59')
     .all();
@@ -45,8 +46,8 @@ news.get('/events', async (c) => {
   const result = await c.env.DB.prepare(
     `SELECT event_name, currency, impact, event_time, forecast, previous, actual
      FROM news_events
-     WHERE event_time >= ? AND event_time <= ?
-     ORDER BY event_time ASC
+     WHERE datetime(event_time) >= datetime(?) AND datetime(event_time) <= datetime(?)
+     ORDER BY datetime(event_time) ASC
      LIMIT 50`,
   )
     .bind(from, to)
@@ -68,9 +69,10 @@ news.get('/check', async (c) => {
   const event = await c.env.DB.prepare(
     `SELECT * FROM news_events
      WHERE currency IN (${placeholders})
-       AND event_time >= ? AND event_time <= ?
+       AND datetime(event_time) >= datetime(?) AND datetime(event_time) <= datetime(?)
        AND impact = 'high'
-     ORDER BY event_time ASC
+     GROUP BY event_name, currency, datetime(event_time)
+     ORDER BY datetime(event_time) ASC
      LIMIT 1`,
   )
     .bind(...currencies, windowStart, windowEnd)

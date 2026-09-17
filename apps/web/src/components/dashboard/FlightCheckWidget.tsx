@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Radar, ShieldCheck, AlertTriangle, TrendingUp, Clock, Target, ChevronRight } from 'lucide-react';
-import { useJournalStore, type JournalTrade } from '@/stores/journal';
+import type { JournalTrade } from '@/stores/journal';
 import { useAccountsStore } from '@/stores/accounts';
 import { usePropGuardStore } from '@/stores/propguard';
 
@@ -101,8 +101,7 @@ function computeFlightCheck(trades: JournalTrade[]) {
   return { pairEdges, sessionEdges, dayEdges, todayTrades, avgTradesPerDay, overtradingWarning };
 }
 
-export function FlightCheckWidget() {
-  const { trades } = useJournalStore();
+export function FlightCheckWidget({ trades }: { trades: JournalTrade[] }) {
   const analysis = useMemo(() => computeFlightCheck(trades), [trades]);
 
   if (!analysis || analysis.pairEdges.length === 0) {

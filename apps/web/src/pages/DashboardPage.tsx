@@ -31,10 +31,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { TelegramBanner } from '@/components/dashboard/TelegramBanner';
 import { MarketHoursWidget } from '@/components/dashboard/MarketHoursWidget';
 import { MarketIntelWidget } from '@/components/dashboard/MarketIntelWidget';
-import { CommunityPulseWidget } from '@/components/dashboard/CommunityPulseWidget';
-import { FlightCheckWidget } from '@/components/dashboard/FlightCheckWidget';
-import { StrategyGenomeWidget } from '@/components/dashboard/StrategyGenomeWidget';
-import { useJournalStore } from '@/stores/journal';
+import { JournalActivitySection } from '@/components/dashboard/JournalActivitySection';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 
 // ── Signal type from API ─────────────────────────────────────────
@@ -503,7 +500,6 @@ export function DashboardPage() {
   const { accounts, fetchAccounts } = useAccountsStore();
   const { healthResults, fetchHealth } = useCommandCenterStore();
   const { checkTelegramStatus } = useNotificationStore();
-  const { trades, fetchTrades } = useJournalStore();
   const clock = useRealtimeClock();
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try { return localStorage.getItem('onboarding_dismissed') !== '1'; }
@@ -511,14 +507,6 @@ export function DashboardPage() {
   });
 
   useEffect(() => { checkTelegramStatus(); }, []);
-
-  // Load journal trades for Flight Check + Strategy DNA widgets
-  useEffect(() => {
-    if (accounts.length > 0 && trades.length === 0) {
-      const follower = accounts.find((a) => a.role === 'follower');
-      if (follower) fetchTrades(follower.id);
-    }
-  }, [accounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch recent signals and total P&L from API
   const [recentSignals, setRecentSignals] = useState<ApiSignal[]>([]);
@@ -727,14 +715,7 @@ export function DashboardPage() {
         <MarketIntelWidget />
       </div>
 
-      {/* ── Pre-Trade Flight Check ────────────────────────────── */}
-      <FlightCheckWidget />
-
-      {/* ── Community Trading Pulse + Strategy DNA ────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <CommunityPulseWidget />
-        <StrategyGenomeWidget />
-      </div>
+      <JournalActivitySection key={user?.id} accounts={accounts} />
 
       {/* ── Master Accounts — Signal Sources ──────────────────────── */}
       <section className="animate-fade-in-up" style={{ animationDelay: '320ms' }}>

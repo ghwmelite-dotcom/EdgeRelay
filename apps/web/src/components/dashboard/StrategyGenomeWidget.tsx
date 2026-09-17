@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Dna, TrendingUp, Clock, Target, BarChart3, Repeat } from 'lucide-react';
-import { useJournalStore, type JournalTrade } from '@/stores/journal';
+import type { JournalTrade } from '@/stores/journal';
 
 interface GenomeTrait {
   label: string;
@@ -70,8 +70,7 @@ function computeGenome(trades: JournalTrade[]): GenomeTrait[] | null {
   ];
 }
 
-export function StrategyGenomeWidget() {
-  const { trades } = useJournalStore();
+export function StrategyGenomeWidget({ trades }: { trades: JournalTrade[] }) {
   const genome = useMemo(() => computeGenome(trades), [trades]);
 
   if (!genome) {

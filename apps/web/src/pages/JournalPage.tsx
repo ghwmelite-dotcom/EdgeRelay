@@ -139,10 +139,11 @@ export function JournalPage() {
     fetchAccounts();
   }, [fetchAccounts]);
 
-  // Auto-select first account if none selected
+  // Prefer an account that has connected, and recover if the old selection was removed.
   useEffect(() => {
-    if (!selectedAccountId && accounts.length > 0) {
-      setSelectedAccountId(accounts[0].id);
+    if (accounts.length > 0 && !accounts.some((account) => account.id === selectedAccountId)) {
+      const preferred = accounts.find((account) => account.last_heartbeat) ?? accounts[0];
+      setSelectedAccountId(preferred.id);
     }
   }, [accounts, selectedAccountId, setSelectedAccountId]);
 

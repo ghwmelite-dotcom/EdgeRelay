@@ -546,7 +546,7 @@ function EADownloadCard({
 
     try {
       const downloadType = isJournal ? 'journal' : type;
-      const res = await fetch(`/v1/accounts/${matchingAccount.id}/ea-download/${downloadType}`, {
+      const res = await fetch(`${API_BASE}/accounts/${matchingAccount.id}/ea-download/${downloadType}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -619,7 +619,7 @@ function EADownloadCard({
           </h3>
           <p className="text-sm text-slate-400">
             {isJournal
-              ? 'Install on any MT5 account. Syncs every trade to your journal with zero drops — real-time capture + history catch-up.'
+              ? 'v1.10: syncs trade history and live open positions, floating P/L, balance and equity every 15 seconds. Replace the older journal EA and retain your existing inputs.'
               : isMaster
               ? 'Install on your master MT5 account. Captures and sends trade signals to the edge network.'
               : 'Install on each follower account. Receives signals and executes trades automatically.'}

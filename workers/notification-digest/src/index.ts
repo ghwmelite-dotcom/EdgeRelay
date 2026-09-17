@@ -1,4 +1,4 @@
-import { sendTelegramMessage } from '@edgerelay/shared';
+import { sendTelegramMessage, selectMajorNews } from '@edgerelay/shared';
 
 interface Env {
   DB: D1Database;
@@ -43,8 +43,8 @@ export default {
     // Pre-event alerts (every minute)
     await checkPreEventAlerts(env, ctx);
 
-    // Breaking news push (every minute — pushes new FinancialJuice headlines)
-    await checkBreakingNews(env, ctx);
+    // Breaking news push (every minute — major market-moving headlines only)
+    await checkBreakingNews(env);
 
     // Session alerts (every minute, fires only at exact session times)
     await checkSessionAlerts(env, ctx);
@@ -141,19 +141,18 @@ async function checkPreEventAlerts(env: Env, ctx: ExecutionContext): Promise<voi
 }
 
 /**
- * Pushes new FinancialJuice headlines to users with news_alerts enabled.
+ * Pushes selected major market-moving headlines to users with news_alerts enabled.
  * Runs every minute. Uses KV dedup to ensure each headline is sent only once per user.
  * Batches up to 5 headlines per message to avoid spam.
  */
-async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void> {
+async function checkBreakingNews(env: Env): Promise<void> {
   // Fetch news items from the last 16 minutes (covers 15-min fetcher interval + 1min buffer)
-  const { results: newsItems } = await env.DB.prepare(
+  const { results: candidates } = await env.DB.prepare(
     `SELECT id, headline_hash, headline, source, related_currencies, published_at, url
      FROM market_news
-     WHERE source = 'FinancialJuice'
-       AND published_at >= datetime('now', '-16 minutes')
+     WHERE datetime(published_at) >= datetime('now', '-16 minutes')
      ORDER BY published_at DESC
-     LIMIT 10`,
+     LIMIT 100`,
   ).all<{
     id: string;
     headline_hash: string;
@@ -164,7 +163,8 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
     url: string | null;
   }>();
 
-  if (!newsItems || newsItems.length === 0) return;
+  const newsItems = selectMajorNews(candidates ?? [], 20);
+  if (newsItems.length === 0) return;
 
   // ── Post to @edgerelay channel (once per batch, deduped) ──
   if (env.TELEGRAM_CHANNEL_ID) {
@@ -177,13 +177,13 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
 
     if (unsentChannel.length > 0) {
       const batch = unsentChannel.slice(0, 5);
-      const lines: string[] = ['📰 <b>Breaking News</b>', ''];
+      const lines: string[] = ['📰 <b>Major Market News</b>', ''];
 
       for (const item of batch) {
         const time = item.published_at.slice(11, 16);
-        const currencies = item.related_currencies ? ` [${item.related_currencies}]` : '';
+        const currencies = item.related_currencies ? ` [${escapeHtml(item.related_currencies)}]` : '';
         lines.push(`• <b>${escapeHtml(item.headline)}</b>${currencies}`);
-        lines.push(`  <i>${time} UTC — ${item.source}</i>`);
+        lines.push(`  <i>${time} UTC — ${escapeHtml(item.source)}</i>`);
         lines.push('');
       }
 
@@ -194,12 +194,12 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
       lines.push('<i>via @edgerelay — TradeMetrics Pro</i>');
 
       const msg = lines.join('\n').trim();
-      await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg);
+      const delivered = await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg);
 
-      for (const item of batch) {
+      for (const item of delivered ? batch : []) {
         await env.BOT_STATE.put(`news-channel:${item.headline_hash}`, '1', { expirationTtl: 21600 });
       }
-      console.log(`[digest] Pushed ${batch.length} headlines to channel ${env.TELEGRAM_CHANNEL_ID}`);
+      if (delivered) console.log(`[digest] Pushed ${batch.length} headlines to channel ${env.TELEGRAM_CHANNEL_ID}`);
     }
   }
 
@@ -233,15 +233,15 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
 
     // Build a batched message (max 5 headlines)
     const batch = unsent.slice(0, 5);
-    const lines: string[] = ['📰 <b>Breaking News</b>', ''];
+    const lines: string[] = ['📰 <b>Major Market News</b>', ''];
 
     for (const item of batch) {
       const time = item.published_at.slice(11, 16);
       const currencies = item.related_currencies
-        ? ` [${item.related_currencies}]`
+        ? ` [${escapeHtml(item.related_currencies)}]`
         : '';
       lines.push(`• <b>${escapeHtml(item.headline)}</b>${currencies}`);
-      lines.push(`  <i>${time} UTC — ${item.source}</i>`);
+      lines.push(`  <i>${time} UTC — ${escapeHtml(item.source)}</i>`);
       lines.push('');
     }
 
@@ -250,14 +250,14 @@ async function checkBreakingNews(env: Env, ctx: ExecutionContext): Promise<void>
     }
 
     const msg = lines.join('\n').trim();
-    ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
+    const delivered = await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg);
 
-    // Mark all as sent (TTL 6 hours to prevent re-sending)
-    for (const item of batch) {
+    // Failed delivery remains eligible for retry.
+    for (const item of delivered ? batch : []) {
       await env.BOT_STATE.put(`news-push:${user.user_id}:${item.headline_hash}`, '1', { expirationTtl: 21600 });
     }
 
-    console.log(`[digest] Pushed ${batch.length} FinancialJuice headlines to user ${user.user_id}`);
+    if (delivered) console.log(`[digest] Pushed ${batch.length} major headlines to user ${user.user_id}`);
   }
 }
 
@@ -351,9 +351,10 @@ async function formatMorningBrief(db: D1Database, now: Date, ai?: Env['AI']): Pr
     .all<{ event_name: string; currency: string; event_time: string; forecast: string | null }>();
 
   // Top 3 headlines
-  const { results: news } = await db
-    .prepare(`SELECT headline, source FROM market_news ORDER BY published_at DESC LIMIT 3`)
+  const { results: newsCandidates } = await db
+    .prepare(`SELECT headline, source FROM market_news WHERE datetime(published_at) >= datetime('now', '-24 hours') ORDER BY published_at DESC LIMIT 300`)
     .all<{ headline: string; source: string }>();
+  const news = selectMajorNews(newsCandidates ?? [], 3);
 
   const lines = [
     `🌅 <b>Market Brief — ${today}</b>`,

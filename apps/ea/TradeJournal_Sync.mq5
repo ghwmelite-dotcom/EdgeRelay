@@ -4,7 +4,7 @@
 //+------------------------------------------------------------------+
 #property copyright "EdgeRelay"
 #property link      "https://www.edgerelay.io"
-#property version   "1.00"
+#property version   "1.10"
 #property description "Syncs every trade to your EdgeRelay journal — zero drops guaranteed."
 #property strict
 
@@ -13,6 +13,7 @@
 #include <EdgeRelay_Http.mqh>
 #include <EdgeRelay_JournalSync.mqh>
 #include <EdgeRelay_JournalQueue.mqh>
+#include <EdgeRelay_Positions.mqh>
 
 //+------------------------------------------------------------------+
 //| Input parameters                                                  |
@@ -23,6 +24,8 @@ input string API_Endpoint        = "https://edgerelay-journal-sync.ghwmelite.wor
 input string AccountID           = "";                                           // Account ID
 input int    SyncIntervalSeconds = 60;                                           // History scan interval (s)
 input int    HeartbeatIntervalMs = 30000;                                        // Heartbeat interval (ms)
+
+input int PositionSnapshotIntervalSeconds = 15; // Read-only live P/L refresh (minimum 10s)
 
 //--- Global variables
 CJournalQueue  g_journalQueue;
@@ -74,7 +77,7 @@ int OnInit()
    g_gvLastDeal = "JournalSync_LastDeal_" + AccountID;
 
    //--- Set timer (use the shorter of heartbeat and sync interval)
-   int timerMs = MathMin(HeartbeatIntervalMs, SyncIntervalSeconds * 1000);
+   int timerMs = MathMin(MathMin(HeartbeatIntervalMs, SyncIntervalSeconds * 1000), MathMax(10, PositionSnapshotIntervalSeconds) * 1000);
    timerMs = MathMax(timerMs, 1000);
    if(!EventSetMillisecondTimer(timerMs))
       EventSetTimer(MathMax(timerMs / 1000, 1));
@@ -186,6 +189,15 @@ void OnTimer()
       int hbResult = SendJournalHeartbeat(API_Endpoint, API_Key, AccountID, API_Secret);
       g_connStatus = (hbResult == 200 || hbResult == 201) ? STATUS_CONNECTED : STATUS_ERROR;
       lastHeartbeat = TimeCurrent();
+     }
+
+   // Wall-clock timer keeps telemetry ticking even when no new market ticks arrive.
+   static ulong lastSnapshot = 0;
+   ulong tickNow = GetTickCount64();
+   if(lastSnapshot == 0 || tickNow - lastSnapshot >= (ulong)MathMax(10, PositionSnapshotIntervalSeconds) * 1000)
+     {
+      SendPositionSnapshot(API_Endpoint, API_Key, AccountID, API_Secret);
+      lastSnapshot = tickNow;
      }
 
    //--- History scan catch-up

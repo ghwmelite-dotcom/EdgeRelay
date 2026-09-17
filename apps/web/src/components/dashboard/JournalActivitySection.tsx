@@ -6,6 +6,7 @@ import type { JournalTrade } from '@/stores/journal';
 import { Select } from '@/components/ui/Select';
 import { FlightCheckWidget } from './FlightCheckWidget';
 import { StrategyGenomeWidget } from './StrategyGenomeWidget';
+import { LivePositionsWidget } from './LivePositionsWidget';
 import { CommunityPulseWidget } from './CommunityPulseWidget';
 
 interface JournalSnapshot {
@@ -76,7 +77,7 @@ export function JournalActivitySection({ accounts }: { accounts: Account[] }) {
               <button type="button" className="min-h-12 px-4 rounded-xl border border-terminal-border text-sm text-terminal-text focus-visible:outline focus-visible:outline-neon-cyan"
                 onClick={() => setRefreshKey((value) => value + 1)}>Refresh journal</button>
             </div>
-            <p className="text-xs text-terminal-muted mb-4">An entry records a trade opening; it does not confirm that the position is still open. Live positions and floating P&amp;L are not supplied by this sync.</p>
+            <p className="text-xs text-terminal-muted mb-4">An entry records a trade opening; it does not confirm that the position is still open. Current positions and floating P/L appear below when MT5 live telemetry is available.</p>
             {current?.error ? <p role="alert" className="text-sm text-neon-red">{current.error}</p>
               : !current || current.loading ? <p role="status" className="text-sm text-terminal-muted">Loading journal activity...</p>
               : trades.length === 0 ? <p className="text-sm text-terminal-muted">No synced trades for this account. Check the selected account and the MT5 journal connection.</p>
@@ -98,6 +99,7 @@ export function JournalActivitySection({ accounts }: { accounts: Account[] }) {
           </>
         )}
       </div>
+      {accountId && <LivePositionsWidget key={accountId} accountId={accountId} />}
       <p className="text-xs text-terminal-muted">Journal analytics below use the selected account’s latest 50 synced deals.</p>
       <FlightCheckWidget trades={trades} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

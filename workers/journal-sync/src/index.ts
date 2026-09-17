@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { positions } from './positions.js';
 import {
   JournalSyncPayload,
   Heartbeat,
@@ -259,5 +260,7 @@ app.post('/v1/journal/heartbeat', async (c) => {
     return errorResponse('INTERNAL_ERROR', message, 500);
   }
 });
+
+app.route('/', positions);
 
 export default app;

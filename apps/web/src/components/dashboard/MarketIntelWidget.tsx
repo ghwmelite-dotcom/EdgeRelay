@@ -41,6 +41,7 @@ export function MarketIntelWidget() {
 
   return (
     <div className="glass-premium border-gradient rounded-2xl p-5 animate-fade-in-up" style={{ animationDelay: '60ms' }}>
+      <p className="text-xs text-terminal-muted mb-3">NFP, CPI, FOMC and comparable high-impact economic releases. Linked Telegram news alerts use the same filter.</p>
       {/* Tabs */}
       <div className="flex items-center gap-1 mb-4">
         <button
@@ -51,7 +52,7 @@ export function MarketIntelWidget() {
               : 'text-terminal-muted hover:text-slate-300'
           }`}
         >
-          <Newspaper size={12} /> News
+          <Newspaper size={12} /> Major News
         </button>
         <button
           onClick={() => setTab('calendar')}
@@ -61,7 +62,7 @@ export function MarketIntelWidget() {
               : 'text-terminal-muted hover:text-slate-300'
           }`}
         >
-          <Calendar size={12} /> Calendar
+          <Calendar size={12} /> High-impact Calendar
         </button>
       </div>
 
@@ -71,7 +72,7 @@ export function MarketIntelWidget() {
           {isLoadingNews && headlines.length === 0 ? (
             <p className="text-xs text-terminal-muted text-center py-4">Loading news...</p>
           ) : headlines.length === 0 ? (
-            <p className="text-xs text-terminal-muted text-center py-4">No recent news</p>
+            <p className="text-xs text-terminal-muted text-center py-4">No major market-moving headlines in the last 24 hours</p>
           ) : (
             headlines.map((item) => (
               <a
@@ -88,6 +89,7 @@ export function MarketIntelWidget() {
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[10px] text-terminal-muted">{item.source}</span>
+                      {item.importance && <span title={item.importance.reason} className="text-[10px] text-neon-amber">{item.importance.category}</span>}
                       <span className="text-[10px] text-terminal-muted/50">{timeAgo(item.published_at)}</span>
                     </div>
                   </div>
@@ -105,7 +107,7 @@ export function MarketIntelWidget() {
           {isLoadingCalendar && calendarEvents.length === 0 ? (
             <p className="text-xs text-terminal-muted text-center py-4">Loading events...</p>
           ) : calendarEvents.length === 0 ? (
-            <p className="text-xs text-terminal-muted text-center py-4">No upcoming events</p>
+            <p className="text-xs text-terminal-muted text-center py-4">No upcoming high-impact events</p>
           ) : (
             calendarEvents.map((event) => (
               <div key={event.id} className="flex items-center gap-2">

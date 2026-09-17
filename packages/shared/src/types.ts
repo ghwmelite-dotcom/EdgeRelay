@@ -507,6 +507,7 @@ export interface TelegramStatus {
 }
 
 export interface MarketHeadline {
+  importance?: { category: string; reason: string };
   id: string;
   headline: string;
   summary: string | null;

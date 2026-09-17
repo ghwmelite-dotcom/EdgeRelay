@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { ApiResponse } from '@edgerelay/shared';
+import { LIVE_POSITION_STALE_MS, type ApiResponse, type LivePositionsResponse, type PositionSnapshot } from '@edgerelay/shared';
 import type { Env } from '../types.js';
 
 export const journal = new Hono<{ Bindings: Env }>();
@@ -539,4 +539,20 @@ journal.delete('/trades/:accountId/:dealTicket', async (c) => {
   }
 
   return c.json<ApiResponse>({ data: { deleted: result.meta.changes }, error: null });
+});
+
+// Complete current-position snapshot, scoped to the authenticated account owner.
+journal.get('/positions/:accountId', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  const accountId = c.req.param('accountId');
+  if (!await verifyAccountOwnership(c.env.DB, accountId, c.get('userId'))) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'FORBIDDEN', message: 'Account not found or not owned by user' } }, 403);
+  }
+  const row = await c.env.DB.prepare('SELECT snapshot_json, captured_at, received_at FROM live_position_snapshots WHERE account_id = ?')
+    .bind(accountId).first<{ snapshot_json: string; captured_at: number; received_at: number }>();
+  const stale = !row || Date.now() - Math.min(row.received_at, row.captured_at * 1000) > LIVE_POSITION_STALE_MS;
+  return c.json<ApiResponse<LivePositionsResponse>>({ data: {
+    snapshot: row ? JSON.parse(row.snapshot_json) as PositionSnapshot : null,
+    received_at: row?.received_at ?? null, stale,
+  }, error: null });
 });

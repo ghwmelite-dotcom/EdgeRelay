@@ -39,15 +39,17 @@ bool Sha256(uchar &data[], uchar &hash[])
 //| HMAC-SHA256 implementation                                        |
 //| RFC 2104: HMAC(K, m) = H((K' ^ opad) || H((K' ^ ipad) || m))    |
 //+------------------------------------------------------------------+
-string HmacSha256(string message, string key)
+string HmacSha256(string message, string key, uint codepage = CP_ACP)
   {
    int blockSize = 64;  // SHA256 block size
 
    //--- Convert key and message to byte arrays
    uchar keyBytes[];
    uchar msgBytes[];
-   StringToCharArray(key, keyBytes, 0, StringLen(key));
-   StringToCharArray(message, msgBytes, 0, StringLen(message));
+   StringToCharArray(key, keyBytes, 0, WHOLE_ARRAY, codepage);
+   ArrayResize(keyBytes, ArraySize(keyBytes) - 1);
+   StringToCharArray(message, msgBytes, 0, WHOLE_ARRAY, codepage);
+   ArrayResize(msgBytes, ArraySize(msgBytes) - 1);
 
    int keyLen = ArraySize(keyBytes);
 

@@ -46,6 +46,19 @@ jobs:
       - name: Typecheck provider-stats
         run: pnpm --filter @edgerelay/provider-stats typecheck
 
+      - name: Typecheck journal sync
+        run: pnpm --filter edgerelay-journal-sync typecheck
+
+      - name: Typecheck notification digest
+        run: pnpm --filter @edgerelay/notification-digest typecheck
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: News and signed telemetry regressions
+        run: node scripts/test-news-positions.cjs
+
   deploy-account-relay:
     name: Deploy Account Relay DO
     needs: typecheck
@@ -94,7 +107,7 @@ jobs:
 
   deploy-api-gateway:
     name: Deploy API Gateway
-    needs: [typecheck, deploy-account-relay]
+    needs: [typecheck, deploy-account-relay, migrate-db]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -187,6 +200,50 @@ jobs:
             echo "Applying $migration..."
             pnpm exec wrangler d1 execute edgerelay-db --file="$migration" --remote || echo "⚠️  $migration had errors (likely already applied), continuing..."
           done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Ensure live-position schema
+        run: pnpm exec wrangler d1 execute edgerelay-db --config workers/api-gateway/wrangler.toml --file=migrations/0024_live_positions.sql --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-journal-sync:
+    name: Deploy Journal Sync
+    needs: [typecheck, migrate-db]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Deploy journal telemetry
+        working-directory: workers/journal-sync
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-notification-digest:
+    name: Deploy Notification Digest
+    needs: typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Deploy major-news delivery
+        working-directory: workers/notification-digest
+        run: pnpm exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

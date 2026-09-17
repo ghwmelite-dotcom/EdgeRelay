@@ -4,9 +4,9 @@ import type { Env } from '../types.js';
 
 export const news = new Hono<{ Bindings: Env }>();
 
-// GET /calendar — upcoming high-impact news events
+// GET /calendar â€” upcoming high-impact news events
 news.get('/calendar', async (c) => {
-  const currencies = c.req.query('currency')?.split(',') ?? ['USD', 'EUR', 'GBP'];
+  const currencies = c.req.query('currency')?.split(',') ?? ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNY'];
   const from = c.req.query('from') ?? new Date().toISOString().split('T')[0];
   const to =
     c.req.query('to') ??
@@ -21,7 +21,7 @@ news.get('/calendar', async (c) => {
     `SELECT * FROM news_events
      WHERE currency IN (${placeholders})
        AND event_time >= ? AND event_time <= ?
-       AND impact IN ('high', 'medium')
+       AND impact = 'high'
      ORDER BY event_time ASC`,
   )
     .bind(...currencies, from, to + 'T23:59:59')
@@ -30,7 +30,7 @@ news.get('/calendar', async (c) => {
   return c.json<ApiResponse>({ data: { events: result.results }, error: null });
 });
 
-// GET /events — news events within a time window (for Trade Autopsy)
+// GET /events â€” news events within a time window (for Trade Autopsy)
 news.get('/events', async (c) => {
   const from = c.req.query('from');
   const to = c.req.query('to');
@@ -55,10 +55,10 @@ news.get('/events', async (c) => {
   return c.json<ApiResponse>({ data: { events: result.results }, error: null });
 });
 
-// GET /check — quick check for imminent news
+// GET /check â€” quick check for imminent news
 news.get('/check', async (c) => {
   const minutes = parseInt(c.req.query('minutes') ?? '5');
-  const currencies = c.req.query('currency')?.split(',') ?? ['USD', 'EUR', 'GBP'];
+  const currencies = c.req.query('currency')?.split(',') ?? ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'NZD', 'CNY'];
 
   const now = new Date();
   const windowStart = new Date(now.getTime() - minutes * 60 * 1000).toISOString();

@@ -641,9 +641,9 @@ accounts.get('/:id/ea-download/:type', async (c) => {
   const accountId = c.req.param('id');
   const eaType = c.req.param('type'); // 'master' or 'follower'
 
-  if (eaType !== 'master' && eaType !== 'follower') {
+  if (eaType !== 'master' && eaType !== 'follower' && eaType !== 'journal') {
     return c.json<ApiResponse>(
-      { data: null, error: { code: 'VALIDATION_ERROR', message: 'Type must be master or follower' } },
+      { data: null, error: { code: 'VALIDATION_ERROR', message: 'Type must be master, follower or journal' } },
       400,
     );
   }
@@ -662,7 +662,8 @@ accounts.get('/:id/ea-download/:type', async (c) => {
     );
   }
 
-  const key = `ea-builds/EdgeRelay_${eaType === 'master' ? 'Master' : 'Follower'}.ex5`;
+  const filename = eaType === 'journal' ? 'TradeJournal_Sync.ex5' : `EdgeRelay_${eaType === 'master' ? 'Master' : 'Follower'}.ex5`;
+  const key = eaType === 'journal' ? 'ea-builds/TradeJournal_Sync_v1.10.ex5' : `ea-builds/${filename}`;
   const object = await c.env.STORAGE.get(key);
 
   if (!object) {
@@ -675,8 +676,8 @@ accounts.get('/:id/ea-download/:type', async (c) => {
   return new Response(object.body, {
     headers: {
       'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="EdgeRelay_${eaType === 'master' ? 'Master' : 'Follower'}.ex5"`,
-      'Cache-Control': 'private, max-age=3600',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'private, no-store',
     },
   });
 });
@@ -743,6 +744,7 @@ const EA_BUNDLES: Record<EaSourceType, { ea: string; includes: string[]; title: 
       'EdgeRelay_Http.mqh',
       'EdgeRelay_JournalSync.mqh',
       'EdgeRelay_JournalQueue.mqh',
+      'EdgeRelay_Positions.mqh',
     ],
   },
 };

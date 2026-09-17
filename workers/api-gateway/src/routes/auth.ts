@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
-import { generateToken, hashPassword, verifyPassword, verifyJwtIgnoreExpiry } from '../middleware/auth.js';
+import { generateToken, hashPassword, verifyPassword, verifyJwtIgnoreExpiry, REFRESH_GRACE_SECONDS } from '../middleware/auth.js';
 import { notifyLogin } from '../lib/notifyLogin.js';
 
 const auth = new Hono<{ Bindings: Env }>();
@@ -95,7 +96,7 @@ auth.post('/register', async (c) => {
   await c.env.SESSIONS.put(
     `session:${result.id}:${token}`,
     JSON.stringify({ userId: result.id, createdAt: Date.now() }),
-    { expirationTtl: expiryHours * 3600 },
+    { expirationTtl: expiryHours * 3600 + REFRESH_GRACE_SECONDS },
   );
 
   return c.json<ApiResponse>(
@@ -151,7 +152,7 @@ auth.post('/login', async (c) => {
   await c.env.SESSIONS.put(
     `session:${user.id}:${token}`,
     JSON.stringify({ userId: user.id, createdAt: Date.now() }),
-    { expirationTtl: expiryHours * 3600 },
+    { expirationTtl: expiryHours * 3600 + REFRESH_GRACE_SECONDS },
   );
 
   // Send login alert via Telegram (non-blocking)
@@ -216,6 +217,10 @@ auth.post('/refresh', async (c) => {
     );
   }
 
+  // Refresh must not recreate logged-out or revoked sessions.
+  const session = await c.env.SESSIONS.get(`session:${payload.sub}:${oldToken}`);
+  if (!session) return c.json<ApiResponse>({ data: null, error: { code: 'UNAUTHORIZED', message: 'Session expired or revoked' } }, 401);
+
   // Verify user still exists
   const user = await c.env.DB.prepare(
     'SELECT id, email, name, plan FROM users WHERE id = ?',
@@ -230,9 +235,6 @@ auth.post('/refresh', async (c) => {
     );
   }
 
-  // Delete old session
-  await c.env.SESSIONS.delete(`session:${payload.sub}:${oldToken}`).catch(() => {});
-
   // Issue new token + session
   const expiryHours = parseInt(c.env.JWT_EXPIRY_HOURS || '24', 10);
   const newToken = await generateToken(user.id, c.env.JWT_SECRET, expiryHours);
@@ -240,8 +242,11 @@ auth.post('/refresh', async (c) => {
   await c.env.SESSIONS.put(
     `session:${user.id}:${newToken}`,
     JSON.stringify({ userId: user.id, createdAt: Date.now() }),
-    { expirationTtl: expiryHours * 3600 },
+    { expirationTtl: expiryHours * 3600 + REFRESH_GRACE_SECONDS },
   );
+
+  // Keep the old session available if storing its replacement fails.
+  await c.env.SESSIONS.delete(`session:${payload.sub}:${oldToken}`);
 
   return c.json<ApiResponse>({
     data: {
@@ -266,6 +271,8 @@ auth.get('/google', async (c) => {
   // Store state in KV for verification
   await c.env.SESSIONS.put(`google-oauth-state:${state}`, '1', { expirationTtl: 600 });
 
+  setCookie(c, 'google_oauth_state', state, { httpOnly: true, secure: true, sameSite: 'Lax', path: '/v1/auth/google', maxAge: 600 });
+
   const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}&prompt=select_account`;
 
   return c.redirect(googleUrl);
@@ -283,14 +290,13 @@ auth.get('/google/callback', async (c) => {
     return c.redirect(`${frontendUrl}/login?error=google_denied`);
   }
 
-  // Verify state
-  if (state) {
-    const valid = await c.env.SESSIONS.get(`google-oauth-state:${state}`);
-    if (!valid) {
-      return c.redirect(`${frontendUrl}/login?error=invalid_state`);
-    }
-    await c.env.SESSIONS.delete(`google-oauth-state:${state}`);
+  // Bind the one-time state to the browser that started login.
+  const browserState = getCookie(c, 'google_oauth_state');
+  deleteCookie(c, 'google_oauth_state', { path: '/v1/auth/google', secure: true });
+  if (!state || !browserState || state !== browserState || !await c.env.SESSIONS.get(`google-oauth-state:${state}`)) {
+    return c.redirect(`${frontendUrl}/login?error=invalid_state`);
   }
+  await c.env.SESSIONS.delete(`google-oauth-state:${state}`);
 
   const clientId = c.env.GOOGLE_CLIENT_ID;
   const clientSecret = c.env.GOOGLE_CLIENT_SECRET;
@@ -319,8 +325,8 @@ auth.get('/google/callback', async (c) => {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
 
-  const googleUser = await userInfoRes.json() as { email?: string; name?: string; picture?: string };
-  if (!googleUser.email) {
+  const googleUser = await userInfoRes.json() as { email?: string; name?: string; picture?: string; verified_email?: boolean };
+  if (!userInfoRes.ok || !googleUser.email || googleUser.verified_email !== true) {
     return c.redirect(`${frontendUrl}/login?error=google_no_email`);
   }
 
@@ -355,7 +361,7 @@ auth.get('/google/callback', async (c) => {
   await c.env.SESSIONS.put(
     `session:${user.id}:${token}`,
     JSON.stringify({ userId: user.id, createdAt: Date.now() }),
-    { expirationTtl: expiryHours * 3600 },
+    { expirationTtl: expiryHours * 3600 + REFRESH_GRACE_SECONDS },
   );
 
   // Redirect to frontend with token (use hash fragment for security — not in URL params)

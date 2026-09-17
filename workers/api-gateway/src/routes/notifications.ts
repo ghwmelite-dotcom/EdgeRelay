@@ -135,41 +135,33 @@ notifications.get('/preferences', async (c) => {
 // Update notification preferences
 notifications.put('/preferences', async (c) => {
   const userId = c.get('userId');
-  const body = await c.req.json<Partial<NotificationPreferences>>();
-
-  // Build SET clause dynamically from provided fields
-  const allowedFields = [
-    'login_alerts',
-    'signal_executed',
-    'equity_guard',
-    'account_disconnected',
-    'daily_summary',
-    'weekly_digest',
-    'timezone',
-    'summary_hour',
-    'morning_brief',
-    'news_alerts',
-    'session_alerts',
-  ];
-
-  const setClauses: string[] = ["updated_at = datetime('now')"];
+  const body: unknown = await c.req.json().catch(() => null);
+  const invalid = () => c.json<ApiResponse>({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Invalid notification preferences' } }, 400);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return invalid();
+  const input = body as Record<string, unknown>;
+  const booleanFields = ['login_alerts', 'signal_executed', 'equity_guard', 'account_disconnected', 'daily_summary', 'weekly_digest', 'morning_brief', 'news_alerts', 'session_alerts'];
+  const fields = Object.keys(input);
+  if (!fields.length) return invalid();
   const values: (string | number)[] = [];
-
-  for (const field of allowedFields) {
-    if (field in body) {
-      const val = body[field as keyof NotificationPreferences];
-      setClauses.push(`${field} = ?`);
-      values.push(typeof val === 'boolean' ? (val ? 1 : 0) : (val as string | number));
-    }
+  for (const field of fields) {
+    const value = input[field];
+    if (booleanFields.includes(field)) {
+      if (typeof value !== 'boolean') return invalid();
+      values.push(value ? 1 : 0);
+    } else if (field === 'summary_hour') {
+      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 23) return invalid();
+      values.push(value);
+    } else if (field === 'timezone') {
+      if (typeof value !== 'string' || value.length > 100) return invalid();
+      try { new Intl.DateTimeFormat('en', { timeZone: value }).format(); } catch { return invalid(); }
+      values.push(value);
+    } else return invalid();
   }
-
-  values.push(userId);
-
-  await c.env.DB.prepare(
-    `UPDATE notification_preferences SET ${setClauses.join(', ')} WHERE user_id = ?`,
-  )
-    .bind(...values)
-    .run();
+  // Field names come exclusively from the allowlist above; values stay bound.
+  await c.env.DB.prepare(`INSERT INTO notification_preferences (user_id, ${fields.join(', ')})
+    VALUES (?, ${fields.map(() => '?').join(', ')}) ON CONFLICT(user_id) DO UPDATE SET
+    ${fields.map((field) => `${field} = excluded.${field}`).join(', ')}, updated_at = datetime('now')`)
+    .bind(userId, ...values).run();
 
   return c.json<ApiResponse<{ updated: boolean }>>({
     data: { updated: true },

@@ -73,7 +73,7 @@ app.post('/v1/journal/sync', async (c) => {
 
     // 2. Look up account
     const account = await c.env.DB.prepare(
-      'SELECT id, api_secret, role FROM accounts WHERE id = ? LIMIT 1',
+      'SELECT id, api_secret, role FROM accounts WHERE id = ? AND is_active = 1 LIMIT 1',
     )
       .bind(payload.account_id)
       .first<{ id: string; api_secret: string; role: string }>();
@@ -179,7 +179,9 @@ app.post('/v1/journal/sync', async (c) => {
           duplicates++;
         }
       } catch {
-        duplicates++;
+        // Returning success makes the EA discard the whole batch. Retain it for retry;
+        // already inserted deals will be safely ignored on the next attempt.
+        return errorResponse('SYNC_RETRY_REQUIRED', 'Journal storage temporarily unavailable; retry this batch', 503);
       }
     }
 
@@ -207,7 +209,7 @@ app.post('/v1/journal/heartbeat', async (c) => {
     const heartbeat = parsed.data;
 
     const account = await c.env.DB.prepare(
-      'SELECT id, api_secret FROM accounts WHERE id = ? LIMIT 1',
+      'SELECT id, api_secret FROM accounts WHERE id = ? AND is_active = 1 LIMIT 1',
     )
       .bind(heartbeat.account_id)
       .first<{ id: string; api_secret: string }>();

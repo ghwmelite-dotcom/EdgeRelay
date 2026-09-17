@@ -40,6 +40,7 @@ export interface Env {
 }
 
 export interface JwtPayload {
+  jti?: string;
   sub: string;
   iat: number;
   exp: number;

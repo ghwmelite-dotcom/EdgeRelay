@@ -1,9 +1,9 @@
 import type { ApiResponse } from '@edgerelay/shared';
 import { API_BASE } from '@/lib/constants';
 
-class ApiClient {
+export class ApiClient {
   private token: string | null = null;
-  private refreshing: Promise<boolean> | null = null;
+  private refreshing: Promise<boolean | null> | null = null;
 
   setToken(token: string | null) {
     this.token = token;
@@ -12,7 +12,7 @@ class ApiClient {
   /** Called when a new token is obtained via refresh */
   onTokenRefreshed: ((token: string, user: unknown) => void) | null = null;
 
-  /** Called when refresh fails — user must re-login */
+  /** Called only when the server rejects the session. */
   onAuthExpired: (() => void) | null = null;
 
   private async request<T>(
@@ -29,13 +29,26 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
-    const res = await fetch(`${API_BASE}${path}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    const requestToken = this.token;
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}${path}`, {
+        method,
+        headers,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+    } catch {
+      return { data: null, error: { code: 'NETWORK_ERROR', message: 'Unable to connect. Please try again.' } };
+    }
 
-    const json = (await res.json()) as ApiResponse<T>;
+    let json: ApiResponse<T>;
+    try {
+      json = await res.json() as ApiResponse<T>;
+      if (!json || typeof json !== 'object' || !('data' in json) || !('error' in json)) throw new Error('Invalid response');
+    } catch {
+      json = { data: null, error: { code: 'INVALID_RESPONSE', message: 'The server returned an unexpected response. Please try again.' } };
+    }
+    if (!res.ok && !json.error) json = { data: null, error: { code: 'HTTP_ERROR', message: 'Request failed. Please try again.' } };
 
     // Auto-refresh on 401 (but not for auth endpoints or retries)
     if (
@@ -44,47 +57,51 @@ class ApiClient {
       this.token &&
       !path.startsWith('/auth/')
     ) {
+      // Another request may already have refreshed this old token.
+      if (this.token !== requestToken) return this.request<T>(method, path, body, true);
       const refreshed = await this.tryRefresh();
       if (refreshed) {
         // Retry the original request with new token
         return this.request<T>(method, path, body, true);
       }
-      // Refresh failed — trigger logout
-      this.onAuthExpired?.();
+      // Only a definitive session rejection triggers logout.
+      if (refreshed === false && this.token === requestToken) this.onAuthExpired?.();
     }
 
     return json;
   }
 
-  private async tryRefresh(): Promise<boolean> {
+  private async tryRefresh(): Promise<boolean | null> {
     // Deduplicate concurrent refresh attempts
     if (this.refreshing) return this.refreshing;
 
+    const refreshToken = this.token;
     this.refreshing = (async () => {
       try {
         const res = await fetch(`${API_BASE}/auth/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.token}`,
+            Authorization: `Bearer ${refreshToken}`,
           },
         });
 
-        if (!res.ok) return false;
+        if (!res.ok) return res.status === 401 || res.status === 403 ? false : null;
 
         const json = (await res.json()) as ApiResponse<{
           token: string;
           user: unknown;
         }>;
 
+        if (this.token !== refreshToken) return null; // Logout/account switch won the race.
         if (json.data?.token) {
           this.token = json.data.token;
           this.onTokenRefreshed?.(json.data.token, json.data.user);
           return true;
         }
-        return false;
+        return null;
       } catch {
-        return false;
+        return null;
       } finally {
         this.refreshing = null;
       }

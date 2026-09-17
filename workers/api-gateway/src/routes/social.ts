@@ -1,19 +1,9 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
-import { verifyJwt } from '../middleware/auth.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 export const social = new Hono<{ Bindings: Env }>();
-
-// Helper: extract userId from Authorization header (for public-mounted routes)
-async function getUserId(c: { req: { header: (name: string) => string | undefined }; env: { JWT_SECRET: string } }): Promise<string | null> {
-  const auth = c.req.header('Authorization');
-  if (!auth?.startsWith('Bearer ')) return null;
-  try {
-    const payload = await verifyJwt(auth.slice(7), c.env.JWT_SECRET);
-    return payload?.sub || null;
-  } catch { return null; }
-}
 
 // ── GET /social/feed — Public feed of posts ───────────────────
 
@@ -41,8 +31,8 @@ social.get('/feed', async (c) => {
 
 // ── POST /social/posts — Create a post (auth required) ────────
 
-social.post('/posts', async (c) => {
-  const userId = await getUserId(c);
+social.post('/posts', authMiddleware, async (c) => {
+  const userId = c.get('userId');
   if (!userId) return c.json<ApiResponse>({ data: null, error: { code: 'UNAUTHORIZED', message: 'Login required' } }, 401);
   const body = await c.req.json<{
     postType: 'setup' | 'result' | 'insight';
@@ -88,8 +78,8 @@ social.post('/posts', async (c) => {
 
 // ── POST /social/posts/:id/vote — Upvote/downvote ────────────
 
-social.post('/posts/:postId/vote', async (c) => {
-  const userId = await getUserId(c);
+social.post('/posts/:postId/vote', authMiddleware, async (c) => {
+  const userId = c.get('userId');
   if (!userId) return c.json<ApiResponse>({ data: null, error: { code: 'UNAUTHORIZED', message: 'Login required' } }, 401);
   const postId = c.req.param('postId');
   const body = await c.req.json<{ vote: 1 | -1 }>();
@@ -133,8 +123,8 @@ social.post('/posts/:postId/vote', async (c) => {
 
 // ── DELETE /social/posts/:id — Delete own post ────────────────
 
-social.delete('/posts/:postId', async (c) => {
-  const userId = await getUserId(c);
+social.delete('/posts/:postId', authMiddleware, async (c) => {
+  const userId = c.get('userId');
   if (!userId) return c.json<ApiResponse>({ data: null, error: { code: 'UNAUTHORIZED', message: 'Login required' } }, 401);
   const postId = c.req.param('postId');
 

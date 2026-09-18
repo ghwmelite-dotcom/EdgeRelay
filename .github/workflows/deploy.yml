@@ -60,6 +60,7 @@ jobs:
         run: |
           node scripts/test-news-positions.cjs
           node scripts/test-platform-audit.cjs
+          node scripts/test-dashboard-models.cjs
 
   deploy-account-relay:
     name: Deploy Account Relay DO

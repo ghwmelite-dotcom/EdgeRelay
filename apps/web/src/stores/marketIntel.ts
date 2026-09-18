@@ -17,6 +17,8 @@ interface CalendarEvent {
 interface MarketIntelState {
   headlines: MarketHeadline[];
   calendarEvents: CalendarEvent[];
+  newsError: boolean;
+  calendarError: boolean;
   isLoadingNews: boolean;
   isLoadingCalendar: boolean;
 
@@ -25,6 +27,8 @@ interface MarketIntelState {
 }
 
 export const useMarketIntelStore = create<MarketIntelState>()((set) => ({
+  newsError: false,
+  calendarError: false,
   headlines: [],
   calendarEvents: [],
   isLoadingNews: false,
@@ -34,9 +38,9 @@ export const useMarketIntelStore = create<MarketIntelState>()((set) => ({
     set({ isLoadingNews: true });
     const res = await api.get<{ headlines: MarketHeadline[] }>('/market-news/headlines?limit=10');
     if (res.data) {
-      set({ headlines: res.data.headlines ?? [], isLoadingNews: false });
+      set({ headlines: res.data.headlines ?? [], isLoadingNews: false, newsError: false });
     } else {
-      set({ isLoadingNews: false });
+      set({ isLoadingNews: false, newsError: true });
     }
   },
 
@@ -44,9 +48,9 @@ export const useMarketIntelStore = create<MarketIntelState>()((set) => ({
     set({ isLoadingCalendar: true });
     const res = await api.get<{ events: CalendarEvent[] }>('/news/calendar');
     if (res.data) {
-      set({ calendarEvents: res.data.events ?? [], isLoadingCalendar: false });
+      set({ calendarEvents: res.data.events ?? [], isLoadingCalendar: false, calendarError: false });
     } else {
-      set({ isLoadingCalendar: false });
+      set({ isLoadingCalendar: false, calendarError: true });
     }
   },
 }));

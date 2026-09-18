@@ -37,7 +37,7 @@ const STEPS = [
     color: '#b18cff',
     title: 'Enable PropGuard',
     description: 'Protect your accounts with prop firm presets. FTMO, The5ers, FundedNext, Apex — one-click rule enforcement.',
-    detail: 'Auto daily loss limits, max drawdown caps, Friday close, and news blackout. Never breach a funded account.',
+    detail: 'Auto daily loss limits, max drawdown caps, Friday close, and news blackout. Verify the settings against your firm’s current rules.',
     cta: 'Open Prop Firm Hub',
     link: '/app/prop-firms',
   },

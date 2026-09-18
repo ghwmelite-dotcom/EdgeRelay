@@ -24,6 +24,7 @@ import { useAccountsStore, type Account } from '@/stores/accounts';
 import { useCommandCenterStore, type AccountHealthResult } from '@/stores/commandCenter';
 import { useNotificationStore } from '@/stores/notifications';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/constants';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatusDot } from '@/components/ui/StatusDot';
@@ -58,7 +59,7 @@ function isConnected(heartbeat: string | null): boolean {
     ? ts * 1000                      // Unix seconds → ms
     : new Date(heartbeat).getTime(); // ISO string
   if (isNaN(heartbeatMs)) return false;
-  return Date.now() - heartbeatMs < 120_000; // 2 minutes tolerance (was 30s — too strict)
+  return Date.now() - heartbeatMs >= -120_000 && Date.now() - heartbeatMs < 120_000; // 2 minutes tolerance (was 30s — too strict)
 }
 
 function formatCurrency(n: number): string {
@@ -123,11 +124,15 @@ function useRealtimeClock(): string {
 }
 
 /** Map API action strings to display-friendly action types */
-function normalizeAction(action: string): 'buy_open' | 'sell_open' | 'close' {
+type DisplayAction = 'buy_open' | 'sell_open' | 'close' | 'modify' | 'cancel' | 'open' | 'unknown';
+function normalizeAction(action: string, orderType: string | null): DisplayAction {
   const lower = action.toLowerCase();
-  if (lower.includes('buy')) return 'buy_open';
-  if (lower.includes('sell')) return 'sell_open';
-  return 'close';
+  if (lower.includes('close')) return 'close';
+  if (lower.includes('modify')) return 'modify';
+  if (lower.includes('cancel')) return 'cancel';
+  if (lower.includes('buy') || (lower === 'open' && orderType?.toLowerCase().includes('buy'))) return 'buy_open';
+  if (lower.includes('sell') || (lower === 'open' && orderType?.toLowerCase().includes('sell'))) return 'sell_open';
+  return lower === 'open' ? 'open' : 'unknown';
 }
 
 // ── Trading Wisdom ────────────────────────────────────────────
@@ -406,45 +411,29 @@ function TopInsightCard() {
 // ── System Status Bar ──────────────────────────────────────────
 
 function SystemStatusBar() {
-  return (
-    <div
-      className="animate-fade-in-up glass-premium rounded-xl px-4 py-2.5 hidden sm:flex items-center justify-between"
-      style={{ animationDelay: '0ms' }}
-    >
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Shield size={13} className="text-neon-green" />
-          <span className="text-[10px] uppercase tracking-[0.2em] font-mono-nums text-neon-green glow-text-green font-semibold">
-            System Status: All Operational
-          </span>
-        </div>
-        <span className="h-3 w-px bg-terminal-border" />
-        <div className="flex items-center gap-1.5">
-          <Wifi size={11} className="text-neon-cyan/60" />
-          <span className="text-[10px] font-mono-nums text-terminal-muted">Edge Network</span>
-          <span className="live-dot" style={{ width: 4, height: 4 }} />
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <Zap size={11} className="text-neon-amber" />
-          <span className="text-[10px] font-mono-nums text-terminal-muted">
-            Uptime <span className="text-slate-300">99.99%</span>
-          </span>
-        </div>
-        <span className="h-3 w-px bg-terminal-border" />
-        <div className="flex items-center gap-1.5">
-          <Signal size={11} className="text-neon-cyan/60" />
-          <span className="text-[10px] font-mono-nums text-terminal-muted">
-            Ping <span className="text-neon-cyan">12ms</span>
-          </span>
-        </div>
-      </div>
-    </div>
-  );
+  const [reachable, setReachable] = useState<boolean | null>(null);
+  useEffect(() => {
+    let disposed = false;
+    let pending = false;
+    const check = async () => {
+      if (pending) return;
+      pending = true;
+      try {
+        const response = await fetch(`${API_BASE.replace(/\/v1$/, '')}/health`, { cache: 'no-store' });
+        const body = await response.json();
+        if (!disposed) setReachable(response.ok && body.data?.status === 'ok');
+      } catch { if (!disposed) setReachable(false); }
+      finally { pending = false; }
+    };
+    void check();
+    const timer = window.setInterval(() => { void check(); }, 30_000);
+    return () => { disposed = true; window.clearInterval(timer); };
+  }, []);
+  return <div role="status" className="glass-premium rounded-xl px-4 py-2.5 text-xs text-terminal-muted">
+    API connection: {reachable === null ? 'Checking...' : reachable ? 'Reachable' : 'Unavailable — retrying'}
+    <span className="ml-3">Checks every 30 seconds. Broker connections are shown per account.</span>
+  </div>;
 }
-
-// ── Stat Card ──────────────────────────────────────────────────
 
 interface StatCardProps {
   label: string;
@@ -510,47 +499,62 @@ export function DashboardPage() {
 
   // Fetch recent signals and total P&L from API
   const [recentSignals, setRecentSignals] = useState<ApiSignal[]>([]);
-  const [totalPnl, setTotalPnl] = useState<{ profit: number; trades: number; winRate: number } | null>(null);
+  const [totalPnl, setTotalPnl] = useState<{ profit: number; trades: number; winRate: number; currency: string | null; canTotal: boolean } | null>(null);
 
   useEffect(() => {
-    fetchAccounts();
-    fetchHealth();
-
-    api.get<ApiSignal[]>('/signals?limit=5').then((res) => {
-      if (res.data) {
-        setRecentSignals(res.data);
-      }
-    });
+    let disposed = false;
+    const refresh = () => {
+      void fetchAccounts();
+      void fetchHealth();
+      void api.get<ApiSignal[]>('/signals?limit=5').then((res) => {
+        if (!disposed) setRecentSignals(Array.isArray(res.data) ? res.data : []);
+      });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 30_000);
+    return () => { disposed = true; window.clearInterval(timer); };
   }, [fetchAccounts, fetchHealth]);
 
   // Fetch total P&L across all accounts from journal stats
   useEffect(() => {
-    if (accounts.length === 0) return;
+    let disposed = false;
+    if (accounts.length === 0) { setTotalPnl(null); return; }
     const fetchPnl = async () => {
       let totalProfit = 0;
       let totalTrades = 0;
       let totalWins = 0;
+      const currencies = new Set<string>();
+      let complete = true;
       for (const account of accounts) {
         try {
           const res = await api.get<{
             net_profit: number;
             total_trades: number;
             winning_trades: number;
+            currency?: string | null;
           }>(`/journal/stats/${account.id}`);
+          if (res.error || !res.data || !Number.isFinite(res.data.net_profit)) { complete = false; continue; }
           if (res.data) {
+            if (res.data.total_trades > 0) currencies.add(res.data.currency ?? `unknown:${account.id}`);
             totalProfit += res.data.net_profit ?? 0;
             totalTrades += res.data.total_trades ?? 0;
             totalWins += res.data.winning_trades ?? 0;
           }
-        } catch { /* skip */ }
+        } catch { complete = false; }
       }
+      if (disposed) return;
+      if (!complete) { setTotalPnl(null); return; }
+      const currency = [...currencies][0];
       setTotalPnl({
+        currency: currency && !currency.startsWith('unknown:') ? currency : null,
+        canTotal: currencies.size <= 1,
         profit: totalProfit,
         trades: totalTrades,
         winRate: totalTrades > 0 ? (totalWins / totalTrades) * 100 : 0,
       });
     };
-    fetchPnl();
+    void fetchPnl();
+    return () => { disposed = true; };
   }, [accounts]);
 
   const masters = accounts.filter((a) => a.role === 'master');
@@ -563,9 +567,9 @@ export function DashboardPage() {
   );
   const activeAccounts = useMemo(
     () => accounts.filter((a) => isConnected(a.last_heartbeat)).length,
-    [accounts],
+    [accounts, clock],
   );
-  const accountLimit = accounts.length > 0 ? Math.max(accounts.length, 10) : 10;
+  const accountLimit = accounts.length;
 
   // Build health lookup for followers
   const healthByAccountId = useMemo(() => {
@@ -654,8 +658,8 @@ export function DashboardPage() {
           }
         />
         <StatCard
-          label="Total P&L"
-          value={totalPnl ? `${totalPnl.profit >= 0 ? '+' : ''}$${Math.abs(totalPnl.profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}
+          label="Closed-deal P&L"
+          value={totalPnl ? totalPnl.canTotal ? `${totalPnl.profit >= 0 ? '+' : '-'}${Math.abs(totalPnl.profit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${totalPnl.currency ?? 'account units'}` : 'Multiple currencies' : '--'}
           delay={160}
           glowValue
           borderClass={totalPnl && totalPnl.profit >= 0 ? 'stat-card-green' : 'stat-card-red'}
@@ -679,7 +683,7 @@ export function DashboardPage() {
             totalPnl && totalPnl.trades > 0 ? (
               <span className="inline-flex items-center gap-1 text-xs text-neon-green glow-text-green font-medium">
                 <CheckCircle size={12} />
-                {totalPnl.winRate >= 50 ? 'Above average' : 'Needs improvement'}
+                Closed deals with positive gross profit
               </span>
             ) : undefined
           }
@@ -696,13 +700,13 @@ export function DashboardPage() {
                 <div
                   className="h-full rounded-full bg-neon-amber"
                   style={{
-                    width: `${(activeAccounts / accountLimit) * 100}%`,
+                    width: `${(activeAccounts / Math.max(1, accountLimit)) * 100}%`,
                     boxShadow: '0 0 6px #ffb80060',
                   }}
                 />
               </div>
               <span className="text-[10px] font-mono-nums text-terminal-muted">
-                {accountLimit - activeAccounts} free
+                {accountLimit - activeAccounts} offline
               </span>
             </div>
           }
@@ -874,7 +878,7 @@ export function DashboardPage() {
                         <Badge variant="cyan" className="font-mono-nums font-bold">{sig.symbol}</Badge>
                       </td>
                       <td className="px-5 py-3.5">
-                        <ActionLabel action={normalizeAction(sig.action)} />
+                        <ActionLabel action={normalizeAction(sig.action, sig.order_type)} />
                       </td>
                       <td className="px-5 py-3.5 text-right font-mono-nums text-slate-200 font-semibold">
                         {sig.volume?.toFixed(2) ?? '—'}
@@ -1063,35 +1067,9 @@ function FollowerCard({
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold mb-1">
-            P&L
+            Daily loss used
           </p>
-          {hasHealth ? (() => {
-            // Calculate actual P&L from health score context
-            // score > 50 means account is healthy (profitable or minimal loss)
-            // drawdown 0 = in profit
-            const isPositive = drawdownPct === 0;
-            const pnlDisplay = hasHealth && healthData.health.daily_loss
-              ? healthData.health.daily_loss.current_percent
-              : 0;
-            return (
-              <p
-                className={`font-mono-nums text-lg sm:text-xl font-bold ${
-                  isPositive
-                    ? 'text-neon-green glow-text-green'
-                    : pnlDisplay > 3
-                      ? 'text-neon-red glow-text-red'
-                      : 'text-neon-amber'
-                }`}
-              >
-                <span className="inline-flex items-center gap-1">
-                  {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                  {isPositive ? '+' : '-'}{pnlDisplay.toFixed(2)}%
-                </span>
-              </p>
-            );
-          })() : (
-            <p className="font-mono-nums text-lg sm:text-xl font-bold text-terminal-muted">&mdash;</p>
-          )}
+          <p className="font-mono-nums text-lg sm:text-xl font-bold text-terminal-text">{healthData?.health.daily_loss ? `${healthData.health.daily_loss.current_percent.toFixed(2)}%` : '—'}</p>
         </div>
         <div>
           <p className="text-[10px] uppercase tracking-[0.18em] text-terminal-muted font-semibold mb-1">
@@ -1157,7 +1135,7 @@ function FollowerCard({
   );
 }
 
-function ActionLabel({ action }: { action: 'buy_open' | 'sell_open' | 'close' }) {
+function ActionLabel({ action }: { action: DisplayAction }) {
   if (action === 'buy_open') {
     return (
       <span
@@ -1182,7 +1160,7 @@ function ActionLabel({ action }: { action: 'buy_open' | 'sell_open' | 'close' })
   }
   return (
     <span className="text-terminal-muted font-bold text-xs bg-terminal-border/30 border border-terminal-border px-2.5 py-1 rounded-md">
-      CLOSE
+      {action.toUpperCase()}
     </span>
   );
 }

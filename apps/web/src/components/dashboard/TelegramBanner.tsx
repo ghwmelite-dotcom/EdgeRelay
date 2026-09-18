@@ -7,6 +7,7 @@ export function TelegramBanner() {
     useNotificationStore();
   const [dismissed, setDismissed] = useState(false);
   const [deepLinkUrl, setDeepLinkUrl] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState(false);
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
@@ -41,8 +42,9 @@ export function TelegramBanner() {
   if (telegramConnected || dismissed) return null;
 
   const handleConnect = async () => {
+    setLinkError(false);
     const deepLink = await generateDeepLink();
-    if (!deepLink) return;
+    if (!deepLink) { setLinkError(true); return; }
     setDeepLinkUrl(deepLink);
     useNotificationStore.setState({ isLinking: false });
   };
@@ -91,6 +93,7 @@ export function TelegramBanner() {
             </button>
           )}
           <button
+            aria-label="Dismiss Telegram banner"
             onClick={handleDismiss}
             className="rounded-lg p-1.5 text-terminal-muted hover:text-slate-300 hover:bg-white/5 transition-colors"
           >
@@ -98,6 +101,7 @@ export function TelegramBanner() {
           </button>
         </div>
       </div>
+      {linkError && <p role="alert" className="text-xs text-neon-red mt-2">Unable to create Telegram link. Please try again.</p>}
       {deepLinkUrl && (
         <p className="text-xs text-neon-cyan mt-2">
           Click "Open Telegram" above, then tap <b>Start</b> in the bot. Come back here and it will update automatically.

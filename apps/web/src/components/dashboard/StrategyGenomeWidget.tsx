@@ -10,8 +10,8 @@ interface GenomeTrait {
   icon: typeof TrendingUp;
 }
 
-function computeGenome(trades: JournalTrade[]): GenomeTrait[] | null {
-  const closed = trades.filter((t) => t.deal_entry === 'out');
+export function computeGenome(trades: JournalTrade[]): GenomeTrait[] | null {
+  const closed = trades.filter((t) => ['out', 'out_by'].includes(t.deal_entry));
   if (closed.length < 10) return null;
 
   // Session distribution
@@ -33,12 +33,13 @@ function computeGenome(trades: JournalTrade[]): GenomeTrait[] | null {
   const symbolFocus = Math.min(100, hhi * 2); // Normalize: 50 HHI = 100% focused
 
   // Hold time profile
-  const avgHold = closed.reduce((s, t) => s + (t.duration_seconds || 0), 0) / closed.length / 60; // minutes
+  const timed = closed.filter((trade) => typeof trade.duration_seconds === 'number' && trade.duration_seconds >= 0);
+  const avgHold = timed.length ? timed.reduce((sum, trade) => sum + trade.duration_seconds!, 0) / timed.length / 60 : 0; // minutes
   const holdScore = avgHold < 5 ? 10 : avgHold < 60 ? 40 : avgHold < 240 ? 70 : 95;
 
   // Risk appetite
   const rrValues = closed.filter((t) => t.risk_reward_ratio && t.risk_reward_ratio > 0).map((t) => t.risk_reward_ratio!);
-  const avgRR = rrValues.length > 0 ? rrValues.reduce((s, v) => s + v, 0) / rrValues.length : 1;
+  const avgRR = rrValues.length > 0 ? rrValues.reduce((s, v) => s + v, 0) / rrValues.length : 0;
   const rrScore = Math.min(100, (avgRR / 3) * 100);
 
   // Consistency (inverse of daily P&L std dev)
@@ -62,11 +63,11 @@ function computeGenome(trades: JournalTrade[]): GenomeTrait[] | null {
   return [
     { label: 'Session Focus', value: sessionConcentration, displayValue: `${SESSION_LABELS[dominantSession[0]] || dominantSession[0]} ${sessionConcentration.toFixed(0)}%`, color: '#00e5ff', icon: Clock },
     { label: 'Win Rate', value: winRate, displayValue: `${winRate.toFixed(1)}%`, color: '#00ff9d', icon: Target },
-    { label: 'Risk-Reward', value: rrScore, displayValue: `${avgRR.toFixed(2)}R`, color: '#ffb800', icon: TrendingUp },
+    { label: 'Risk-Reward', value: rrScore, displayValue: rrValues.length ? `${avgRR.toFixed(2)}R` : 'Unavailable', color: '#ffb800', icon: TrendingUp },
     { label: 'Symbol Focus', value: symbolFocus, displayValue: `${Object.keys(symbolCounts).length} pairs`, color: '#b18cff', icon: BarChart3 },
-    { label: 'Hold Style', value: holdScore, displayValue: avgHold < 5 ? 'Scalper' : avgHold < 60 ? 'Day Trader' : avgHold < 240 ? 'Intraday' : 'Swing', color: '#00e5ff', icon: Clock },
+    { label: 'Hold Style', value: holdScore, displayValue: !timed.length ? 'Unavailable' : avgHold < 5 ? 'Scalper' : avgHold < 60 ? 'Day Trader' : avgHold < 240 ? 'Intraday' : 'Swing', color: '#00e5ff', icon: Clock },
     { label: 'Consistency', value: consistencyScore, displayValue: `${consistencyScore.toFixed(0)}/100`, color: consistencyScore >= 60 ? '#00ff9d' : '#ffb800', icon: Repeat },
-    { label: 'Direction Bias', value: 100 - dirBias, displayValue: dirBias < 20 ? 'Balanced' : buys > closed.length / 2 ? 'Long Bias' : 'Short Bias', color: dirBias < 30 ? '#00ff9d' : '#ffb800', icon: TrendingUp },
+    { label: 'Exit Deal Mix', value: 100 - dirBias, displayValue: dirBias < 20 ? 'Balanced' : buys > closed.length / 2 ? 'Buy exits' : 'Sell exits', color: dirBias < 30 ? '#00ff9d' : '#ffb800', icon: TrendingUp },
   ];
 }
 
@@ -80,7 +81,7 @@ export function StrategyGenomeWidget({ trades }: { trades: JournalTrade[] }) {
           <Dna size={16} className="text-neon-purple" />
           <h3 className="text-sm font-semibold text-white">Strategy DNA</h3>
         </div>
-        <p className="text-[12px] text-terminal-muted">Complete at least 10 trades to generate your trading DNA fingerprint.</p>
+        <p className="text-[12px] text-terminal-muted">Sync at least 10 closed deals to generate your trading DNA fingerprint.</p>
       </div>
     );
   }
@@ -94,7 +95,7 @@ export function StrategyGenomeWidget({ trades }: { trades: JournalTrade[] }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Strategy DNA Fingerprint</h3>
-            <p className="font-mono-nums text-[9px] text-terminal-muted">Your unique trading identity</p>
+            <p className="font-mono-nums text-[9px] text-terminal-muted">Descriptive metrics from the latest closed-deal sample</p>
           </div>
         </div>
       </div>

@@ -176,6 +176,7 @@ export function AppLayout() {
             <span className="live-dot" />
           </div>
           <button
+            aria-label="Close navigation"
             onClick={() => setSidebarOpen(false)}
             className="rounded-xl p-1.5 text-slate-400 hover:bg-terminal-card/50 hover:text-slate-200 lg:hidden focus-ring"
           >
@@ -211,7 +212,8 @@ export function AppLayout() {
                     <NavLink
                       key={to}
                       to={to}
-                      onClick={() => setSidebarOpen(false)}
+                      aria-label="Close navigation"
+            onClick={() => setSidebarOpen(false)}
                       className={`
                         flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
                         transition-all duration-200 ease-out
@@ -317,6 +319,8 @@ export function AppLayout() {
         {/* Mobile top bar */}
         <header className="flex h-14 items-center border-b border-terminal-border/40 backdrop-blur-xl bg-terminal-surface/80 px-4 lg:hidden">
           <button
+            aria-label="Open navigation"
+            aria-expanded={sidebarOpen}
             onClick={() => setSidebarOpen(true)}
             className="rounded-xl p-2 text-slate-500 backdrop-blur-sm bg-terminal-card/30 hover:bg-terminal-card/60 hover:text-neon-cyan transition-all duration-200 focus-ring"
           >

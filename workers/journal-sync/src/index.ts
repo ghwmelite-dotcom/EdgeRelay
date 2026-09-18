@@ -252,7 +252,7 @@ app.post('/v1/journal/heartbeat', async (c) => {
     await c.env.DB.prepare(
       'UPDATE accounts SET last_heartbeat = ? WHERE id = ?',
     )
-      .bind(heartbeat.timestamp, heartbeat.account_id)
+      .bind(Math.floor(Date.now() / 1000), heartbeat.account_id)
       .run();
 
     return jsonResponse({ ok: true });

@@ -263,6 +263,8 @@ journal.get('/stats/:accountId', async (c) => {
     );
   }
 
+  const telemetry = await c.env.DB.prepare("SELECT json_extract(snapshot_json, '$.currency') AS currency FROM live_position_snapshots WHERE account_id = ?")
+    .bind(accountId).first<{ currency: string }>();
   const conditions: string[] = ["account_id = ?", "deal_entry = 'out'"];
   const bindings: unknown[] = [accountId];
   addDateRange(conditions, bindings, c.req.query('from'), c.req.query('to'));
@@ -294,6 +296,7 @@ journal.get('/stats/:accountId', async (c) => {
   if (!stats || !stats.total_trades) {
     return c.json<ApiResponse>({
       data: {
+        currency: telemetry?.currency ?? null,
         total_trades: 0, winning_trades: 0, losing_trades: 0,
         win_rate: 0, total_profit: 0, total_commission: 0, total_swap: 0,
         net_profit: 0, avg_profit_per_trade: 0, avg_winner: 0, avg_loser: 0,
@@ -315,6 +318,7 @@ journal.get('/stats/:accountId', async (c) => {
 
   return c.json<ApiResponse>({
     data: {
+      currency: telemetry?.currency ?? null,
       total_trades: totalTrades,
       winning_trades: winningTrades,
       losing_trades: stats.losing_trades ?? 0,

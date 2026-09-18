@@ -25,7 +25,7 @@ function timeUntil(dateStr: string): string {
 
 export function MarketIntelWidget() {
   const [tab, setTab] = useState<'news' | 'calendar'>('news');
-  const { headlines, calendarEvents, isLoadingNews, isLoadingCalendar, fetchHeadlines, fetchCalendar } =
+  const { newsError, calendarError, headlines, calendarEvents, isLoadingNews, isLoadingCalendar, fetchHeadlines, fetchCalendar } =
     useMarketIntelStore();
 
   useEffect(() => {
@@ -66,13 +66,14 @@ export function MarketIntelWidget() {
         </button>
       </div>
 
+      {(tab === 'news' ? newsError : calendarError) && <p role="alert" className="text-xs text-neon-amber mb-3">Unable to refresh {tab === 'news' ? 'news' : 'calendar'}. Any displayed items are last known data.</p>}
       {/* News Tab */}
       {tab === 'news' && (
         <div className="space-y-2.5 max-h-[220px] overflow-y-auto scrollbar-thin">
           {isLoadingNews && headlines.length === 0 ? (
             <p className="text-xs text-terminal-muted text-center py-4">Loading news...</p>
           ) : headlines.length === 0 ? (
-            <p className="text-xs text-terminal-muted text-center py-4">No major market-moving headlines in the last 24 hours</p>
+            <p className="text-xs text-terminal-muted text-center py-4">{newsError ? 'News temporarily unavailable' : 'No major market-moving headlines in the last 24 hours'}</p>
           ) : (
             headlines.map((item) => (
               <a
@@ -107,7 +108,7 @@ export function MarketIntelWidget() {
           {isLoadingCalendar && calendarEvents.length === 0 ? (
             <p className="text-xs text-terminal-muted text-center py-4">Loading events...</p>
           ) : calendarEvents.length === 0 ? (
-            <p className="text-xs text-terminal-muted text-center py-4">No upcoming high-impact events</p>
+            <p className="text-xs text-terminal-muted text-center py-4">{calendarError ? 'Calendar temporarily unavailable' : 'No upcoming high-impact events'}</p>
           ) : (
             calendarEvents.map((event) => (
               <div key={event.id} className="flex items-center gap-2">

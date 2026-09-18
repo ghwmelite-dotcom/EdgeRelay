@@ -38,13 +38,14 @@ const SESSION_META: Record<string, { label: string; color: string }> = {
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-function computeFlightCheck(trades: JournalTrade[]) {
-  if (trades.length === 0) return null;
+export function computeFlightCheck(trades: JournalTrade[]) {
+  const closed = trades.filter((trade) => ['out', 'out_by'].includes(trade.deal_entry));
+  if (closed.length < 10) return null;
 
   // Per-pair
   const pairMap = new Map<string, { wins: number; total: number; pnl: number; rrSum: number; rrCount: number }>();
   for (const t of trades) {
-    if (t.deal_entry !== 'out') continue;
+    if (!['out', 'out_by'].includes(t.deal_entry)) continue;
     const s = pairMap.get(t.symbol) || { wins: 0, total: 0, pnl: 0, rrSum: 0, rrCount: 0 };
     s.total++;
     if (t.profit > 0) s.wins++;
@@ -59,7 +60,7 @@ function computeFlightCheck(trades: JournalTrade[]) {
   // Per-session
   const sessMap = new Map<string, { wins: number; total: number; pnl: number }>();
   for (const t of trades) {
-    if (t.deal_entry !== 'out' || !t.session_tag) continue;
+    if (!['out', 'out_by'].includes(t.deal_entry) || !t.session_tag) continue;
     const s = sessMap.get(t.session_tag) || { wins: 0, total: 0, pnl: 0 };
     s.total++;
     if (t.profit > 0) s.wins++;
@@ -79,7 +80,7 @@ function computeFlightCheck(trades: JournalTrade[]) {
   // Per day-of-week
   const dayMap = new Map<number, { wins: number; total: number }>();
   for (const t of trades) {
-    if (t.deal_entry !== 'out') continue;
+    if (!['out', 'out_by'].includes(t.deal_entry)) continue;
     const day = new Date(t.time * 1000).getUTCDay();
     const s = dayMap.get(day) || { wins: 0, total: 0 };
     s.total++;
@@ -94,8 +95,8 @@ function computeFlightCheck(trades: JournalTrade[]) {
   const todayStart = new Date();
   todayStart.setUTCHours(0, 0, 0, 0);
   const todayTs = todayStart.getTime() / 1000;
-  const todayTrades = trades.filter((t) => t.time >= todayTs && t.deal_entry === 'out').length;
-  const avgTradesPerDay = trades.filter((t) => t.deal_entry === 'out').length / Math.max(1, dayMap.size);
+  const todayTrades = trades.filter((t) => t.time >= todayTs && ['out', 'out_by'].includes(t.deal_entry)).length;
+  const avgTradesPerDay = trades.filter((t) => ['out', 'out_by'].includes(t.deal_entry)).length / Math.max(1, new Set(closed.map((trade) => new Date(trade.time * 1000).toISOString().slice(0, 10))).size);
   const overtradingWarning = todayTrades > avgTradesPerDay * 1.5 && todayTrades >= 4;
 
   return { pairEdges, sessionEdges, dayEdges, todayTrades, avgTradesPerDay, overtradingWarning };
@@ -111,7 +112,7 @@ export function FlightCheckWidget({ trades }: { trades: JournalTrade[] }) {
           <Radar size={16} className="text-neon-cyan" />
           <h3 className="text-sm font-semibold text-white">Pre-Trade Flight Check</h3>
         </div>
-        <p className="text-[12px] text-terminal-muted">Trade data needed — journal at least 10 trades to unlock your flight check.</p>
+        <p className="text-[12px] text-terminal-muted">Trade data needed — sync at least 10 closed deals to unlock your flight check.</p>
       </div>
     );
   }
@@ -130,7 +131,7 @@ export function FlightCheckWidget({ trades }: { trades: JournalTrade[] }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">Pre-Trade Flight Check</h3>
-            <p className="font-mono-nums text-[9px] text-terminal-muted">Your edge by pair, session, and day</p>
+            <p className="font-mono-nums text-[9px] text-terminal-muted">Latest closed-deal sample; P/L in account units</p>
           </div>
         </div>
         {analysis.overtradingWarning && (
@@ -156,7 +157,7 @@ export function FlightCheckWidget({ trades }: { trades: JournalTrade[] }) {
                     {p.winRate.toFixed(0)}%
                   </span>
                   <span className={p.totalPnl >= 0 ? 'text-neon-green' : 'text-neon-red'}>
-                    {p.totalPnl >= 0 ? '+' : ''}${Math.abs(p.totalPnl).toFixed(0)}
+                    {p.totalPnl >= 0 ? '+' : '-'}{Math.abs(p.totalPnl).toFixed(0)}
                   </span>
                 </div>
               </div>
@@ -209,7 +210,7 @@ export function FlightCheckWidget({ trades }: { trades: JournalTrade[] }) {
               <p className="text-neon-green">Best: {bestSession.label} ({bestSession.winRate.toFixed(0)}% WR)</p>
             )}
             {worstSession && worstSession.session !== bestSession?.session && (
-              <p className="text-neon-red">Avoid: {worstSession.label} ({worstSession.winRate.toFixed(0)}% WR)</p>
+              <p className="text-neon-red">Lowest sample P/L: {worstSession.label} ({worstSession.winRate.toFixed(0)}% WR)</p>
             )}
           </div>
         </div>

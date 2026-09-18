@@ -7,8 +7,8 @@ const esbuild=Module.createRequire(fromWeb.resolve('vite'))('esbuild');
 const bundle=esbuild.buildSync({stdin:{contents:`export {Hono} from 'hono'; export {notifications} from './workers/api-gateway/src/routes/notifications.ts'; export {auth} from './workers/api-gateway/src/routes/auth.ts'; export {social} from './workers/api-gateway/src/routes/social.ts'; export * from './workers/api-gateway/src/middleware/auth.ts'; export {default as sync} from './workers/journal-sync/src/index.ts'; export {ApiClient} from './apps/web/src/lib/api.ts';`,resolveDir:process.cwd(),loader:'ts'},bundle:true,platform:'node',format:'cjs',write:false,alias:{'@':path.resolve('apps/web/src')},define:{'import.meta.env.PROD':'false'},nodePaths:[path.resolve('workers/api-gateway/node_modules')]});
 const compiled=new Module(path.resolve('scripts/audit-tests.bundle.cjs'),module);compiled.filename=compiled.id;compiled.paths=module.paths;compiled._compile(bundle.outputFiles[0].text,compiled.filename);
 const {Hono,notifications,auth,social,generateToken,verifyJwt,verifyJwtIgnoreExpiry,sync,ApiClient}=compiled.exports;
-const secret='synthetic-secret';const sessions=new Map();let dbCalls=0,storageFails=true,insertCount=0;
-const env={JWT_SECRET:secret,JWT_EXPIRY_HOURS:'24',GOOGLE_CLIENT_ID:'test',GOOGLE_CLIENT_SECRET:'test',SESSIONS:{async get(k){return sessions.get(k)??null},async put(k,v,options){sessions.set(k,v);if(k.startsWith('session:'))assert.ok(options.expirationTtl>86400)},async delete(k){sessions.delete(k)}},RATE_LIMIT:{async get(){return null},async put(){}},DB:{prepare(sql){dbCalls++;return {bind(){return this},async first(){if(sql.includes('FROM accounts'))return {id:'account',api_secret:secret,role:'journal'};return {id:'user',email:'test@example.invalid',name:'Test',plan:'free'}},async run(){if(sql.includes('INSERT OR IGNORE INTO journal_trades')){insertCount++;if(storageFails)throw Error('simulated D1 failure');return {meta:{changes:0}}}return {meta:{changes:1}}}}}}};
+const secret='synthetic-secret';const sessions=new Map();let lastWriteBindings=[];let dbCalls=0,storageFails=true,insertCount=0;
+const env={JWT_SECRET:secret,JWT_EXPIRY_HOURS:'24',GOOGLE_CLIENT_ID:'test',GOOGLE_CLIENT_SECRET:'test',SESSIONS:{async get(k){return sessions.get(k)??null},async put(k,v,options){sessions.set(k,v);if(k.startsWith('session:'))assert.ok(options.expirationTtl>86400)},async delete(k){sessions.delete(k)}},RATE_LIMIT:{async get(){return null},async put(){}},DB:{prepare(sql){dbCalls++;return {bind(...values){lastWriteBindings=values;return this},async first(){if(sql.includes('FROM accounts'))return {id:'account',api_secret:secret,role:'journal'};return {id:'user',email:'test@example.invalid',name:'Test',plan:'free'}},async run(){if(sql.includes('INSERT OR IGNORE INTO journal_trades')){insertCount++;if(storageFails)throw Error('simulated D1 failure');return {meta:{changes:0}}}return {meta:{changes:1}}}}}}};
 const headers=(token)=>({Authorization:`Bearer ${token}`,'Content-Type':'application/json'});
 const response=(data,status=200)=>new Response(JSON.stringify({data,error:status===401?{code:'UNAUTHORIZED',message:'expired'}:null}),{status});
 (async()=>{
@@ -32,6 +32,12 @@ const response=(data,status=200)=>new Response(JSON.stringify({data,error:status
  const send=()=>sync.request('/v1/journal/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},env);
  r=await send();assert.equal(r.status,503);assert.equal((await r.json()).error.code,'SYNC_RETRY_REQUIRED');storageFails=false;r=await send();assert.equal(r.status,201);assert.equal((await r.json()).data.duplicates,1);assert.equal(insertCount,2);
  console.log('PASS D1 failure retains EA batch for retry; duplicate retry remains successful');
+ const heartbeat={account_id:'account',timestamp:timestamp+10800};
+ heartbeat.hmac_signature=createHmac('sha256',secret).update(JSON.stringify(heartbeat)).digest('hex');
+ const hb=await sync.request('/v1/journal/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(heartbeat)},env);
+ assert.equal(hb.status,200);assert.ok(Math.abs(lastWriteBindings[0]-Math.floor(Date.now()/1000))<3);
+ console.log('PASS broker-offset heartbeat stores server UTC arrival time');
+
  const client=new ApiClient();let logouts=0;client.setToken('old');client.onAuthExpired=()=>logouts++;
  global.fetch=async()=>{throw Error('offline')};assert.equal((await client.get('/accounts')).error.code,'NETWORK_ERROR');
  global.fetch=async()=>new Response('<html>gateway down</html>',{status:502});assert.equal((await client.get('/accounts')).error.code,'INVALID_RESPONSE');

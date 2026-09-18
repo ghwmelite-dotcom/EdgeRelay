@@ -157,6 +157,7 @@ export function SettingsPage() {
 
   /* -- Notifications -- */
   const {
+    error: notificationError,
     telegramConnected,
     linkedAt,
     preferences,
@@ -169,6 +170,14 @@ export function SettingsPage() {
   } = useNotificationStore();
   const [tgDeepLink, setTgDeepLink] = useState<string | null>(null);
   const [tgChecking, setTgChecking] = useState(false);
+  const [testMessage, setTestMessage] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
+  const sendTest = async () => {
+    setSendingTest(true);
+    const r = await api.post<{accepted:boolean}>('/notifications/telegram/test');
+    setTestMessage(r.error?.message ?? 'Telegram accepted the test. Check your private bot chat to confirm receipt.');
+    setSendingTest(false);
+  };
 
   /* -- Danger Zone -- */
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -211,7 +220,7 @@ export function SettingsPage() {
 
   // Clear deep link once connected
   useEffect(() => {
-    if (telegramConnected) setTgDeepLink(null);
+    if (telegramConnected) { setTgDeepLink(null); void fetchPreferences(); }
   }, [telegramConnected]);
 
   /* -- Handlers -- */
@@ -219,9 +228,10 @@ export function SettingsPage() {
   const handleProfileSave = async (e: FormEvent) => {
     e.preventDefault();
     setProfileSaving(true);
-    await api.put('/accounts/profile', { name });
+    const res = await api.put('/accounts/profile', { name });
     setProfileSaving(false);
-    setProfileMsg('Profile updated successfully.');
+    setProfileMsg(res.error?.message ?? 'Profile updated successfully.');
+    if(!res.error && user) useAuthStore.setState({user:{...user,name:name.trim()}});
   };
 
   const handlePasswordUpdate = async (e: FormEvent) => {
@@ -452,6 +462,9 @@ export function SettingsPage() {
               </button>
             </div>
 
+            <button type="button" disabled={sendingTest} onClick={sendTest} className="min-h-11 px-3 rounded-lg border border-terminal-border text-neon-cyan text-sm">{sendingTest ? 'Sending…' : 'Send test Telegram message'}</button>
+            {testMessage && <p role="status" className="text-sm text-terminal-muted">{testMessage}</p>}
+            {notificationError && <p role="alert" className="text-sm text-neon-red">{notificationError}</p>}
             {/* Preference toggles */}
             <div className="space-y-2">
               <div>

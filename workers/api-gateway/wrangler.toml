@@ -18,7 +18,7 @@ id = "cccd807ee9d64f3d84ace82529092566"
 binding = "DB"
 database_name = "edgerelay-db"
 database_id = "8a0eb54a-7072-40fd-8a34-22c6fb3471e0"
-migrations_dir = "../../migrations"
+migrations_dir = "../../migrations/managed"
 
 [[r2_buckets]]
 binding = "STORAGE"

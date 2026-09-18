@@ -14,6 +14,9 @@ export async function handleStart(
 ): Promise<CommandResult> {
   // Deep-link flow: /start {code}
   if (args && args.length > 0) {
+    if (chatId !== user.id || chatId <= 0) return { text: 'Connect from a private chat with this bot.' };
+    const current = await getUserMapping(env, user.id);
+    if (current) return { text: 'This Telegram account is already connected. Use /unlink before connecting another account.' };
     const code = args.trim();
     const userId = await env.BOT_STATE.get(`tg-link:${code}`);
 
@@ -56,7 +59,7 @@ export async function handleStart(
     try {
       const { TelegramApi } = await import('./telegram.js');
       const botApi = new TelegramApi(env.TELEGRAM_BOT_TOKEN);
-      await botApi.setChatMenuButton(chatId, 'https://edgerelay-web.pages.dev/tg');
+      await botApi.setChatMenuButton(chatId, 'https://trademetricspro.com/tg');
     } catch {}
 
     return {
@@ -96,56 +99,12 @@ export async function handleStart(
 
 // ── /link <api_key> ────────────────────────────────────────────────
 export async function handleLink(
-  env: Env,
-  user: TelegramUser,
-  chatId: number,
-  apiKey: string | undefined,
+  _env: Env,
+  _user: TelegramUser,
+  _chatId: number,
+  _apiKey: string | undefined,
 ): Promise<CommandResult> {
-  if (!apiKey) {
-    return {
-      text: 'Usage: <code>/link &lt;api_key&gt;</code>\n\nYou can find your API key in the EdgeRelay dashboard under Account Settings.',
-    };
-  }
-
-  try {
-    const account = await env.DB.prepare(
-      'SELECT id, user_id, alias FROM accounts WHERE api_key = ?',
-    )
-      .bind(apiKey)
-      .first<{ id: string; user_id: string; alias: string }>();
-
-    if (!account) {
-      return { text: 'API key not found. Please check your key and try again.' };
-    }
-
-    const dbUser = await env.DB.prepare('SELECT id, email FROM users WHERE id = ?')
-      .bind(account.user_id)
-      .first<{ id: string; email: string }>();
-
-    if (!dbUser) {
-      return { text: 'Account owner not found. Please contact support.' };
-    }
-
-    // Store forward mapping: telegram user → edgerelay user
-    await env.BOT_STATE.put(
-      `tg:${user.id}`,
-      JSON.stringify({
-        user_id: dbUser.id,
-        chat_id: chatId,
-        linked_at: new Date().toISOString(),
-      }),
-    );
-
-    // Store reverse mapping: edgerelay user → telegram chat (for proactive notifications)
-    await env.BOT_STATE.put(`user:${dbUser.id}:tg`, String(chatId));
-
-    return {
-      text: `Linked to <b>${escapeHtml(dbUser.email)}</b>!\n\nYou'll receive signal notifications and alerts here. Use /status to check your accounts.`,
-    };
-  } catch (err) {
-    console.error('Link error:', err);
-    return { text: 'An error occurred while linking. Please try again.' };
-  }
+  return { text: 'Connect securely using Connect Telegram in trademetricspro.com/settings. Do not send API keys to the bot.' };
 }
 
 // ── /unlink ────────────────────────────────────────────────────────
@@ -153,10 +112,11 @@ export async function handleUnlink(env: Env, user: TelegramUser): Promise<Comman
   try {
     const mappingRaw = await env.BOT_STATE.get(`tg:${user.id}`);
     if (!mappingRaw) {
-      return { text: 'No account linked. Use /link &lt;api_key&gt; to link one.' };
+      return { text: 'No account linked. Use Connect Telegram in trademetricspro.com/settings to link one.' };
     }
 
-    const mapping = JSON.parse(mappingRaw) as { user_id: string };
+    const mapping = await getUserMapping(env, user.id);
+    if (!mapping) { await env.BOT_STATE.delete(`tg:${user.id}`); return { text: 'No active account connection.' }; }
 
     // Remove both mappings
     await env.BOT_STATE.delete(`tg:${user.id}`);
@@ -167,7 +127,7 @@ export async function handleUnlink(env: Env, user: TelegramUser): Promise<Comman
       .bind(mapping.user_id)
       .run();
 
-    return { text: 'Unlinked. You won\'t receive notifications anymore.\n\nUse /link &lt;api_key&gt; to re-link at any time.' };
+    return { text: 'Unlinked. You won\'t receive notifications anymore.\n\nUse Connect Telegram in trademetricspro.com/settings to re-link at any time.' };
   } catch (err) {
     console.error('Unlink error:', err);
     return { text: 'An error occurred while unlinking. Please try again.' };
@@ -178,7 +138,7 @@ export async function handleUnlink(env: Env, user: TelegramUser): Promise<Comman
 export async function handleStatus(env: Env, user: TelegramUser): Promise<CommandResult> {
   const mapping = await getUserMapping(env, user.id);
   if (!mapping) {
-    return { text: 'No account linked. Use /link &lt;api_key&gt; to get started.' };
+    return { text: 'No account linked. Use Connect Telegram in trademetricspro.com/settings to get started.' };
   }
 
   try {
@@ -269,7 +229,7 @@ export async function handleSignals(
 ): Promise<CommandResult> {
   const mapping = await getUserMapping(env, user.id);
   if (!mapping) {
-    return { text: 'No account linked. Use /link &lt;api_key&gt; to get started.' };
+    return { text: 'No account linked. Use Connect Telegram in trademetricspro.com/settings to get started.' };
   }
 
   const count = Math.min(Math.max(parseInt(countArg ?? '5', 10) || 5, 1), 20);
@@ -341,7 +301,7 @@ export async function handleSignals(
 export async function handleAccounts(env: Env, user: TelegramUser): Promise<CommandResult> {
   const mapping = await getUserMapping(env, user.id);
   if (!mapping) {
-    return { text: 'No account linked. Use /link &lt;api_key&gt; to get started.' };
+    return { text: 'No account linked. Use Connect Telegram in trademetricspro.com/settings to get started.' };
   }
 
   try {
@@ -456,7 +416,7 @@ async function handleApp(env: Env, user: TelegramUser, chatId: number): Promise<
   try {
     const { TelegramApi } = await import('./telegram.js');
     const api = new TelegramApi(env.TELEGRAM_BOT_TOKEN);
-    await api.setChatMenuButton(chatId, 'https://edgerelay-web.pages.dev/tg');
+    await api.setChatMenuButton(chatId, 'https://trademetricspro.com/tg');
     return {
       text: [
         '✅ <b>Dashboard button activated!</b>',
@@ -482,7 +442,15 @@ interface UserMapping {
 async function getUserMapping(env: Env, telegramUserId: number): Promise<UserMapping | null> {
   const raw = await env.BOT_STATE.get(`tg:${telegramUserId}`);
   if (!raw) return null;
-  return JSON.parse(raw) as UserMapping;
+  try {
+    const mapping = JSON.parse(raw) as UserMapping;
+    const forward = await env.BOT_STATE.get(`user:${mapping.user_id}:tg`);
+    if (!forward) return null;
+    const parsed = JSON.parse(forward);
+    const chatId = typeof parsed === 'number' ? parsed : parsed.chatId;
+    if (chatId !== telegramUserId || mapping.chat_id !== telegramUserId) return null;
+    return mapping;
+  } catch { return null; }
 }
 
 function escapeHtml(text: string): string {

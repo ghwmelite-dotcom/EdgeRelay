@@ -26,6 +26,7 @@ import { counselor } from './routes/counselor.js';
 import { marketPulse } from './routes/marketPulse.js';
 import { social } from './routes/social.js';
 import { founderAnalytics } from './routes/founderAnalytics.js';
+import { communityPulse } from './routes/communityPulse.js';
 import { academy } from './routes/academy.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -136,6 +137,7 @@ protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
 protectedApp.route('/academy', academy);
+protectedApp.route('/community-pulse', communityPulse);
 protectedApp.route('/founder-analytics', founderAnalytics);
 // social routes mounted publicly above (auth checked per-endpoint in social.ts)
 

@@ -4,8 +4,8 @@
 //+------------------------------------------------------------------+
 #property copyright "EdgeRelay"
 #property link      "https://www.edgerelay.io"
-#property version   "1.10"
-#property description "Syncs every trade to your EdgeRelay journal — zero drops guaranteed."
+#property version   "1.11"
+#property description "Syncs every trade to your EdgeRelay journal — with queued retries and signed telemetry."
 #property strict
 
 #include <EdgeRelay_Common.mqh>

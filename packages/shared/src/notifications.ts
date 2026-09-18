@@ -40,7 +40,7 @@ export async function shouldNotify(
   let chatId: string;
   try {
     const parsed = JSON.parse(raw);
-    chatId = String(parsed.chatId);
+    chatId = String(typeof parsed === 'number' ? parsed : parsed.chatId);
   } catch {
     chatId = raw;
   }

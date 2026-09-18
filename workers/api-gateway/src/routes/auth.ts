@@ -2,10 +2,27 @@ import { Hono } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
-import { generateToken, hashPassword, verifyPassword, verifyJwtIgnoreExpiry, REFRESH_GRACE_SECONDS } from '../middleware/auth.js';
+import { authMiddleware, generateToken, hashPassword, verifyPassword, verifyJwtIgnoreExpiry, REFRESH_GRACE_SECONDS } from '../middleware/auth.js';
 import { notifyLogin } from '../lib/notifyLogin.js';
 
 const auth = new Hono<{ Bindings: Env }>();
+
+auth.put('/password', authMiddleware, async c => {
+ const body: unknown=await c.req.json().catch(()=>null);
+ const input=body && typeof body==='object' ? body as Record<string,unknown> : {};
+ if(typeof input.current_password!=='string' || typeof input.new_password!=='string' || input.new_password.length<8 || input.new_password.length>256 || input.current_password.length>256) return c.json({data:null,error:{code:'VALIDATION_ERROR',message:'Provide your current password and a new password of 8–256 characters.'}},400);
+ const userId=c.get('userId');
+ const limitKey=`password-change:${userId}:${Math.floor(Date.now()/60000)}`;
+ const attempts=Number(await c.env.SESSIONS.get(limitKey)??0);
+ if(attempts>=5)return c.json({data:null,error:{code:'RATE_LIMITED',message:'Wait a minute before trying again.'}},429);
+ await c.env.SESSIONS.put(limitKey,String(attempts+1),{expirationTtl:120});
+ const row=await c.env.DB.prepare('SELECT password_hash FROM users WHERE id=?').bind(userId).first<{password_hash:string|null}>();
+ if(!row?.password_hash || !await verifyPassword(input.current_password,row.password_hash))return c.json({data:null,error:{code:'INVALID_PASSWORD',message:'Current password is incorrect. Accounts using Google sign-in should manage their password with Google.'}},400);
+ const hash=await hashPassword(input.new_password);
+ const updated=await c.env.DB.prepare('UPDATE users SET password_hash=? WHERE id=? AND password_hash=?').bind(hash,userId,row.password_hash).run();
+ if(!updated.meta.changes)return c.json({data:null,error:{code:'CONFLICT',message:'Password changed concurrently. Sign in again.'}},409);
+ return c.json({data:{updated:true},error:null});
+});
 
 // ── POST /auth/register ─────────────────────────────────────────
 auth.post('/register', async (c) => {
@@ -420,7 +437,7 @@ auth.post('/telegram', async (c) => {
 
   // Check auth_date is recent (within 1 hour)
   const authTime = parseInt(authDate, 10);
-  if (Math.abs(Date.now() / 1000 - authTime) > 3600) {
+  if (!/^\d+$/.test(authDate) || !Number.isSafeInteger(authTime) || Math.abs(Date.now() / 1000 - authTime) > 3600) {
     return c.json<ApiResponse>({ data: null, error: { code: 'EXPIRED', message: 'Telegram auth expired' } }, 401);
   }
 
@@ -432,10 +449,16 @@ auth.post('/telegram', async (c) => {
   }
 
   const { user_id } = JSON.parse(mapping) as { user_id: string };
+  const forward = await c.env.BOT_STATE.get(`user:${user_id}:tg`);
+  const linked = forward ? JSON.parse(forward) : null;
+  if (!linked || (typeof linked === 'number' ? linked : linked.chatId) !== tgUser.id) {
+    return c.json<ApiResponse>({ data: null, error: { code: 'NOT_LINKED', message: 'Reconnect Telegram from Settings.' } }, 401);
+  }
 
   // Generate JWT
   const expiryHours = parseInt(c.env.JWT_EXPIRY_HOURS || '24', 10);
   const token = await generateToken(user_id, c.env.JWT_SECRET, expiryHours);
+  await c.env.SESSIONS.put(`session:${user_id}:${token}`, JSON.stringify({ userId: user_id, createdAt: Date.now() }), { expirationTtl: expiryHours * 3600 + REFRESH_GRACE_SECONDS });
 
   return c.json<ApiResponse>({ data: { token }, error: null });
 });

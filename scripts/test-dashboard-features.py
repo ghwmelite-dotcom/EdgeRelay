@@ -34,7 +34,8 @@ with sync_playwright() as p:
   elif path.startswith('journal/positions/'):data={'snapshot':None,'received_at':None,'stale':True}
   elif path=='market-news/headlines':data={'headlines':[{'id':'cpi','headline':'US CPI Actual 3.2%','source':'FinancialJuice','url':'https://example.invalid/cpi','published_at':'2026-09-18T10:00:00Z','importance':{'category':'Major economic release','reason':'CPI'}}]}
   elif path=='news/calendar':data={'events':[{'id':'nfp','event_name':'Nonfarm Payrolls','currency':'USD','impact':'high','event_time':'2026-10-02T12:30:00Z'}]}
-  elif path=='analytics/ai-insights':data=[{'id':'i1','severity':'warning','title':'Audit insight','detail':'Synthetic account insight. Test details.'}]
+  elif path=='analytics/ai-insights':data={'insights':[{'id':'i1','severity':'warning','title':'Audit insight','detail':'Synthetic account insight. Test details.'}]}
+  elif path=='community-pulse':data={'enabled':False,'symbols':[]}
   elif path=='notifications/telegram/status':data={'connected':controls['connected'],'linked_at':None}
   elif path=='notifications/telegram/link':
    if controls['link_fail']:route.abort('failed');return
@@ -62,7 +63,7 @@ with sync_playwright() as p:
   controls['connected']=True;page.evaluate('window.dispatchEvent(new Event("focus"))');expect(page.get_by_text('Get instant trade alerts on Telegram',exact=True)).to_have_count(0)
   print('PASS Telegram error, retry, deep link and returned-tab connection state (mocked)')
   assert page.get_by_text('Unavailable',exact=True).count()>=2
-  page.get_by_text('Live community positioning is not connected yet.',exact=False).wait_for()
+  page.get_by_text('Insufficient opted-in activity.',exact=False).wait_for()
   journal=page.get_by_role('region',name='Journal activity',exact=True)
   page.get_by_label('Journal account',exact=True).select_option('follower');journal.get_by_text('No synced trades for this account.',exact=False).wait_for()
   page.get_by_label('Journal account',exact=True).select_option('master');journal.get_by_text('Showing the latest 10 synced deals.',exact=True).wait_for()

@@ -124,7 +124,7 @@ async function checkPreEventAlerts(env: Env): Promise<void> {
 
         let chatId: string;
         try {
-          chatId = String((JSON.parse(raw) as { chatId?: unknown }).chatId);
+          chatId = String(typeof JSON.parse(raw) === 'number' ? JSON.parse(raw) : (JSON.parse(raw) as { chatId?: unknown }).chatId);
         } catch {
           chatId = raw;
         }
@@ -219,7 +219,7 @@ async function checkBreakingNews(env: Env): Promise<void> {
 
     let chatId: string;
     try {
-      chatId = String((JSON.parse(raw) as { chatId?: unknown }).chatId);
+      chatId = String(typeof JSON.parse(raw) === 'number' ? JSON.parse(raw) : (JSON.parse(raw) as { chatId?: unknown }).chatId);
     } catch {
       chatId = raw;
     }
@@ -271,7 +271,7 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
-async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void> {
+async function checkSessionAlerts(env: Env, _ctx: ExecutionContext): Promise<void> {
   const now = new Date();
   const utcHour = now.getUTCHours();
   const utcMinute = now.getUTCMinutes();
@@ -296,8 +296,7 @@ async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void
       if (!channelSent) {
         const emoji = type === 'open' ? '🟢' : '🔴';
         const msg = `${emoji} <b>${session.name} Session ${type === 'open' ? 'Open' : 'Closed'}</b> (${String(utcHour).padStart(2, '0')}:00 UTC)`;
-        ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg));
-        await env.BOT_STATE.put(channelDedupKey, '1', { expirationTtl: 86400 });
+        if (await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, msg)) await env.BOT_STATE.put(channelDedupKey, '1', { expirationTtl: 86400 });
       }
     }
 
@@ -317,7 +316,7 @@ async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void
 
       let chatId: string;
       try {
-        chatId = String((JSON.parse(raw) as { chatId?: unknown }).chatId);
+        chatId = String(typeof JSON.parse(raw) === 'number' ? JSON.parse(raw) : (JSON.parse(raw) as { chatId?: unknown }).chatId);
       } catch {
         chatId = raw;
       }
@@ -325,8 +324,7 @@ async function checkSessionAlerts(env: Env, ctx: ExecutionContext): Promise<void
       const emoji = type === 'open' ? '🟢' : '🔴';
       const msg = `${emoji} <b>${session.name} Session ${type === 'open' ? 'Open' : 'Closed'}</b> (${String(utcHour).padStart(2, '0')}:00 UTC)`;
 
-      ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg));
-      await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+      if (await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, chatId, msg)) await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
     }
   }
 }
@@ -426,7 +424,7 @@ async function formatMorningBrief(db: D1Database, now: Date, ai?: Env['AI']): Pr
   return lines.join('\n');
 }
 
-async function sendChannelBriefing(env: Env, ctx: ExecutionContext, now: Date): Promise<void> {
+async function sendChannelBriefing(env: Env, _ctx: ExecutionContext, now: Date): Promise<void> {
   if (!env.TELEGRAM_CHANNEL_ID) return;
 
   const today = now.toISOString().slice(0, 10);
@@ -436,8 +434,7 @@ async function sendChannelBriefing(env: Env, ctx: ExecutionContext, now: Date): 
 
   const brief = await formatMorningBrief(env.DB, now, env.AI);
   if (brief) {
-    ctx.waitUntil(sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, brief));
-    await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
+    if (await sendTelegramMessage(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHANNEL_ID, brief)) await env.BOT_STATE.put(dedupKey, '1', { expirationTtl: 86400 });
     console.log(`[digest] Channel briefing sent to ${env.TELEGRAM_CHANNEL_ID}`);
   }
 }
@@ -479,7 +476,7 @@ async function sendDigests(env: Env, _ctx: ExecutionContext, now: Date): Promise
     let chatId: string;
     try {
       const parsed = JSON.parse(raw) as { chatId?: unknown };
-      chatId = String(parsed.chatId);
+      chatId = String(typeof parsed === 'number' ? parsed : parsed.chatId);
     } catch {
       chatId = raw;
     }

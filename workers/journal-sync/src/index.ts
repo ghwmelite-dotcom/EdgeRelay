@@ -60,7 +60,9 @@ app.get('/v1/journal/health', () => {
 app.post('/v1/journal/sync', async (c) => {
   try {
     // 1. Parse & validate
-    const rawBody: unknown = await c.req.json();
+    const rawText = await c.req.text();
+    if (new TextEncoder().encode(rawText).length > 1024 * 1024) return errorResponse('TOO_LARGE', 'Journal batch too large', 413);
+    const rawBody: unknown = JSON.parse(rawText);
     const parsed = JournalSyncPayload.safeParse(rawBody);
 
     if (!parsed.success) {
@@ -88,17 +90,29 @@ app.post('/v1/journal/sync', async (c) => {
 
     // 3. Verify HMAC
     const dealTickets = payload.trades.map((t) => t.deal_ticket);
-    const isValid = await verifyJournalHmac(
+    const fullSignature = c.req.header('X-Journal-Signature');
+    let isValid: boolean;
+    if (fullSignature) {
+      if (!/^[a-f0-9]{64}$/.test(fullSignature) || Math.abs(Date.now()/1000-payload.timestamp)>120) return errorResponse('INVALID_SIGNATURE','Invalid signature or terminal UTC clock',401);
+      const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(account.api_secret),{name:'HMAC',hash:'SHA-256'},false,['verify']);
+      isValid=await crypto.subtle.verify('HMAC',key,Uint8Array.from(fullSignature.match(/../g)!,b=>parseInt(b,16)),new TextEncoder().encode(rawText));
+    } else {
+      const upgraded=await c.env.RATE_LIMIT.get(`journal-v2:${payload.account_id}`);
+      if(upgraded) return errorResponse('UPGRADE_REQUIRED','This account requires full-body journal signing',401);
+      isValid = await verifyJournalHmac(
       payload.account_id,
       payload.timestamp,
       dealTickets,
       payload.hmac_signature,
       account.api_secret,
     );
+    }
 
     if (!isValid) {
       return errorResponse('INVALID_SIGNATURE', 'HMAC signature verification failed', 401);
     }
+
+    if (fullSignature && isValid) await c.env.RATE_LIMIT.put(`journal-v2:${payload.account_id}`, '1');
 
     // 4. Rate limit
     const minuteBucket = Math.floor(Date.now() / 60000);
@@ -197,7 +211,9 @@ app.post('/v1/journal/sync', async (c) => {
 
 app.post('/v1/journal/heartbeat', async (c) => {
   try {
-    const rawBody: unknown = await c.req.json();
+    const rawText = await c.req.text();
+    if (new TextEncoder().encode(rawText).length > 1024 * 1024) return errorResponse('TOO_LARGE', 'Journal batch too large', 413);
+    const rawBody: unknown = JSON.parse(rawText);
     const parsed = Heartbeat.safeParse(rawBody);
 
     if (!parsed.success) {

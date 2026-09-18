@@ -49,6 +49,9 @@ jobs:
       - name: Typecheck journal sync
         run: pnpm --filter edgerelay-journal-sync typecheck
 
+      - name: Typecheck Telegram bot
+        run: pnpm --filter @edgerelay/telegram-bot typecheck
+
       - name: Typecheck notification digest
         run: pnpm --filter @edgerelay/notification-digest typecheck
 
@@ -61,6 +64,7 @@ jobs:
           node scripts/test-news-positions.cjs
           node scripts/test-platform-audit.cjs
           node scripts/test-dashboard-models.cjs
+          node scripts/test-extended-platform.cjs
 
   deploy-account-relay:
     name: Deploy Account Relay DO
@@ -156,7 +160,7 @@ jobs:
 
   deploy-web:
     name: Deploy Frontend
-    needs: typecheck
+    needs: [typecheck, deploy-api-gateway]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -197,12 +201,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Apply D1 migrations
-        run: |
-          for migration in migrations/*.sql; do
-            echo "Applying $migration..."
-            pnpm exec wrangler d1 execute edgerelay-db --file="$migration" --remote || echo "⚠️  $migration had errors (likely already applied), continuing..."
-          done
+      - name: Apply tracked D1 migrations
+        run: pnpm exec wrangler d1 migrations apply edgerelay-db --config workers/api-gateway/wrangler.toml --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -227,6 +227,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Deploy journal telemetry
         working-directory: workers/journal-sync
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  deploy-telegram-bot:
+    name: Deploy Telegram Bot
+    needs: [typecheck, migrate-db]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Deploy Telegram Bot
+        working-directory: workers/telegram-bot
         run: pnpm exec wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

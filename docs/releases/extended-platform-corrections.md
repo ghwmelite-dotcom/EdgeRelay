@@ -1,0 +1,24 @@
+# Extended platform corrections — 2026-09-18
+
+## Delivered changes
+- Telegram: reject unsigned/unconfigured webhooks; stop logging secret fragments; block unprotected notification hooks (no repository callers exist); commands work only in private chats. Replace API-key linking with dashboard links, strengthen codes to 128-bit UUIDs, reject stale reverse links, and create valid Mini App sessions. A user-triggered Settings test reports Telegram acceptance, rejection, and throttling; actual receipt needs confirmation in the user's chat.
+- Settings: implement missing profile and current-password-verified password update endpoints. Show failed preference/unlink/profile updates rather than claiming success. Fix legacy numeric Telegram chat-ID parsing and failed delivery deduplication for session/channel briefing messages.
+- Insights: correct dashboard API envelope mismatch; require 20 exit deals, include close-by and exit costs, refuse mixed/unknown account-currency totals, invalidate caches when recorded costs change. The model only selects IDs of calculated observations; it cannot author numerical claims. Clearly labelled recorded-data fallback works during model failure. Statistics use up to 1,000 recent exit deals and do not reconstruct whole-position or entry-cost returns.
+- Community Pulse: default-off explicit owner consent, withdrawal controls, fresh 45-second snapshots only, one directional vote per owner/exact broker symbol. Publish only cohorts of at least 10 owners with at least 5 on each side. Round percentages to 10-point increments; expose no identities, sizes or balances. Empty cohorts show insufficient data. This is not differential privacy and not a trading signal.
+- Downloads: static package endpoint now precedes the dynamic account route. Journal EA 1.11 compiled with zero errors/warnings; full UTF-8 history-body HMAC with fresh UTC timestamps. Backend retains legacy compatibility until a valid upgraded batch pins that account to full signatures in KV. Existing 1.10 installations still need replacement to gain this protection; KV propagation is not strongly consistent. No orders are opened or modified.
+- Calculator: zero/negative/non-finite inputs do not produce lot recommendations. Estimated sizes round down to 0.01 lot; actual broker lot steps and costs still need verification.
+- Marketplace: API failures are visible and unexpected list envelopes are rejected.
+- Deployment: remove replay of historical SQL (including table rebuilds) and error suppression. D1 tracks new forward migrations in migrations/managed. Legacy migrations remain historical bootstrap material; do not replay them on production. The existing remote database baseline was inspected; only 0025_community_consent.sql was pending. New empty installations need a separately validated complete baseline. Frontend deploy waits for API/schema.
+
+## Evidence
+- scripts/test-extended-platform.cjs: real Hono routes, SQLite fixtures, signed Telegram initData, session authentication, profile/password validation, Telegram acceptance/rejection/throttling, AI cache/currency/grounding and community suppression.
+- scripts/test-platform-audit.cjs: history tampering, freshness and post-upgrade downgrade rejection plus existing auth/regression cases.
+- scripts/test-news-positions.cjs and scripts/test-dashboard-models.cjs: existing major-news, delivery retry, signed live-P/L, ownership, calculation and DST regressions.
+- scripts/test-dashboard-features.py: full dashboard control matrix with correctly shaped insight response.
+- scripts/test-extended-ui.py: consent/withdrawal, explicit Telegram test, profile saving and calculator edge cases.
+- scripts/test-sidebar-routes.py: 27 routes render without uncaught errors during API outages. This is route resilience coverage, not certification of every nested workflow.
+- Changed TypeScript packages compile; frontend builds. MQL5 compiler: 0 errors, 0 warnings.
+- R2 journal binary uploaded/read back; SHA256 7D36BBDF198FFA08C1DB1E329AFF024E6D64974BA33854747A1C7EE5CDA220E6.
+
+## Explicit limits
+Browser account mutations and Telegram requests in tests use synthetic fixtures. No real Telegram test message, payment, subscription purchase or trade execution was performed. Real Workers AI availability and interactive Google login are not validated by the mocked regression suite. Community output remains empty until consenting fresh cohorts exist. Legacy history signing remains supported for accounts that have not upgraded. Telegram session alerts still use their existing UTC schedule; broker holidays are not integrated. Password changes require the current password and do not revoke other existing sessions. Unauthenticated /notify hooks are disabled pending a designed authenticated producer integration; this release does not claim trade execution alerts are end-to-end operational.

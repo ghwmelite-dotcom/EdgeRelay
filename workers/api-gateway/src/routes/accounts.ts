@@ -7,6 +7,14 @@ import { createZip, type ZipEntry } from '../lib/zip.js';
 
 const accounts = new Hono<{ Bindings: Env }>();
 
+accounts.put('/profile', async c => {
+ const body: unknown=await c.req.json().catch(()=>null);
+ const name=body && typeof body==='object' ? (body as {name?:unknown}).name : null;
+ if(typeof name!=='string' || !name.trim() || name.trim().length>100) return c.json({data:null,error:{code:'VALIDATION_ERROR',message:'Name must contain 1–100 characters.'}},400);
+ await c.env.DB.prepare('UPDATE users SET name=? WHERE id=?').bind(name.trim(),c.get('userId')).run();
+ return c.json({data:{name:name.trim()},error:null});
+});
+
 // ── Helpers ─────────────────────────────────────────────────────
 
 function generateRandomHex(bytes: number): string {
@@ -384,6 +392,25 @@ accounts.get('/:id/usage', authMiddleware, async (c) => {
 });
 
 // ── GET /accounts/:id ───────────────────────────────────────────
+accounts.get('/ea-package', async (c) => {
+  const object = await c.env.STORAGE.get('ea-builds/TradeMetrics_EA_Package.zip');
+
+  if (!object) {
+    return c.json<ApiResponse>(
+      { data: null, error: { code: 'NOT_FOUND', message: 'EA package not yet available.' } },
+      404,
+    );
+  }
+
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': 'attachment; filename="TradeMetrics_EA_Package.zip"',
+      'Cache-Control': 'private, max-age=3600',
+    },
+  });
+});
+
 accounts.get('/:id', async (c) => {
   const userId = c.get('userId');
   const accountId = c.req.param('id');
@@ -663,7 +690,7 @@ accounts.get('/:id/ea-download/:type', async (c) => {
   }
 
   const filename = eaType === 'journal' ? 'TradeJournal_Sync.ex5' : `EdgeRelay_${eaType === 'master' ? 'Master' : 'Follower'}.ex5`;
-  const key = eaType === 'journal' ? 'ea-builds/TradeJournal_Sync_v1.10.ex5' : `ea-builds/${filename}`;
+  const key = eaType === 'journal' ? 'ea-builds/TradeJournal_Sync_v1.11.ex5' : `ea-builds/${filename}`;
   const object = await c.env.STORAGE.get(key);
 
   if (!object) {
@@ -683,24 +710,7 @@ accounts.get('/:id/ea-download/:type', async (c) => {
 });
 
 // ── GET /accounts/ea-package — Download full EA source package ──
-accounts.get('/ea-package', async (c) => {
-  const object = await c.env.STORAGE.get('ea-builds/TradeMetrics_EA_Package.zip');
 
-  if (!object) {
-    return c.json<ApiResponse>(
-      { data: null, error: { code: 'NOT_FOUND', message: 'EA package not yet available.' } },
-      404,
-    );
-  }
-
-  return new Response(object.body, {
-    headers: {
-      'Content-Type': 'application/zip',
-      'Content-Disposition': 'attachment; filename="TradeMetrics_EA_Package.zip"',
-      'Cache-Control': 'private, max-age=3600',
-    },
-  });
-});
 
 // ── EA source bundles ───────────────────────────────────────────
 // Each bundle ships the EA plus the transitive closure of the .mqh

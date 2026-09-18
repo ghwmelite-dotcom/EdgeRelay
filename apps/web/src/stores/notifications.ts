@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 import type { NotificationPreferences, TelegramStatus } from '@edgerelay/shared';
 
 interface NotificationState {
+  error: string | null;
   telegramConnected: boolean;
   linkedAt: string | null;
   preferences: NotificationPreferences | null;
@@ -18,6 +19,7 @@ interface NotificationState {
 }
 
 export const useNotificationStore = create<NotificationState>()((set) => ({
+  error: null,
   telegramConnected: false,
   linkedAt: null,
   preferences: null,
@@ -44,17 +46,20 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
     try {
       const res = await api.post<{ deepLink: string }>('/notifications/telegram/link');
       if (res.data) {
+        set({isLinking:false,error:null});
         return res.data.deepLink;
       }
     } catch {
       // API call failed
     }
-    set({ isLinking: false });
+    set({ isLinking: false, error: 'Unable to generate Telegram link. Please retry.' });
     return null;
   },
 
   unlinkTelegram: async () => {
-    await api.del('/notifications/telegram/link');
+    const res = await api.del('/notifications/telegram/link');
+    if (res.error) { set({error:res.error.message}); return; }
+    set({error:null});
     set({ telegramConnected: false, linkedAt: null, preferences: null });
   },
 
@@ -71,7 +76,9 @@ export const useNotificationStore = create<NotificationState>()((set) => ({
   },
 
   updatePreferences: async (prefs) => {
-    await api.put('/notifications/preferences', prefs);
+    const res = await api.put('/notifications/preferences', prefs);
+    if (res.error) { set({error:res.error.message}); return; }
+    set({error:null});
     set((state) => ({
       preferences: state.preferences ? { ...state.preferences, ...prefs } : null,
     }));

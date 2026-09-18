@@ -32,6 +32,15 @@ const response=(data,status=200)=>new Response(JSON.stringify({data,error:status
  const send=()=>sync.request('/v1/journal/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},env);
  r=await send();assert.equal(r.status,503);assert.equal((await r.json()).error.code,'SYNC_RETRY_REQUIRED');storageFails=false;r=await send();assert.equal(r.status,201);assert.equal((await r.json()).data.duplicates,1);assert.equal(insertCount,2);
  console.log('PASS D1 failure retains EA batch for retry; duplicate retry remains successful');
+ const versionFlags=new Map();env.RATE_LIMIT={async get(k){return versionFlags.get(k)??null},async put(k,v){versionFlags.set(k,v)}};
+ const signedBody=JSON.stringify(body);const signature=createHmac('sha256',secret).update(signedBody).digest('hex');
+ const signed=(raw,sig)=>sync.request('/v1/journal/sync',{method:'POST',headers:{'Content-Type':'application/json','X-Journal-Signature':sig},body:raw},env);
+ assert.equal((await signed(signedBody.replace('USDJPY','EURUSD'),signature)).status,401);
+ assert.equal((await signed(signedBody,signature)).status,201);
+ assert.equal((await send()).status,401);
+ const oldBody=JSON.stringify({...body,timestamp:timestamp-1000});assert.equal((await signed(oldBody,createHmac('sha256',secret).update(oldBody).digest('hex'))).status,401);
+ console.log('PASS history body tampering, stale full signature, and downgrade rejection after upgrade');
+
  const heartbeat={account_id:'account',timestamp:timestamp+10800};
  heartbeat.hmac_signature=createHmac('sha256',secret).update(JSON.stringify(heartbeat)).digest('hex');
  const hb=await sync.request('/v1/journal/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(heartbeat)},env);

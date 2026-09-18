@@ -365,9 +365,9 @@ function TopInsightCard() {
   const [insight, setInsight] = useState<AiInsight | null>(null);
 
   useEffect(() => {
-    api.get<AiInsight[]>('/analytics/ai-insights').then((res) => {
-      if (res.data && res.data.length > 0) {
-        const sorted = [...res.data].sort(
+    api.get<{ insights: AiInsight[] }>('/analytics/ai-insights').then((res) => {
+      if (res.data?.insights?.length) {
+        const sorted = [...res.data.insights].sort(
           (a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9),
         );
         setInsight(sorted[0]);

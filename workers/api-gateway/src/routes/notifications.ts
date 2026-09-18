@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types.js';
+import { sendTelegramMessage } from '@edgerelay/shared';
 import type { ApiResponse, NotificationPreferences, TelegramStatus } from '@edgerelay/shared';
 
 const notifications = new Hono<{ Bindings: Env }>();
@@ -8,14 +9,7 @@ const notifications = new Hono<{ Bindings: Env }>();
 notifications.post('/telegram/link', async (c) => {
   const userId = c.get('userId');
 
-  // Generate 6-char alphanumeric code
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
-  const code = Array.from(bytes)
-    .map((b) => b.toString(36).padStart(2, '0'))
-    .join('')
-    .slice(0, 6)
-    .toUpperCase();
+  const code = crypto.randomUUID().replaceAll('-', '');
 
   // Store in KV with 5-minute TTL
   await c.env.BOT_STATE.put(`tg-link:${code}`, userId, { expirationTtl: 300 });
@@ -24,6 +18,21 @@ notifications.post('/telegram/link', async (c) => {
     data: { deepLink: `https://t.me/edgerelay_bot?start=${code}` },
     error: null,
   });
+});
+
+// Sent only following the user's explicit Settings button action.
+notifications.post('/telegram/test', async c => {
+ const userId=c.get('userId');
+ const raw=await c.env.BOT_STATE.get(`user:${userId}:tg`);
+ let chatId: unknown;
+ try {const v=JSON.parse(raw??'null');chatId=typeof v==='number'?v:v?.chatId;} catch {chatId=null;}
+ if (typeof chatId !== 'number' || !Number.isSafeInteger(chatId) || chatId<=0) return c.json({data:null,error:{code:'NOT_LINKED',message:'Connect Telegram in a private chat first.'}},409);
+ const key=`telegram-test:${userId}`;
+ if(await c.env.BOT_STATE.get(key)) return c.json({data:null,error:{code:'RATE_LIMITED',message:'Wait one minute before sending another test.'}},429);
+ await c.env.BOT_STATE.put(key,'1',{expirationTtl:60});
+ const sent=await sendTelegramMessage(c.env.TELEGRAM_BOT_TOKEN,String(chatId),'TradeMetrics Pro test: your Telegram connection can receive messages. Manage major-news and account alerts in Settings.');
+ if(!sent)return c.json({data:null,error:{code:'DELIVERY_FAILED',message:'Telegram did not accept the test. Open the bot, unblock it if needed, and reconnect.'}},502);
+ return c.json({data:{accepted:true},error:null});
 });
 
 // Check Telegram connection status

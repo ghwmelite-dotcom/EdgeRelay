@@ -10,8 +10,8 @@ const app = new Hono<{ Bindings: Env }>();
 app.post('/webhook', async (c) => {
   // Verify webhook secret (skip if not set)
   const secret = c.req.header('X-Telegram-Bot-Api-Secret-Token');
-  if (c.env.TELEGRAM_WEBHOOK_SECRET && secret !== c.env.TELEGRAM_WEBHOOK_SECRET) {
-    console.error('Webhook secret mismatch. Got:', secret?.slice(0, 8), 'Expected:', c.env.TELEGRAM_WEBHOOK_SECRET?.slice(0, 8));
+  if (!c.env.TELEGRAM_WEBHOOK_SECRET || secret !== c.env.TELEGRAM_WEBHOOK_SECRET) {
+    console.error('Webhook authentication failed');
     return c.text('Unauthorized', 401);
   }
 
@@ -27,6 +27,9 @@ app.post('/webhook', async (c) => {
 
   return c.text('OK', 200);
 });
+
+// Notification hooks are disabled until authenticated internal callers are configured.
+app.use('/notify/*', async (c) => c.json({ error: 'Internal delivery endpoint unavailable' }, 403));
 
 // ── POST /notify/signal — Internal signal notification ────────────
 app.post('/notify/signal', async (c) => {
@@ -116,7 +119,7 @@ async function handleUpdate(env: Env, update: TelegramUpdate): Promise<void> {
 
     // Handle text messages
     const message = update.message;
-    if (!message?.text || !message.from) return;
+    if (!message?.text || !message.from || message.chat.type !== 'private' || message.chat.id !== message.from.id) return;
 
     // Only process commands (messages starting with /)
     if (!message.text.startsWith('/')) return;

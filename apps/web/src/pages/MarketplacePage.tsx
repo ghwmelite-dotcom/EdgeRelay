@@ -671,7 +671,11 @@ export function MarketplacePage() {
 
         const res = await fetch(`${API_BASE}/marketplace/providers?${params.toString()}`);
         const json = await res.json();
-        setProviders(json.data ?? json.data?.providers ?? []);
+        if(!res.ok || json.error) throw new Error('Provider request failed');
+        const list=Array.isArray(json.data)?json.data:json.data?.providers;
+        if(!Array.isArray(list)) throw new Error('Invalid provider response');
+        setProviders(list);
+        setError(null);
       } catch {
         setError('Failed to load providers. Please try again.');
       } finally {

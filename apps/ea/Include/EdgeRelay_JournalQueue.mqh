@@ -155,7 +155,7 @@ int CJournalQueue::Flush(string endpoint, string apiKey, string apiSecret, strin
    tradesJson += "]";
 
    //--- Build HMAC
-   long ts = (long)TimeCurrent();
+   long ts = (long)TimeGMT();
    string canonical = BuildJournalHmacCanonical(accountId, batchSize, dealTickets, ts);
    string hmac = HmacSha256(canonical, apiSecret);
 
@@ -170,10 +170,12 @@ int CJournalQueue::Flush(string endpoint, string apiKey, string apiSecret, strin
    //--- Send
    string url = endpoint + "/v1/journal/sync";
    string headers = "Content-Type: application/json\r\n"
-                     "X-API-Key: " + apiKey + "\r\n";
+                     "X-API-Key: " + apiKey + "\r\n"
+                     "X-Journal-Signature: " + HmacSha256(json, apiSecret, CP_UTF8) + "\r\n";
 
    char postData[];
-   StringToCharArray(json, postData, 0, StringLen(json));
+   int byteCount = StringToCharArray(json, postData, 0, WHOLE_ARRAY, CP_UTF8);
+   ArrayResize(postData, byteCount - 1);
 
    char result[];
    string resultHeaders;

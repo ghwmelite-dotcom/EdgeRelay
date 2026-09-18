@@ -619,7 +619,7 @@ function EADownloadCard({
           </h3>
           <p className="text-sm text-slate-400">
             {isJournal
-              ? 'v1.10: syncs trade history and live open positions, floating P/L, balance and equity every 15 seconds. Replace the older journal EA and retain your existing inputs.'
+              ? 'v1.11: adds full-body signed history sync and syncs trade history and live open positions, floating P/L, balance and equity every 15 seconds. Replace the older journal EA and retain your existing inputs.'
               : isMaster
               ? 'Install on your master MT5 account. Captures and sends trade signals to the edge network.'
               : 'Install on each follower account. Receives signals and executes trades automatically.'}

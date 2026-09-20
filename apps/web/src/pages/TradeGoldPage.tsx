@@ -5,7 +5,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const FEATURES = [
   { icon: ShieldCheck, color: '#00ff9d', title: 'Gold-Ready PropGuard', desc: 'XAUUSD moves 200+ pips in minutes. PropGuard auto-enforces daily loss limits and max drawdown with gold\'s volatility in mind. One-click presets for FTMO, The5ers, and Apex.' },
-  { icon: FlaskConical, color: '#00e5ff', title: 'Gold-Optimized EAs', desc: 'Strategy Hub generates EAs tuned for gold — wider stops, ATR-based position sizing, and session filters for London and New York opens when gold volume peaks.' },
+  { icon: FlaskConical, color: '#00e5ff', title: 'Three Strategies Playbook', desc: 'Practise opening-range, previous-day and pre-session break-and-retest setups using the verified instrument schedule in UTC. Fixed risk rules, no automatic strategy generation.' },
   { icon: Radio, color: '#ffb800', title: 'Copy Gold Signals Across VPSes', desc: 'Master EA trades XAUUSD on VPS 1, follower copies to VPS 2 at a different broker. Symbol normalization handles XAUUSD → Gold → GOLD.m automatically.' },
   { icon: BarChart3, color: '#b18cff', title: 'Gold Edge Validation', desc: 'Monte Carlo simulation on your gold trades specifically. Know if your XAUUSD edge is statistically real — not gut feeling from a few lucky trades.' },
   { icon: Brain, color: '#ff3d57', title: 'Gold Session Analysis', desc: 'AI identifies your best gold trading hours. Most traders lose money on gold in Asian session — the data proves it. Cut the losers, keep the winners.' },
@@ -14,7 +14,7 @@ const FEATURES = [
 
 const FAQ = [
   { q: 'Can I copy XAUUSD trades between different brokers?', a: 'Yes. The signal copier handles symbol normalization automatically — if your master broker calls it XAUUSD and your follower broker calls it Gold or GOLD.m, the Platform Bridge maps between them. Works across different VPSes and countries.' },
-  { q: 'What stop loss should I use for gold trading?', a: 'Gold (XAUUSD) has significantly wider spreads and volatility than forex pairs. Most successful gold traders use 100-300 pip stops (10-30 points). The Strategy Hub\'s gold-optimized EAs use ATR-based stops that adapt to current volatility.' },
+  { q: 'What stop does this gold practice framework use?', a: 'One actual price tick beyond the completed one-minute trigger candle. Skip if the broker minimum stop distance rejects it. Verify contract economics and costs before sizing; the demo-equity risk ceiling is 0.5%.' },
   { q: 'Does PropGuard work well with gold\'s volatility?', a: 'Yes. PropGuard monitors equity in real-time and gold\'s fast moves make protection even more critical. It blocks trades when approaching daily loss limits — which gold can hit in a single trade if position sizing is wrong.' },
   { q: 'What sessions are best for trading gold?', a: 'London session (07:00-16:00 UTC) and New York open (12:00-15:00 UTC) offer the highest gold volume and cleanest moves. Asian session gold trading typically has wider spreads and lower win rates. The AI Flight Check shows your specific performance by session.' },
 ];
@@ -33,7 +33,7 @@ export function TradeGoldPage() {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org', '@type': 'WebPage', name: 'Trade Gold (XAUUSD) with AI Analytics & PropGuard',
-        description: 'Free gold trading tools: PropGuard equity protection, AI strategy optimization, cross-VPS signal copying, and edge validation for XAUUSD traders.',
+        description: 'Free gold trading tools: PropGuard equity protection, Three Strategies practice, cross-VPS signal copying, and edge validation for XAUUSD traders.',
         url: 'https://trademetrics.pro/trade-gold',
       }) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -61,7 +61,7 @@ export function TradeGoldPage() {
             Trade Gold with <span className="text-neon-amber">AI Protection</span>
           </h1>
           <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-lg text-slate-400" style={{ animationDelay: '100ms' }}>
-            XAUUSD moves fast — protect your account with PropGuard, optimize your strategy with AI, copy gold signals across unlimited VPSes, and validate your edge with Monte Carlo simulation. 100% free.
+            XAUUSD moves fast — protect your account with PropGuard, review your Three Strategies execution, copy gold signals across unlimited VPSes, and validate your edge with Monte Carlo simulation. 100% free.
           </p>
           <div className="animate-fade-in-up mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center" style={{ animationDelay: '200ms' }}>
             <Link to="/" className="btn-premium signal-pulse inline-flex items-center gap-2 rounded-xl bg-neon-amber px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(255,184,0,0.3)]">Start Trading Gold Free <ArrowRight className="h-4 w-4" /></Link>

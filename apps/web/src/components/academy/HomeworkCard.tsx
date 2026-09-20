@@ -16,10 +16,7 @@ const ACCENT_MAP: Record<string, string> = {
   'neon-purple': '#b18cff', 'neon-red': '#ff3d57',
 };
 
-const LINK_MAP: Record<string, string> = {
-  'hw-1': '/accounts', 'hw-2': '/accounts', 'hw-3': '/journal',
-  'hw-4': '/journal', 'hw-5': '/counselor', 'hw-6': '/academy/practice',
-};
+const LINK_MAP: Record<string,string> = Object.fromEntries([1,2,3,4,5,6].map(i=>['ts-hw-'+i,'/academy/ts-v1-'+String(i*2-1).padStart(2,'0')]));
 
 interface HomeworkStatus {
   current: number;
@@ -57,7 +54,7 @@ export function HomeworkSection() {
             <BookOpen size={18} className="text-neon-amber" />
           </div>
           <div className="text-left">
-            <h3 className="font-display text-base font-bold text-white">Practical Homework</h3>
+            <h3 className="font-display text-base font-bold text-white">Rule-compliance assignments</h3>
             <p className="text-[11px] text-terminal-muted">
               {loading ? 'Checking progress...' : `${completedCount}/${totalCount} assignments completed`}
             </p>

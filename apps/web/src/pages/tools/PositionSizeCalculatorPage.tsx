@@ -5,9 +5,9 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { PositionSizeCalculator } from '@/components/academy/widgets/PositionSizeCalculator';
 
 const FAQ = [
-  { q: 'What is position sizing in trading?', a: 'Position sizing is the process of determining how many lots (or units) to trade based on your account size, risk tolerance, and stop loss distance. Proper position sizing ensures no single trade can damage your account beyond a predetermined percentage — typically 1-2% of total equity.' },
-  { q: 'What is the 1% rule in trading?', a: 'The 1% rule states that you should never risk more than 1% of your total account equity on a single trade. For a $10,000 account, this means a maximum risk of $100 per trade. This ensures you can survive 10+ consecutive losing trades without significant account damage.' },
-  { q: 'How do I calculate my lot size?', a: 'Lot Size = Risk Amount ÷ (Stop Loss in Pips × Pip Value per Lot). For example, with a $10,000 account risking 1% ($100) with a 25-pip stop loss on EURUSD ($10/pip): Lot Size = $100 ÷ (25 × $10) = 0.40 lots.' },
+ {q:'What risk does the Three Strategies practice version use?',a:'At most 0.5% of current demo equity, including a reserve for fees and execution costs. A stop order does not guarantee a maximum realized loss.'},
+ {q:'Can this basic pip calculator size XAUUSD or USDJPY automatically?',a:'No. Enter the actual account-currency pip value from your broker. This basic estimate excludes costs and assumes a 0.01 lot step. The strategy replay instead requires verified tick economics, costs, broker size limits and margin.'},
+ {q:'How is the estimate calculated?',a:'Divide the practice budget by stop distance times pip value, then round down. A $10,000 equity example at 0.5% has a $50 budget; with 25 pips and $10 per pip the basic estimate is 0.20 lots before costs. These are illustrative values, not broker specifications.'},
 ];
 
 export function PositionSizeCalculatorPage() {

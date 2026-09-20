@@ -110,8 +110,8 @@ const STEPS = [
   },
   {
     step: '02',
-    title: 'Generate Your Strategy',
-    desc: 'Pick from 10 battle-tested strategies in Strategy Hub. Set your prop firm preset and the AI auto-configures risk parameters: daily loss caps, max drawdown, and Friday close. One click generates a production EA.',
+    title: 'Choose Your Practice Setup',
+    desc: 'Use the fixed Three Strategies playbooks and verify the instrument session in UTC. Practise at most 0.5% demo-equity risk including costs; review skips and rule compliance. Existing account protections remain separate. No automatic EA generation or guarantee of passing a challenge.',
     icon: FlaskConical,
     color: '#00ff9d',
   },
@@ -124,8 +124,8 @@ const STEPS = [
   },
   {
     step: '04',
-    title: 'Analyze, Optimize, Pass',
-    desc: 'AI Insights identifies your edge leaks — losing sessions, bad instruments, overtrading. The AI Optimizer recommends parameter changes and regenerates a better EA. Iterate until you pass.',
+    title: 'Analyse and Review',
+    desc: 'Use the fixed Three Strategies playbooks and verify the instrument session in UTC. Practise at most 0.5% demo-equity risk including costs; review skips and rule compliance. Existing account protections remain separate. No automatic EA generation or guarantee of passing a challenge.',
     icon: Sparkles,
     color: '#ffb800',
   },
@@ -141,13 +141,13 @@ const FEATURES = [
   {
     icon: FlaskConical,
     title: '10 Strategies, Zero Coding',
-    desc: 'MA Crossover, RSI Reversion, Bollinger Squeeze, Supply & Demand, Grid Recovery, and 5 more. Each strategy comes with prop firm presets that auto-configure daily loss, drawdown, and position limits.',
+    desc: 'Use the fixed Three Strategies playbooks and verify the instrument session in UTC. Practise at most 0.5% demo-equity risk including costs; review skips and rule compliance. Existing account protections remain separate. No automatic EA generation or guarantee of passing a challenge.',
     color: '#00e5ff',
   },
   {
     icon: Sparkles,
-    title: 'AI Strategy Optimization',
-    desc: 'Trade for a week, then let AI analyze your results. It identifies losing sessions, bad instruments, and parameter weaknesses. One click regenerates a better EA tuned to your live performance.',
+    title: 'Strategy Compliance Review',
+    desc: 'Use the fixed Three Strategies playbooks and verify the instrument session in UTC. Practise at most 0.5% demo-equity risk including costs; review skips and rule compliance. Existing account protections remain separate. No automatic EA generation or guarantee of passing a challenge.',
     color: '#b18cff',
   },
   {
@@ -176,7 +176,7 @@ const COMPARISON = [
   { feature: 'Auto Friday close before weekend', us: true, alone: false },
   { feature: 'News event trade blocking', us: true, alone: false },
   { feature: 'Prop firm preset rules (1-click)', us: true, alone: false },
-  { feature: 'AI strategy optimization', us: true, alone: false },
+  { feature: 'strategy compliance review', us: true, alone: false },
   { feature: 'Multi-account signal copying', us: true, alone: false },
   { feature: 'Statistical edge validation', us: true, alone: false },
   { feature: 'Real-time equity monitoring', us: true, alone: false },
@@ -194,15 +194,15 @@ const FAQ = [
   },
   {
     q: 'Can I use my own strategy or do I have to use yours?',
-    a: 'Both. You can use our Strategy Hub to generate an EA from 10 pre-built strategies with automatic prop firm risk parameters, or you can bring your own EA and just use PropGuard for risk protection. PropGuard works with any EA or manual trading — it monitors your account equity regardless of how trades are placed.',
+    a: 'Use the fixed Three Strategies playbooks and verify the instrument session in UTC. Practise at most 0.5% demo-equity risk including costs; review skips and rule compliance. Existing account protections remain separate. No automatic EA generation or guarantee of passing a challenge.',
   },
   {
     q: 'How much does TradeMetrics Pro cost?',
     a: 'TradeMetrics Pro is completely free until 2027. No per-account fees, no monthly subscription, no credit card required. While competitors charge $20–$100/month, you pay nothing. All features — PropGuard, Strategy Hub, AI Insights, Signal Copier, and Analytics — are included at no cost.',
   },
   {
-    q: 'What is the AI Strategy Optimizer and how does it work?',
-    a: 'After you trade for 1–2 weeks, the AI analyzes your live results — win rate by session, performance by instrument, parameter sensitivity — and recommends specific parameter changes. For example, it might suggest widening your stop loss on XAUUSD or reducing position size during Asian session. One click regenerates your EA with the optimized settings. Your robot evolves with every optimization cycle.',
+    q: 'How does Three Strategies practice work?',
+    a: 'Use the fixed Three Strategies playbooks and verify the instrument session in UTC. Practise at most 0.5% demo-equity risk including costs; review skips and rule compliance. Existing account protections remain separate. No automatic EA generation or guarantee of passing a challenge.',
   },
   {
     q: 'Can I copy trades to multiple funded accounts?',
@@ -245,7 +245,7 @@ export function PropFirmChallengePage() {
             '@context': 'https://schema.org',
             '@type': 'WebPage',
             name: 'Pass Your Prop Firm Challenge — First Try',
-            description: 'Free prop firm challenge tools: PropGuard equity protection, AI strategy optimization, and multi-account signal copying for FTMO, The5ers, FundedNext, Apex, and more.',
+            description: 'Free prop firm challenge tools: PropGuard equity protection, strategy compliance review, and multi-account signal copying for FTMO, The5ers, FundedNext, Apex, and more.',
             url: 'https://trademetrics.pro/pass-prop-firm-challenge',
             publisher: { '@type': 'Organization', name: 'TradeMetrics Pro' },
           }),
@@ -309,7 +309,7 @@ export function PropFirmChallengePage() {
 
           <p className="animate-fade-in-up mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-slate-400" style={{ animationDelay: '200ms' }}>
             Stop paying <span className="text-white font-semibold">$84–$979 per attempt</span>.
-            PropGuard enforces your firm's exact rules in real-time, the AI Optimizer evolves your strategy with every trade,
+            PropGuard enforces your firm's exact rules in real-time, Three Strategies provides a fixed framework for practice and review,
             and the Signal Copier scales you across unlimited funded accounts.{' '}
             <span className="text-neon-cyan">100% free until 2027.</span>
           </p>
@@ -660,7 +660,7 @@ export function PropFirmChallengePage() {
             <span className="text-neon-green glow-text-green">Start Passing.</span>
           </h2>
           <p className="animate-fade-in-up mt-6 text-lg text-slate-400" style={{ animationDelay: '80ms' }}>
-            PropGuard, AI Strategy Optimizer, Edge Signal Copier, and Advanced Analytics — all free until 2027. No per-account fees. No credit card.
+            PropGuard, Three Strategies Studio, Edge Signal Copier, and Advanced Analytics — all free until 2027. No per-account fees. No credit card.
           </p>
           <Link
             to="/"

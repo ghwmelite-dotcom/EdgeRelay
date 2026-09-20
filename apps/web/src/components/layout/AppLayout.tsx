@@ -40,8 +40,8 @@ const NAV_GROUPS = [
     items: [
       { label: 'Academy', icon: GraduationCap, to: '/academy', highlight: true, highlightColor: 'amber' },
       { label: 'Prop Firm Hub', icon: ShieldCheck, to: '/app/prop-firms', highlight: true, highlightColor: 'green' },
-      { label: 'Simulator', icon: Dice5, to: '/simulator' },
-      { label: 'Strategy Hub', icon: FlaskConical, to: '/app/strategy-hub' },
+      { label: 'Strategy Studio', icon: Dice5, to: '/academy/three-strategies' },
+      { label: 'Three Strategies', icon: FlaskConical, to: '/app/strategy-hub' },
       { label: 'Firm Directory', icon: Building2, to: '/app/firms' },
       { label: 'Downloads', icon: Download, to: '/downloads' },
     ],

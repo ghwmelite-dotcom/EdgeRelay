@@ -1,3 +1,4 @@
+import { CourseVideo } from '@/components/academy/CourseVideo';
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
@@ -7,36 +8,6 @@ import {
 import { useAcademyStore, type QuizAnswer, type QuizResult } from '@/stores/academy';
 import { InlineAITutor } from '@/components/academy/InlineAITutor';
 import { ACADEMY_CURRICULUM, type AcademyLesson, type AcademyLevel } from '@/data/academy-curriculum';
-import { PositionSizeCalculator } from '@/components/academy/widgets/PositionSizeCalculator';
-import { RiskRewardVisualizer } from '@/components/academy/widgets/RiskRewardVisualizer';
-import { CompoundingCalculator } from '@/components/academy/widgets/CompoundingCalculator';
-import { CandlestickQuiz } from '@/components/academy/widgets/CandlestickQuiz';
-import { SessionTimezoneMap } from '@/components/academy/widgets/SessionTimezoneMap';
-import { MovingAverageCrossover } from '@/components/academy/widgets/MovingAverageCrossover';
-import { EmotionCheckIn } from '@/components/academy/widgets/EmotionCheckIn';
-import { CandlestickForming } from '@/components/academy/animations/CandlestickForming';
-import { RiskMathAnimation } from '@/components/academy/animations/RiskMathAnimation';
-import { SupportResistanceBounce } from '@/components/academy/animations/SupportResistanceBounce';
-import { MACrossoverAnimation } from '@/components/academy/animations/MACrossoverAnimation';
-import { RevengeTradingSpiral } from '@/components/academy/animations/RevengeTradingSpiral';
-import { CompoundGrowthAnimation } from '@/components/academy/animations/CompoundGrowthAnimation';
-
-const WIDGET_REGISTRY: Record<string, React.ComponentType> = {
-  'position-size-calculator': PositionSizeCalculator,
-  'risk-reward-visualizer': RiskRewardVisualizer,
-  'compounding-calculator': CompoundingCalculator,
-  'candlestick-quiz': CandlestickQuiz,
-  'session-timezone-map': SessionTimezoneMap,
-  'moving-average-crossover': MovingAverageCrossover,
-  'emotion-check-in': EmotionCheckIn,
-  'anim-candlestick-forming': CandlestickForming,
-  'anim-risk-math': RiskMathAnimation,
-  'anim-support-resistance': SupportResistanceBounce,
-  'anim-ma-crossover': MACrossoverAnimation,
-  'anim-revenge-spiral': RevengeTradingSpiral,
-  'anim-compound-growth': CompoundGrowthAnimation,
-};
-
 const ACCENT_MAP: Record<string, string> = {
   'neon-cyan': '#00e5ff', 'neon-green': '#00ff9d', 'neon-amber': '#ffb800',
   'neon-purple': '#b18cff', 'neon-red': '#ff3d57',
@@ -64,6 +35,7 @@ export function AcademyLessonPage() {
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({});
   const [quizResult, setQuizResult] = useState<QuizResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [quizError, setQuizError] = useState('');
   const [tutorOpen, setTutorOpen] = useState(false);
   const [tutorPrompt, setTutorPrompt] = useState<string | undefined>();
 
@@ -72,6 +44,7 @@ export function AcademyLessonPage() {
   useEffect(() => {
     fetchProgress();
     window.scrollTo(0, 0);
+    setQuizAnswers({}); setQuizResult(null);
   }, [lessonId, fetchProgress]);
 
   // Mark as in_progress when opened
@@ -111,10 +84,10 @@ export function AcademyLessonPage() {
 
   const handleQuizSubmit = async () => {
     if (lesson.quiz.some((q) => quizAnswers[q.id] === undefined)) return;
-    setSubmitting(true);
+    setSubmitting(true); setQuizError('');
     const answers: QuizAnswer[] = lesson.quiz.map((q) => ({ questionId: q.id, selected: quizAnswers[q.id] }));
     const result = await submitQuiz(lesson.id, level.id, answers);
-    if (result) setQuizResult(result);
+    if (result) setQuizResult(result); else setQuizError('The quiz could not be saved. Check your connection and level access, then retry.');
     setSubmitting(false);
   };
 
@@ -140,7 +113,7 @@ export function AcademyLessonPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
           <span className="font-mono-nums text-[10px] uppercase tracking-widest" style={{ color: accent }}>
-            Level {level.id} · Lesson {lesson.id.split('-')[1]}
+            Level {level.id} · Lesson {lesson.id.split('-').at(-1)}
           </span>
           <span className="font-mono-nums text-[10px] text-terminal-muted">{lesson.readTime}</span>
           {isPassed && <CheckCircle2 size={14} style={{ color: accent }} />}
@@ -149,6 +122,8 @@ export function AcademyLessonPage() {
         <p className="mt-2 text-sm text-terminal-muted">{lesson.description}</p>
       </div>
 
+      <CourseVideo chapter={lesson.chapter} />
+      <details className="mb-8 rounded-xl border border-terminal-border p-4"><summary className="cursor-pointer text-sm text-neon-cyan">Original source diagram — stock-reference times</summary><p className="text-xs text-neon-amber my-3">Use the market-specific UTC schedule described in this lesson. This source illustration retains its original example times.</p><img src={`/playbook/${lesson.diagram}.svg`} alt={`Source illustration for ${lesson.title}; timing is adapted in the lesson text`} className="w-full rounded-xl" /></details>
       {/* Lesson content */}
       <div className="space-y-8">
         {lesson.sections.map((section, i) => (
@@ -169,17 +144,11 @@ export function AcademyLessonPage() {
               <Brain size={12} /> Ask Sage about this
             </button>
 
-            {/* Interactive widget */}
-            {section.widgetId && WIDGET_REGISTRY[section.widgetId] && (
-              <div className="mt-6 rounded-xl border border-terminal-border/30 bg-terminal-card/20 p-5">
-                <p className="font-mono-nums text-[9px] uppercase tracking-widest text-neon-cyan mb-3">Interactive Exercise</p>
-                {(() => { const Widget = WIDGET_REGISTRY[section.widgetId!]; return <Widget />; })()}
-              </div>
-            )}
           </section>
         ))}
       </div>
 
+      {quizError && <p role="alert" className="text-neon-amber">{quizError}</p>}
       {/* Quiz */}
       <div className="mt-12 rounded-2xl border border-terminal-border/40 bg-terminal-card/20 overflow-hidden">
         <div className="flex items-center justify-between border-b border-terminal-border/30 px-6 py-4">

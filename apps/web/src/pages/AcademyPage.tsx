@@ -17,7 +17,7 @@ export function AcademyPage() {
   useEffect(() => { fetchProgress(); }, [fetchProgress]);
 
   const totalLessons = ACADEMY_CURRICULUM.reduce((s, l) => s + l.lessons.length, 0);
-  const completedLessons = Object.values(progress).filter((p) => p.quiz_passed).length;
+  const completedLessons = ACADEMY_CURRICULUM.flatMap(l => l.lessons).filter(l => progress[l.id]?.quiz_passed).length;
 
   return (
     <div className="page-enter max-w-4xl mx-auto space-y-8 pb-12">
@@ -27,7 +27,7 @@ export function AcademyPage() {
           <GraduationCap size={24} className="text-neon-amber" />
           <h1 className="text-2xl font-bold text-white font-display tracking-tight">TradeMetrics Academy</h1>
         </div>
-        <p className="text-sm text-terminal-muted">Master trading from the ground up — 6 levels, interactive lessons, and quizzes</p>
+        <p className="text-sm text-terminal-muted">Three Strategies: 12 source-based lessons, Scarface Trades course chapters, and rule-compliance quizzes.</p>
       </div>
 
       {/* Overall progress */}
@@ -59,15 +59,15 @@ export function AcademyPage() {
           </div>
           <div className="flex-1">
             <h3 className="font-display text-base font-bold text-white group-hover:text-neon-cyan transition-colors">Practice Trading</h3>
-            <p className="text-[12px] text-terminal-muted">Trade against historical data with zero risk. 4 scenarios from beginner to expert.</p>
+            <p className="text-[12px] text-terminal-muted">Practice the 15m direction, 5m breakout and 1m retest sequence using clearly labelled synthetic teaching candles.</p>
           </div>
           <ChevronRight size={18} className="text-terminal-muted group-hover:text-neon-cyan transition-colors" />
         </div>
       </Link>
 
-      {/* ICC Practice Studio CTA */}
+      {/* Three Strategies Studio CTA */}
       <Link
-        to="/academy/icc-studio"
+        to="/academy/three-strategies"
         className="animate-fade-in-up group block rounded-2xl border border-neon-purple/20 bg-gradient-to-r from-neon-purple/[0.04] to-transparent p-5 hover:border-neon-purple/40 transition-all"
         style={{ animationDelay: '140ms' }}
       >
@@ -76,8 +76,8 @@ export function AcademyPage() {
             <Target size={20} className="text-neon-purple" />
           </div>
           <div className="flex-1">
-            <h3 className="font-display text-base font-bold text-white group-hover:text-neon-purple transition-colors">ICC Practice Studio</h3>
-            <p className="text-[12px] text-terminal-muted">Master Indication-Correction-Continuation across 4 timeframes. 8 scenarios with scoring.</p>
+            <h3 className="font-display text-base font-bold text-white group-hover:text-neon-purple transition-colors">Three Strategies Studio</h3>
+            <p className="text-[12px] text-terminal-muted">Opening range, previous day, and pre-window. Follow the same fixed rules from preparation through review.</p>
           </div>
           <ChevronRight size={18} className="text-terminal-muted group-hover:text-neon-purple transition-colors" />
         </div>

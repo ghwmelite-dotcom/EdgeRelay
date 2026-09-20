@@ -63,12 +63,12 @@ with sync_playwright() as p:
  page.get_by_text('Profile updated successfully.',exact=True).wait_for()
  print('PASS Telegram test action and profile save (mocked requests only)')
  page.goto(BASE+'/tools/position-size-calculator',wait_until='networkidle')
- page.get_by_text('0.40',exact=True).wait_for()
+ page.get_by_text('0.20',exact=True).wait_for()
  page.get_by_label('Stop loss in pips',exact=True).fill('0')
  page.get_by_role('alert').filter(has_text='Enter positive values').wait_for()
- assert page.get_by_text('0.40',exact=True).count()==0
+ assert page.get_by_text('0.20',exact=True).count()==0
  page.get_by_label('Stop loss in pips',exact=True).fill('30')
- page.get_by_text('0.33',exact=True).wait_for()
+ page.get_by_text('0.16',exact=True).wait_for()
  page.get_by_label('Risk per trade',exact=True).fill('-1')
  page.get_by_role('alert').filter(has_text='Enter positive values').wait_for()
  print('PASS calculator known result, zero/negative input rejection and conservative rounding')

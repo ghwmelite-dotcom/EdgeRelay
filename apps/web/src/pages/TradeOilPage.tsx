@@ -5,7 +5,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const FEATURES = [
   { icon: ShieldCheck, color: '#00ff9d', title: 'Oil-Ready PropGuard', desc: 'Crude oil is driven by inventory reports, OPEC decisions, and geopolitics. PropGuard auto-protects your account during these high-volatility events with news blackout windows and daily loss enforcement.' },
-  { icon: FlaskConical, color: '#00e5ff', title: 'Oil Strategy Generator', desc: 'Generate EAs optimized for USOIL and UKOIL — with inventory event filters, volatility-adaptive stops, and session timing for maximum edge during US trading hours.' },
+  { icon: FlaskConical, color: '#00e5ff', title: 'Three Strategies Playbook', desc: 'Practise opening-range, previous-day and pre-session break-and-retest setups using the verified instrument schedule in UTC. Fixed risk rules, no automatic strategy generation.' },
   { icon: Radio, color: '#ffb800', title: 'Copy Oil Trades Cross-VPS', desc: 'Master EA trades USOIL on one VPS, followers copy on others. Symbol normalization handles USOIL → WTI → CrudeOil → CLm automatically across brokers.' },
   { icon: BarChart3, color: '#b18cff', title: 'Oil Edge Analytics', desc: 'Validate your oil trading edge with Monte Carlo simulation. Oil has unique seasonality and event-driven patterns — the analytics capture this.' },
   { icon: Brain, color: '#ff3d57', title: 'Inventory Event Detection', desc: 'AI flags EIA crude oil inventory reports and OPEC meetings. Your Flight Check shows how your oil strategy performs around these events vs normal conditions.' },
@@ -33,7 +33,7 @@ export function TradeOilPage() {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org', '@type': 'WebPage', name: 'Trade Oil (USOIL, UKOIL) with AI Analytics & PropGuard',
-        description: 'Free oil trading tools for USOIL and UKOIL: PropGuard protection, AI strategy optimization, cross-VPS signal copying, and edge validation for crude oil traders.',
+        description: 'Free oil trading tools for USOIL and UKOIL: PropGuard protection, Three Strategies practice, cross-VPS signal copying, and edge validation for crude oil traders.',
         url: 'https://trademetrics.pro/trade-oil',
       }) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -59,7 +59,7 @@ export function TradeOilPage() {
             Trade Oil with <span className="text-neon-red">Event-Aware AI</span>
           </h1>
           <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-lg text-slate-400" style={{ animationDelay: '100ms' }}>
-            Crude oil trading with PropGuard protection against inventory reports and OPEC volatility, AI-optimized strategies, and cross-VPS signal copying. Free forever.
+            Crude oil trading with PropGuard protection against inventory reports and OPEC volatility, versioned practice playbooks, and cross-VPS signal copying. Free forever.
           </p>
           <div className="animate-fade-in-up mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center" style={{ animationDelay: '200ms' }}>
             <Link to="/" className="btn-premium signal-pulse inline-flex items-center gap-2 rounded-xl bg-neon-red px-10 py-4 text-base font-semibold text-white shadow-[0_0_32px_rgba(255,61,87,0.3)]">Start Trading Oil Free <ArrowRight className="h-4 w-4" /></Link>

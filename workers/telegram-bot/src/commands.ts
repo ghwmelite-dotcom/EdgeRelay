@@ -353,11 +353,12 @@ export function handleHelp(): CommandResult {
       '<b>EdgeRelay Bot Commands</b>',
       '',
       '/start \u2014 Welcome message',
-      '/link &lt;api_key&gt; \u2014 Link your EdgeRelay account',
+      '/link \u2014 Connect securely from dashboard Settings',
       '/unlink \u2014 Unlink your account',
       '/status \u2014 Account & connection status',
       '/signals [count] \u2014 Recent signals (default: 5, max: 20)',
       '/accounts \u2014 List all trading accounts',
+      '/strategy \u2014 Three Strategies playbook and practice',
       '/help \u2014 Show this help message',
     ].join('\n'),
   };
@@ -397,6 +398,8 @@ export async function routeCommand(
       return handleSignals(env, user, args[0]);
     case '/accounts':
       return handleAccounts(env, user);
+    case '/strategy':
+      return { text: '<b>Three Strategies — XAUUSD and USDJPY first</b>\nOpening range, previous-day levels, or a verified pre-session range. Use the exact instrument session converted to UTC; stock opening hours are examples.\n15m direction → 5m breakout → later 1m retest. Practice risk at most 0.5% including costs, one entry per UTC day, fixed 2R. No martingale or grid.\n<a href="https://trademetricspro.com/three-strategies">Open the practice studio</a> · <a href="https://www.youtube.com/@ScarfaceTrades">Original course: Scarface Trades</a>' };
     case '/help':
       return handleHelp();
     case '/app':

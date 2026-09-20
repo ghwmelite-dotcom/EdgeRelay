@@ -56,7 +56,8 @@ export const useAcademyStore = create<AcademyState>()((set, get) => ({
   },
 
   updateLessonStatus: async (lessonId, levelId, status) => {
-    await api.post('/academy/progress', { lessonId, levelId, status });
+    const response = await api.post('/academy/progress', { lessonId, levelId, status });
+    if (response.error) return;
     set((state) => ({
       progress: {
         ...state.progress,

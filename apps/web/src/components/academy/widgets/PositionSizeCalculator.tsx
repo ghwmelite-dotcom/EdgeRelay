@@ -3,7 +3,7 @@ import { Calculator } from 'lucide-react';
 
 export function PositionSizeCalculator() {
   const [balance, setBalance] = useState('10000');
-  const [riskPct, setRiskPct] = useState('1');
+  const [riskPct, setRiskPct] = useState('0.5');
   const [slPips, setSlPips] = useState('25');
   const [pipValue, setPipValue] = useState('10'); // $10 per pip for standard lot EURUSD
 
@@ -11,7 +11,7 @@ export function PositionSizeCalculator() {
   const riskNum = Number(riskPct);
   const slNum = Number(slPips);
   const pvNum = Number(pipValue);
-  const valid = [balanceNum,riskNum,slNum,pvNum].every(n=>Number.isFinite(n)&&n>0) && riskNum<=100;
+  const valid = [balanceNum,riskNum,slNum,pvNum].every(n=>Number.isFinite(n)&&n>0) && riskNum<=0.5;
   const riskAmount = valid ? balanceNum*(riskNum/100) : 0;
   const lotSize = valid ? Math.floor((riskAmount/(slNum*pvNum))*100)/100 : 0;
 
@@ -24,13 +24,13 @@ export function PositionSizeCalculator() {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-[11px] text-terminal-muted mb-1">Account Balance ($)</label>
+          <label className="block text-[11px] text-terminal-muted mb-1">Current Demo Equity ($)</label>
           <input aria-label="Account balance" type="number" value={balance} onChange={(e) => setBalance(e.target.value)}
             className="w-full rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2 font-mono-nums text-sm text-white focus:border-neon-cyan/40 focus:outline-none" />
         </div>
         <div>
           <label className="block text-[11px] text-terminal-muted mb-1">Risk Per Trade (%)</label>
-          <input aria-label="Risk per trade" type="number" value={riskPct} onChange={(e) => setRiskPct(e.target.value)} step="0.5"
+          <input aria-label="Risk per trade" type="number" value={riskPct} onChange={(e) => setRiskPct(e.target.value)} step="0.1" max="0.5"
             className="w-full rounded-lg border border-terminal-border bg-terminal-bg px-3 py-2 font-mono-nums text-sm text-white focus:border-neon-cyan/40 focus:outline-none" />
         </div>
         <div>
@@ -45,7 +45,7 @@ export function PositionSizeCalculator() {
         </div>
       </div>
 
-      {!valid && <p role="alert" className="text-sm text-neon-amber">Enter positive values for balance, risk, stop loss and pip value. Risk cannot exceed 100%.</p>}
+      {!valid && <p role="alert" className="text-sm text-neon-amber">Enter positive values with risk at most 0.5% for balance, risk, stop loss and pip value. Risk cannot exceed 100%.</p>}
       {/* Result */}
       <div className="rounded-xl border border-neon-cyan/20 bg-neon-cyan/[0.04] p-4">
         <div className="grid grid-cols-3 gap-4 text-center">
@@ -65,7 +65,7 @@ export function PositionSizeCalculator() {
       </div>
 
       <p className="text-[11px] text-terminal-muted">
-        Estimate rounded down to 0.01 lot. Use your broker’s pip value and lot step; this excludes slippage and fees.
+        Basic pip arithmetic only, rounded down to 0.01 lot. This is not the strategy execution sizer. Use your broker’s pip value and lot step; this excludes slippage and fees.
       </p>
     </div>
   );

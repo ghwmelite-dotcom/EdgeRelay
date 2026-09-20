@@ -1,3 +1,5 @@
+import { strategyReviews } from './routes/strategyReviews.js';
+import { academyMedia } from './routes/academyMedia.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { ApiResponse } from '@edgerelay/shared';
@@ -84,6 +86,7 @@ app.get('/health', (c) => {
 
 // ── Public Routes ───────────────────────────────────────────────
 app.route('/v1/auth', auth);
+app.route('/v1/academy-media', academyMedia);
 
 // Paystack webhook + plans are public (verified via signature, not JWT)
 // Auth-required routes (initialize, verify, subscription, cancel) apply authMiddleware internally
@@ -137,6 +140,7 @@ protectedApp.route('/referral', referral);
 protectedApp.route('/admin', admin);
 protectedApp.route('/counselor', counselor);
 protectedApp.route('/academy', academy);
+protectedApp.route('/strategy-reviews', strategyReviews);
 protectedApp.route('/community-pulse', communityPulse);
 protectedApp.route('/founder-analytics', founderAnalytics);
 // social routes mounted publicly above (auth checked per-endpoint in social.ts)

@@ -55,7 +55,6 @@ const CommandCenterPage = React.lazy(() => import('@/pages/CommandCenterPage').t
 const FirmDirectoryPage = React.lazy(() => import('@/pages/FirmDirectoryPage').then(m => ({ default: m.FirmDirectoryPage })));
 const FirmDetailPage = React.lazy(() => import('@/pages/FirmDetailPage').then(m => ({ default: m.FirmDetailPage })));
 const RiskDashboardPage = React.lazy(() => import('@/pages/RiskDashboardPage').then(m => ({ default: m.RiskDashboardPage })));
-const SimulatorPage = React.lazy(() => import('@/pages/SimulatorPage').then(m => ({ default: m.SimulatorPage })));
 const ProviderSetupPage = React.lazy(() => import('@/pages/ProviderSetupPage').then(m => ({ default: m.ProviderSetupPage })));
 const MarketplacePage = React.lazy(() => import('@/pages/MarketplacePage').then(m => ({ default: m.MarketplacePage })));
 const StrategyHubPage = React.lazy(() => import('@/pages/StrategyHubPage').then(m => ({ default: m.StrategyHubPage })));
@@ -75,7 +74,7 @@ const MarketPulsePage = React.lazy(() => import('@/pages/MarketPulsePage').then(
 const PipCalculatorPage = React.lazy(() => import('@/pages/tools/PipCalculatorPage').then(m => ({ default: m.PipCalculatorPage })));
 const PositionSizeCalculatorPage = React.lazy(() => import('@/pages/tools/PositionSizeCalculatorPage').then(m => ({ default: m.PositionSizeCalculatorPage })));
 const RiskRewardCalculatorPage = React.lazy(() => import('@/pages/tools/RiskRewardCalculatorPage').then(m => ({ default: m.RiskRewardCalculatorPage })));
-const ICCStudioPage = React.lazy(() => import('@/pages/ICCStudioPage').then(m => ({ default: m.ICCStudioPage })));
+const ThreeStrategiesStudioPage = React.lazy(() => import('@/pages/ThreeStrategiesStudioPage').then(m => ({ default: m.ThreeStrategiesStudioPage })));
 const TradeGoldPage = React.lazy(() => import('@/pages/TradeGoldPage').then(m => ({ default: m.TradeGoldPage })));
 const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').then(m => ({ default: m.TradeIndicesPage })));
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
@@ -83,7 +82,6 @@ const TelegramMiniAppPage = React.lazy(() => import('@/pages/TelegramMiniAppPage
 const CommunityPage = React.lazy(() => import('@/pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
 const AcademyPage = React.lazy(() => import('@/pages/AcademyPage').then(m => ({ default: m.AcademyPage })));
 const AcademyLessonPage = React.lazy(() => import('@/pages/AcademyLessonPage').then(m => ({ default: m.AcademyLessonPage })));
-const ChartSimulatorPage = React.lazy(() => import('@/pages/ChartSimulatorPage').then(m => ({ default: m.ChartSimulatorPage })));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -155,7 +153,8 @@ function App() {
         <Route path="/blog/:slug" element={<BlogPostPage />} />
         <Route path="/pass-prop-firm-challenge" element={<PropFirmChallengePage />} />
         <Route path="/markets" element={<MarketPulsePage />} />
-        <Route path="/icc-studio" element={<ICCStudioPage />} />
+        <Route path="/icc-studio" element={<Navigate to="/three-strategies" replace />} />
+        <Route path="/three-strategies" element={<ThreeStrategiesStudioPage />} />
         <Route path="/tools/pip-calculator" element={<PipCalculatorPage />} />
         <Route path="/tools/position-size-calculator" element={<PositionSizeCalculatorPage />} />
         <Route path="/tools/risk-reward-calculator" element={<RiskRewardCalculatorPage />} />
@@ -194,9 +193,10 @@ function App() {
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/academy" element={<AcademyPage />} />
           <Route path="/academy/:lessonId" element={<AcademyLessonPage />} />
-          <Route path="/academy/practice" element={<ChartSimulatorPage />} />
-          <Route path="/academy/icc-studio" element={<ICCStudioPage />} />
-          <Route path="/simulator" element={<SimulatorPage />} />
+          <Route path="/academy/practice" element={<Navigate to="/academy/three-strategies" replace />} />
+          <Route path="/academy/icc-studio" element={<Navigate to="/academy/three-strategies" replace />} />
+          <Route path="/academy/three-strategies" element={<ThreeStrategiesStudioPage />} />
+          <Route path="/simulator" element={<Navigate to="/academy/three-strategies" replace />} />
           <Route path="/provider/setup" element={<ProviderSetupPage />} />
           <Route path="/app/marketplace" element={<MarketplacePage />} />
           <Route path="/app/strategy-hub" element={<StrategyHubPage />} />

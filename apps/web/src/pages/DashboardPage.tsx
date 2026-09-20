@@ -1,3 +1,4 @@
+import { StrategyBrief } from '@/components/three-strategies/StrategyBrief';
 import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -584,6 +585,7 @@ export function DashboardPage() {
     <div className="space-y-8">
       {/* ── System Status Bar ────────────────────────────────────── */}
       <SystemStatusBar />
+      <StrategyBrief />
 
       {/* ── Onboarding Wizard (new users) ──────────────────────── */}
       {showOnboarding && accounts.length === 0 && (

@@ -1,3 +1,4 @@
+import { StrategyReview } from '@/components/three-strategies/StrategyReview';
 import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
@@ -207,6 +208,7 @@ export function JournalTradeDetailPage() {
         Back to Journal
       </Link>
 
+      <StrategyReview accountId={accountId} dealTicket={Number(dealTicket)} symbol={t.symbol} />
       {/* ── Header card ─────────────────────────────────────────────── */}
       <div
         className="glass rounded-2xl p-6 animate-fade-in-up"

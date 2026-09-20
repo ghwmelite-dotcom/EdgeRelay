@@ -5,7 +5,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const FEATURES = [
   { icon: ShieldCheck, color: '#00ff9d', title: 'Index-Proof PropGuard', desc: 'NAS100 can move 500+ points in a session. PropGuard enforces daily loss limits calibrated for index volatility — auto-closes positions before your prop firm drawdown is hit.' },
-  { icon: FlaskConical, color: '#00e5ff', title: 'Index-Tuned EAs', desc: 'Generate Expert Advisors optimized for US30, NAS100, and SPX500. Wider ATR-based stops, session filters for US market hours, and gap protection for overnight holds.' },
+  { icon: FlaskConical, color: '#00e5ff', title: 'Three Strategies Playbook', desc: 'Practise opening-range, previous-day and pre-session break-and-retest setups using the verified instrument schedule in UTC. Fixed risk rules, no automatic strategy generation.' },
   { icon: Radio, color: '#ffb800', title: 'Copy Index Trades Cross-VPS', desc: 'Master trades NAS100 on VPS 1, followers copy on VPS 2 and 3 at different brokers. Symbol normalization handles NAS100 → USTEC → US100.m seamlessly.' },
   { icon: BarChart3, color: '#b18cff', title: 'Index Edge Validation', desc: 'Run Monte Carlo simulation on your index trades. Indices have different statistical properties than forex — validate your edge with instrument-specific confidence intervals.' },
   { icon: Brain, color: '#ff3d57', title: 'Session & Gap Analysis', desc: 'AI identifies your best index trading windows. Pre-market, US open, power hour — know exactly when your NAS100 strategy performs and when it bleeds.' },
@@ -16,7 +16,7 @@ const FAQ = [
   { q: 'Which indices can I trade on TradeMetrics Pro?', a: 'Any index available on your MT5 broker — NAS100 (Nasdaq), US30 (Dow Jones), SPX500 (S&P 500), GER40 (DAX), UK100 (FTSE), JPN225 (Nikkei), and more. The signal copier and PropGuard work with any MT5 symbol.' },
   { q: 'Are index trades copied with the same lot size?', a: 'You can mirror the exact lot size, use a fixed size, apply a multiplier, or use risk-percentage mode. Each follower account has independent lot configuration, so your $100K FTMO account can trade 0.5 lots while your $50K The5ers account trades 0.25.' },
   { q: 'How does PropGuard handle index gaps?', a: 'PropGuard includes a Friday close feature that liquidates all index positions before market close, preventing weekend gap risk. For daily gaps, it monitors pre-market equity and blocks trading if overnight P&L has already consumed most of your daily limit.' },
-  { q: 'What timeframe works best for index trading?', a: 'Most successful index traders use H1 or H4 for trend direction and M15 for entries. The Strategy Hub generates EAs with recommended timeframes per instrument. For NAS100, H1 during US session (14:30-21:00 UTC) tends to produce the cleanest signals.' },
+  { q: 'Which timeframes does the practice framework use?', a: 'Confirmed 15m swing direction, a completed 5m breakout, then a later 1m retest. Verify the instrument session and convert it to UTC for the date; these are practice rules, not evidence of optimal performance.' },
 ];
 
 export function TradeIndicesPage() {
@@ -33,7 +33,7 @@ export function TradeIndicesPage() {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org', '@type': 'WebPage', name: 'Trade Indices with AI Analytics & PropGuard',
-        description: 'Free index trading tools for NAS100, US30, SPX500: PropGuard protection, AI strategy optimization, cross-VPS signal copying, and edge validation.',
+        description: 'Free index trading tools for NAS100, US30, SPX500: PropGuard protection, Three Strategies practice, cross-VPS signal copying, and edge validation.',
         url: 'https://trademetrics.pro/trade-indices',
       }) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -59,7 +59,7 @@ export function TradeIndicesPage() {
             Trade Indices with <span className="text-neon-cyan">AI-Powered Edge</span>
           </h1>
           <p className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-lg text-slate-400" style={{ animationDelay: '100ms' }}>
-            NAS100, US30, SPX500, and more — with PropGuard protection against index volatility, AI-optimized strategies, and cross-VPS signal copying. Completely free.
+            NAS100, US30, SPX500, and more — with PropGuard protection against index volatility, versioned practice playbooks, and cross-VPS signal copying. Completely free.
           </p>
           <div className="animate-fade-in-up mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center" style={{ animationDelay: '200ms' }}>
             <Link to="/" className="btn-premium signal-pulse inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.3)]">Start Trading Indices Free <ArrowRight className="h-4 w-4" /></Link>

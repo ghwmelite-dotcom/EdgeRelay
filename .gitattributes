@@ -1,0 +1,3 @@
+
+# Preserve source PDF bytes and suppress text whitespace checks.
+apps/web/public/playbook/*.pdf binary

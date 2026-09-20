@@ -80,6 +80,7 @@ const TradeIndicesPage = React.lazy(() => import('@/pages/TradeIndicesPage').the
 const TradeOilPage = React.lazy(() => import('@/pages/TradeOilPage').then(m => ({ default: m.TradeOilPage })));
 const TelegramMiniAppPage = React.lazy(() => import('@/pages/TelegramMiniAppPage').then(m => ({ default: m.TelegramMiniAppPage })));
 const CommunityPage = React.lazy(() => import('@/pages/CommunityPage').then(m => ({ default: m.CommunityPage })));
+const RangeBreakoutGuidePage = React.lazy(() => import('@/pages/RangeBreakoutGuidePage').then(m => ({ default: m.RangeBreakoutGuidePage })));
 const AcademyPage = React.lazy(() => import('@/pages/AcademyPage').then(m => ({ default: m.AcademyPage })));
 const AcademyLessonPage = React.lazy(() => import('@/pages/AcademyLessonPage').then(m => ({ default: m.AcademyLessonPage })));
 
@@ -192,6 +193,7 @@ function App() {
           <Route path="/counselor" element={<CounselorPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/academy" element={<AcademyPage />} />
+          <Route path="/academy/gold-range-guide" element={<RangeBreakoutGuidePage />} />
           <Route path="/academy/:lessonId" element={<AcademyLessonPage />} />
           <Route path="/academy/practice" element={<Navigate to="/academy/three-strategies" replace />} />
           <Route path="/academy/icc-studio" element={<Navigate to="/academy/three-strategies" replace />} />

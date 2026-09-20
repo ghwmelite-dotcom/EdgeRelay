@@ -1,4 +1,4 @@
-import { STRATEGY_TEACHING_CONTEXT } from '@edgerelay/shared';
+import { STRATEGY_TEACHING_CONTEXT, GOLD_RANGE_TEACHING_CONTEXT } from '@edgerelay/shared';
 import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
@@ -205,7 +205,7 @@ counselor.post('/sessions/:sessionId/messages', async (c) => {
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       {
         role: 'system',
-        content: `${SYSTEM_PROMPT}\n\n${STRATEGY_TEACHING_CONTEXT}\n\n--- CURRENT TRADING DATA ---\n${buildContextBlock(traderContext)}`,
+        content: `${SYSTEM_PROMPT}\n\n${STRATEGY_TEACHING_CONTEXT}\n\n${GOLD_RANGE_TEACHING_CONTEXT}\n\n--- CURRENT TRADING DATA ---\n${buildContextBlock(traderContext)}`,
       },
     ];
 

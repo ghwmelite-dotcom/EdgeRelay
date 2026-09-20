@@ -2,7 +2,7 @@ import {
   COURSE_LESSONS,
   COURSE_LEVELS,
   ADAPTED_PLAYBOOK_PAGES,
-  MARKET_ADAPTATION,
+  MARKET_ADAPTATION, GOLD_RANGE_LESSONS, GOLD_RANGE_LEVELS,
 } from "@edgerelay/shared";
 export interface AcademyQuestion {
   id: string;
@@ -24,8 +24,8 @@ export interface AcademyLesson {
   readTime: string;
   sections: LessonSection[];
   quiz: AcademyQuestion[];
-  diagram: string;
-  chapter: number;
+  diagram?: string;
+  chapter?: number;
 }
 export interface AcademyLevel {
   id: number;
@@ -85,3 +85,16 @@ export const ACADEMY_CURRICULUM: AcademyLevel[] = COURSE_LEVELS.map(
     }),
   }),
 );
+
+export const GOLD_RANGE_CURRICULUM: AcademyLevel[] = GOLD_RANGE_LEVELS.map((title, index) => ({
+ id: index + 1, title, subtitle: 'TMPro Range Breakout · UTC only', accentColor: 'neon-amber',
+ lessons: GOLD_RANGE_LESSONS.filter(l => l.levelId === index + 1).map(l => ({
+  ...l, readTime: '4 min', sections: l.sections.map(s => ({heading: s.heading, content: '<p>' + escape(s.text) + '</p>'})),
+ })),
+}));
+export function curriculumFor(courseId = 'three-strategies'): AcademyLevel[] {
+ return courseId === 'gold-range-utc' ? GOLD_RANGE_CURRICULUM : ACADEMY_CURRICULUM;
+}
+export function courseForLesson(lessonId: string): string {
+ return GOLD_RANGE_LESSONS.some(l => l.id === lessonId) ? 'gold-range-utc' : 'three-strategies';
+}

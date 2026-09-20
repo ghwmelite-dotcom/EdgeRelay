@@ -14,3 +14,6 @@ export * from './three-strategies/fixtures.js';
 export * from './three-strategies/import.js';
 
 export * from './three-strategies/adapted-playbook.js';
+
+export * from './gold-range-academy.js';
+export * from './academy-catalog.js';

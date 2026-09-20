@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { RangeBreakoutGuide } from '@/components/academy/RangeBreakoutGuide';
 import { GraduationCap, BookOpen, CheckCircle2, Lock, ChevronRight, Sparkles, BarChart3, Target } from 'lucide-react';
 import { useAcademyStore } from '@/stores/academy';
-import { ACADEMY_CURRICULUM } from '@/data/academy-curriculum';
+import { curriculumFor } from '@/data/academy-curriculum';
 import { HomeworkSection } from '@/components/academy/HomeworkCard';
 import { PeerChallenges } from '@/components/academy/PeerChallenges';
 
@@ -12,12 +13,16 @@ const ACCENT_MAP: Record<string, string> = {
 };
 
 export function AcademyPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const courseId = searchParams.get('course') === 'gold-range-utc' ? 'gold-range-utc' : 'three-strategies';
+  const isGold = courseId === 'gold-range-utc';
+  const curriculum = curriculumFor(courseId);
   const { progress, fetchProgress, isLevelUnlocked, getLevelProgress, loading } = useAcademyStore();
 
   useEffect(() => { fetchProgress(); }, [fetchProgress]);
 
-  const totalLessons = ACADEMY_CURRICULUM.reduce((s, l) => s + l.lessons.length, 0);
-  const completedLessons = ACADEMY_CURRICULUM.flatMap(l => l.lessons).filter(l => progress[l.id]?.quiz_passed).length;
+  const totalLessons = curriculum.reduce((s, l) => s + l.lessons.length, 0);
+  const completedLessons = curriculum.flatMap(l => l.lessons).filter(l => progress[l.id]?.quiz_passed).length;
 
   return (
     <div className="page-enter max-w-4xl mx-auto space-y-8 pb-12">
@@ -27,9 +32,14 @@ export function AcademyPage() {
           <GraduationCap size={24} className="text-neon-amber" />
           <h1 className="text-2xl font-bold text-white font-display tracking-tight">TradeMetrics Academy</h1>
         </div>
-        <p className="text-sm text-terminal-muted">Three Strategies: 12 source-based lessons, Scarface Trades course chapters, and rule-compliance quizzes.</p>
+        <p className="text-sm text-terminal-muted">Choose a course. Each has its own lessons, rules and progress.</p>
       </div>
 
+      <nav aria-label="Academy courses" className="grid gap-3 sm:grid-cols-2">
+        {[['three-strategies','Three Strategies','12 lessons · market-specific UTC sessions'],['gold-range-utc','TMPro Range Breakout','The Worlds Simpliest Strategy']].map(([id,title,description]) => <button key={id} type="button" aria-pressed={courseId===id} onClick={() => setSearchParams(id==='three-strategies' ? {} : {course:id})} className={`text-left rounded-xl border p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-cyan ${courseId===id ? 'border-neon-amber/60 bg-neon-amber/5' : 'border-terminal-border'}`}><span className="block text-base font-semibold text-white">{title}</span><span className="block mt-2 text-sm text-slate-300">{description}</span></button>)}
+      </nav>
+      {isGold && <div className="space-y-4"><h2 className="text-xl font-semibold text-white">TMPro Range Breakout</h2><p className="text-sm text-slate-300">Six lessons · three levels · MZITOH FX transcript adaptation · UTC only</p><Link to="/academy/gr-v1-01" className="inline-flex min-h-11 items-center rounded-lg bg-neon-amber px-5 font-semibold text-terminal-bg">Start course</Link><details className="rounded-xl border border-terminal-border p-4"><summary className="min-h-11 cursor-pointer text-neon-cyan">Open the visual guide</summary><RangeBreakoutGuide /></details></div>}
+      {loading && <p role="status" className="text-sm text-terminal-muted">Loading course progress…</p>}
       {/* Overall progress */}
       <div className="animate-fade-in-up glass-premium rounded-2xl p-6" style={{ animationDelay: '60ms' }}>
         <div className="flex items-center justify-between mb-3">
@@ -47,6 +57,7 @@ export function AcademyPage() {
         </div>
       </div>
 
+      {!isGold && <>
       {/* Practice Trading CTA */}
       <Link
         to="/academy/practice"
@@ -89,11 +100,12 @@ export function AcademyPage() {
       {/* Homework */}
       <HomeworkSection />
 
+      </>}
       {/* Level cards */}
       <div className="space-y-4">
-        {ACADEMY_CURRICULUM.map((level, li) => {
-          const unlocked = isLevelUnlocked(level.id);
-          const { completed, total } = getLevelProgress(level.id);
+        {curriculum.map((level, li) => {
+          const unlocked = isLevelUnlocked(level.id, courseId);
+          const { completed, total } = getLevelProgress(level.id, courseId);
           const accent = ACCENT_MAP[level.accentColor] || '#00e5ff';
           const isComplete = completed === total;
 

@@ -313,6 +313,28 @@ async function post(path, body) {
   console.log(
     "PASS academy: complete quiz sets, duplicate/foreign rejection, server progression, failed-attempt status, legacy separation and no trade-count homework",
   );
+  // Course isolation: completing Three Strategies must not unlock the second course.
+  const goldBody = (lesson) => ({lessonId: lesson.id, levelId: lesson.levelId, answers: lesson.quiz.map(q => ({questionId:q.id,selected:q.correctIndex}))});
+  assert.equal((await post('/academy/quiz', goldBody(s.GOLD_RANGE_LESSONS[2]))).status,403);
+  // A new user can start this course without completing the first one.
+  db.exec("DELETE FROM academy_progress WHERE user_id='owner' AND lesson_id LIKE 'ts-v1-%'");
+  const firstGold = s.GOLD_RANGE_LESSONS[0];
+  assert.equal((await post('/academy/quiz', {...goldBody(firstGold), levelId: 2})).status,400);
+  assert.equal((await post('/academy/quiz', {...goldBody(firstGold), answers: goldBody(s.COURSE_LESSONS[0]).answers})).status,400);
+  assert.equal((await post('/academy/quiz', {...goldBody(firstGold), answers: [goldBody(firstGold).answers[0],goldBody(firstGold).answers[0]]})).status,400);
+  assert.equal((await post('/academy/progress', {lessonId:firstGold.id,levelId:1,status:'completed'})).status,400);
+  for (const lesson of s.GOLD_RANGE_LESSONS) assert.equal((await post('/academy/quiz', goldBody(lesson))).status,200);
+  assert.equal((await post('/academy/quiz', goldBody(s.COURSE_LESSONS[2]))).status,403);
+  const goldProgress=(await (await app.request('/academy/progress',{},env)).json()).data.progress;
+  assert.equal(goldProgress.length,6);
+  assert.ok(goldProgress.every(p=>p.lesson_id.startsWith('gr-v1-') && p.quiz_passed===1));
+  const goldStats=(await (await app.request('/academy/stats',{},env)).json()).data.stats;
+  assert.equal(goldStats.lessons_completed,6);
+  const oldHomework=(await (await app.request('/academy/homework',{},env)).json()).data.homework;
+  assert.ok(Object.values(oldHomework).every(h=>!h.completed));
+  db.exec("INSERT INTO academy_progress(id,user_id,level_id,lesson_id,status,quiz_passed) VALUES ('foreign-course','other',1,'gr-v1-01','completed',1)");
+  assert.equal((await (await app.request('/academy/progress',{},env)).json()).data.progress.length,6);
+  console.log('PASS independent course enrollment, both-way level isolation, exact quiz validation, stored progress/stats, user isolation and original homework separation');
   const review = {
     version: s.STRATEGY_VERSION,
     strategyId: "opening-range",

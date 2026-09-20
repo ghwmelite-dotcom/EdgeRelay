@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import type { ApiResponse } from '@edgerelay/shared';
 import type { Env } from '../types.js';
-import { COURSE_LESSONS } from '@edgerelay/shared';
-async function unlocked(db: D1Database, userId:string, level:number) {
- const required=COURSE_LESSONS.filter(l=>l.levelId<level);
+import { COURSE_LESSONS, ACADEMY_LESSONS, prerequisiteLessons } from '@edgerelay/shared';
+async function unlocked(db: D1Database, userId:string, lessonId:string) {
+ const required=prerequisiteLessons(lessonId);
  if(!required.length)return true;
  const rows=await db.prepare('SELECT lesson_id FROM academy_progress WHERE user_id = ? AND quiz_passed = 1').bind(userId).all<{lesson_id:string}>();
  const passed=new Set(rows.results.map(r=>r.lesson_id));return required.every(l=>passed.has(l.id));
@@ -18,8 +18,8 @@ academy.get('/progress', async (c) => {
 
   const { results } = await c.env.DB.prepare(
     `SELECT lesson_id, level_id, status, quiz_score, quiz_passed, completed_at
-     FROM academy_progress WHERE user_id = ? AND lesson_id GLOB 'ts-v1-[0-9][0-9]'`,
-  ).bind(userId).all();
+     FROM academy_progress WHERE user_id = ? AND lesson_id IN (${ACADEMY_LESSONS.map(() => '?').join(',')})`,
+  ).bind(userId, ...ACADEMY_LESSONS.map(l => l.id)).all();
 
   return c.json<ApiResponse>({ data: { progress: results || [] }, error: null });
 });
@@ -31,9 +31,9 @@ academy.post('/progress', async (c) => {
   const body = await c.req.json<{ lessonId: string; levelId: number; status: string }>().catch(()=>null);
   if(!body)return c.json({data:null,error:{code:'BAD_REQUEST',message:'Valid JSON is required'}},400);
 
-  const lesson=COURSE_LESSONS.find(l=>l.id===body.lessonId && l.levelId===body.levelId);
+  const lesson=ACADEMY_LESSONS.find(l=>l.id===body.lessonId && l.levelId===body.levelId);
   if (!lesson || body.status !== 'in_progress') return c.json<ApiResponse>({data:null,error:{code:'BAD_REQUEST',message:'A current lesson and in_progress status are required. Completion is earned through its quiz.'}},400);
-  if(!await unlocked(c.env.DB,userId,lesson.levelId))return c.json<ApiResponse>({data:null,error:{code:'LEVEL_LOCKED',message:'Complete the preceding levels first.'}},403);
+  if(!await unlocked(c.env.DB,userId,lesson.id))return c.json<ApiResponse>({data:null,error:{code:'LEVEL_LOCKED',message:'Complete the preceding levels first.'}},403);
   const completedAt = null;
 
   await c.env.DB.prepare(
@@ -57,9 +57,9 @@ academy.post('/quiz', async (c) => {
   }>().catch(()=>null);
   if(!body)return c.json({data:null,error:{code:'BAD_REQUEST',message:'Valid JSON is required'}},400);
 
-  const lesson=COURSE_LESSONS.find(l=>l.id===body.lessonId && l.levelId===body.levelId);
+  const lesson=ACADEMY_LESSONS.find(l=>l.id===body.lessonId && l.levelId===body.levelId);
   if(!lesson || !Array.isArray(body.answers) || body.answers.length!==lesson.quiz.length || new Set(body.answers.map(a=>a?.questionId)).size!==lesson.quiz.length || !body.answers.every(a=>a && lesson.quiz.some(q=>q.id===a.questionId && Number.isInteger(a.selected) && a.selected>=0 && a.selected<q.options.length))) return c.json<ApiResponse>({data:null,error:{code:'BAD_REQUEST',message:'Submit every question from this lesson exactly once with a valid option.'}},400);
-  if(!await unlocked(c.env.DB,userId,lesson.levelId))return c.json<ApiResponse>({data:null,error:{code:'LEVEL_LOCKED',message:'Complete the preceding levels first.'}},403);
+  if(!await unlocked(c.env.DB,userId,lesson.id))return c.json<ApiResponse>({data:null,error:{code:'LEVEL_LOCKED',message:'Complete the preceding levels first.'}},403);
   const results=lesson.quiz.map(q=>{const selected=body.answers.find(a=>a.questionId===q.id)!.selected;return {questionId:q.id,selected,correctIndex:q.correctIndex,isCorrect:selected===q.correctIndex};});
   const correct=results.filter(r=>r.isCorrect).length;
 
@@ -103,8 +103,8 @@ academy.get('/stats', async (c) => {
        SUM(CASE WHEN quiz_passed = 1 THEN 1 ELSE 0 END) as lessons_completed,
        MAX(level_id) as highest_level,
        ROUND(AVG(CASE WHEN quiz_score IS NOT NULL THEN quiz_score END), 0) as avg_quiz_score
-     FROM academy_progress WHERE user_id = ? AND lesson_id GLOB 'ts-v1-[0-9][0-9]'`,
-  ).bind(userId).first();
+     FROM academy_progress WHERE user_id = ? AND lesson_id IN (${ACADEMY_LESSONS.map(() => '?').join(',')})`,
+  ).bind(userId, ...ACADEMY_LESSONS.map(l => l.id)).first();
 
   return c.json<ApiResponse>({ data: { stats: stats || {} }, error: null });
 });

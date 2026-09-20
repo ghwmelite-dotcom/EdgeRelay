@@ -1,0 +1,299 @@
+{
+  "provenance": "Constructed teaching data. Not historical XAUUSD prices.",
+  "examples": {
+    "buy": {
+      "pipSize": 0.1,
+      "candles": [
+        {
+          "time": "09:15 UTC",
+          "open": 3351,
+          "high": 3353,
+          "low": 3349.8,
+          "close": 3352.4
+        },
+        {
+          "time": "09:30 UTC",
+          "open": 3352.4,
+          "high": 3353.1,
+          "low": 3350.2,
+          "close": 3350.8
+        },
+        {
+          "time": "09:45 UTC",
+          "open": 3350.8,
+          "high": 3352,
+          "low": 3349.4,
+          "close": 3351.5
+        },
+        {
+          "time": "10:00 UTC",
+          "open": 3351.5,
+          "high": 3353,
+          "low": 3350,
+          "close": 3352
+        },
+        {
+          "time": "10:15 UTC",
+          "open": 3352,
+          "high": 3354,
+          "low": 3349,
+          "close": 3350.5
+        },
+        {
+          "time": "10:30 UTC",
+          "open": 3350.5,
+          "high": 3352,
+          "low": 3348,
+          "close": 3351
+        },
+        {
+          "time": "10:45 UTC",
+          "open": 3351,
+          "high": 3355,
+          "low": 3350.5,
+          "close": 3352
+        },
+        {
+          "time": "11:00 UTC",
+          "open": 3352,
+          "high": 3359,
+          "low": 3351.6,
+          "close": 3358
+        }
+      ],
+      "rangeHigh": 3355,
+      "rangeLow": 3348,
+      "breakoutBodyPips": 60.0,
+      "midpoint": 3355.0,
+      "entry": 3358,
+      "stop": 3350,
+      "target2R": 3374,
+      "target3R": 3382,
+      "entryTime": "11:15 UTC"
+    },
+    "sell": {
+      "pipSize": 0.1,
+      "candles": [
+        {
+          "time": "09:15 UTC",
+          "open": 3353,
+          "high": 3354.2,
+          "low": 3351,
+          "close": 3351.6
+        },
+        {
+          "time": "09:30 UTC",
+          "open": 3351.6,
+          "high": 3353.8,
+          "low": 3350.9,
+          "close": 3353.2
+        },
+        {
+          "time": "09:45 UTC",
+          "open": 3353.2,
+          "high": 3354.6,
+          "low": 3352,
+          "close": 3352.5
+        },
+        {
+          "time": "10:00 UTC",
+          "open": 3352.5,
+          "high": 3354,
+          "low": 3351,
+          "close": 3352
+        },
+        {
+          "time": "10:15 UTC",
+          "open": 3352,
+          "high": 3355,
+          "low": 3350,
+          "close": 3353.5
+        },
+        {
+          "time": "10:30 UTC",
+          "open": 3353.5,
+          "high": 3356,
+          "low": 3352,
+          "close": 3353
+        },
+        {
+          "time": "10:45 UTC",
+          "open": 3353,
+          "high": 3353.5,
+          "low": 3349,
+          "close": 3352
+        },
+        {
+          "time": "11:00 UTC",
+          "open": 3352,
+          "high": 3352.4,
+          "low": 3345,
+          "close": 3346
+        }
+      ],
+      "rangeHigh": 3356,
+      "rangeLow": 3349,
+      "breakoutBodyPips": 60.0,
+      "midpoint": 3349.0,
+      "entry": 3346,
+      "stop": 3354,
+      "target2R": 3330,
+      "target3R": 3322,
+      "entryTime": "11:15 UTC"
+    },
+    "buy-delayed": {
+      "pipSize": 0.1,
+      "candles": [
+        {
+          "time": "09:15 UTC",
+          "open": 3351,
+          "high": 3353,
+          "low": 3349.8,
+          "close": 3352.4
+        },
+        {
+          "time": "09:30 UTC",
+          "open": 3352.4,
+          "high": 3353.1,
+          "low": 3350.2,
+          "close": 3350.8
+        },
+        {
+          "time": "09:45 UTC",
+          "open": 3350.8,
+          "high": 3352,
+          "low": 3349.4,
+          "close": 3351.5
+        },
+        {
+          "time": "10:00 UTC",
+          "open": 3351.5,
+          "high": 3353,
+          "low": 3350,
+          "close": 3352
+        },
+        {
+          "time": "10:15 UTC",
+          "open": 3352,
+          "high": 3354,
+          "low": 3349,
+          "close": 3350.5
+        },
+        {
+          "time": "10:30 UTC",
+          "open": 3350.5,
+          "high": 3352,
+          "low": 3348,
+          "close": 3351
+        },
+        {
+          "time": "10:45 UTC",
+          "open": 3351,
+          "high": 3355,
+          "low": 3350.5,
+          "close": 3352
+        },
+        {
+          "time": "11:00 UTC",
+          "open": 3352,
+          "high": 3365,
+          "low": 3351.6,
+          "close": 3364
+        },
+        {
+          "time": "11:15 UTC",
+          "open": 3364,
+          "high": 3364.8,
+          "low": 3357.8,
+          "close": 3358.2
+        }
+      ],
+      "rangeHigh": 3355,
+      "rangeLow": 3348,
+      "breakoutBodyPips": 120.0,
+      "midpoint": 3358.0,
+      "entry": 3358.2,
+      "stop": 3350.2,
+      "target2R": 3374.2,
+      "target3R": 3382.2,
+      "entryTime": "11:30 UTC"
+    },
+    "sell-delayed": {
+      "pipSize": 0.1,
+      "candles": [
+        {
+          "time": "09:15 UTC",
+          "open": 3353,
+          "high": 3354.2,
+          "low": 3351,
+          "close": 3351.6
+        },
+        {
+          "time": "09:30 UTC",
+          "open": 3351.6,
+          "high": 3353.8,
+          "low": 3350.9,
+          "close": 3353.2
+        },
+        {
+          "time": "09:45 UTC",
+          "open": 3353.2,
+          "high": 3354.6,
+          "low": 3352,
+          "close": 3352.5
+        },
+        {
+          "time": "10:00 UTC",
+          "open": 3352.5,
+          "high": 3354,
+          "low": 3351,
+          "close": 3352
+        },
+        {
+          "time": "10:15 UTC",
+          "open": 3352,
+          "high": 3355,
+          "low": 3350,
+          "close": 3353.5
+        },
+        {
+          "time": "10:30 UTC",
+          "open": 3353.5,
+          "high": 3356,
+          "low": 3352,
+          "close": 3353
+        },
+        {
+          "time": "10:45 UTC",
+          "open": 3353,
+          "high": 3353.5,
+          "low": 3349,
+          "close": 3352
+        },
+        {
+          "time": "11:00 UTC",
+          "open": 3352,
+          "high": 3352.4,
+          "low": 3339,
+          "close": 3340
+        },
+        {
+          "time": "11:15 UTC",
+          "open": 3340,
+          "high": 3346.2,
+          "low": 3339.2,
+          "close": 3345.8
+        }
+      ],
+      "rangeHigh": 3356,
+      "rangeLow": 3349,
+      "breakoutBodyPips": 120.0,
+      "midpoint": 3346.0,
+      "entry": 3345.8,
+      "stop": 3353.8,
+      "target2R": 3329.8,
+      "target3R": 3321.8,
+      "entryTime": "11:30 UTC"
+    }
+  }
+}

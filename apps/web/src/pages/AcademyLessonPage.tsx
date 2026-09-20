@@ -7,14 +7,14 @@ import {
 } from 'lucide-react';
 import { useAcademyStore, type QuizAnswer, type QuizResult } from '@/stores/academy';
 import { InlineAITutor } from '@/components/academy/InlineAITutor';
-import { ACADEMY_CURRICULUM, type AcademyLesson, type AcademyLevel } from '@/data/academy-curriculum';
+import { curriculumFor, courseForLesson, type AcademyLesson, type AcademyLevel } from '@/data/academy-curriculum';
 const ACCENT_MAP: Record<string, string> = {
   'neon-cyan': '#00e5ff', 'neon-green': '#00ff9d', 'neon-amber': '#ffb800',
   'neon-purple': '#b18cff', 'neon-red': '#ff3d57',
 };
 
 function findLessonAndLevel(lessonId: string): { lesson: AcademyLesson; level: AcademyLevel } | null {
-  for (const level of ACADEMY_CURRICULUM) {
+  for (const level of curriculumFor(courseForLesson(lessonId))) {
     const lesson = level.lessons.find((l) => l.id === lessonId);
     if (lesson) return { lesson, level };
   }
@@ -22,7 +22,7 @@ function findLessonAndLevel(lessonId: string): { lesson: AcademyLesson; level: A
 }
 
 function getNextLesson(currentId: string): string | null {
-  const allLessons = ACADEMY_CURRICULUM.flatMap((l) => l.lessons);
+  const allLessons = curriculumFor(courseForLesson(currentId)).flatMap((l) => l.lessons);
   const idx = allLessons.findIndex((l) => l.id === currentId);
   return idx >= 0 && idx < allLessons.length - 1 ? allLessons[idx + 1].id : null;
 }
@@ -44,15 +44,17 @@ export function AcademyLessonPage() {
   useEffect(() => {
     fetchProgress();
     window.scrollTo(0, 0);
-    setQuizAnswers({}); setQuizResult(null);
+    setQuizAnswers({}); setQuizResult(null); setQuizError(''); setTutorOpen(false); setTutorPrompt(undefined);
   }, [lessonId, fetchProgress]);
 
-  // Mark as in_progress when opened
+  const canStudy = found ? isLevelUnlocked(found.level.id, courseForLesson(found.lesson.id)) : false;
+
+  // Mark only accessible lessons as started.
   useEffect(() => {
-    if (found && !progress[found.lesson.id]?.quiz_passed) {
+    if (found && canStudy && !progress[found.lesson.id]?.quiz_passed) {
       updateLessonStatus(found.lesson.id, found.level.id, 'in_progress');
     }
-  }, [found?.lesson.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [found?.lesson.id, canStudy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!found) {
     return (
@@ -65,8 +67,10 @@ export function AcademyLessonPage() {
   }
 
   const { lesson, level } = found;
+  const courseId = courseForLesson(lesson.id);
+  const academyPath = courseId === 'gold-range-utc' ? '/academy?course=gold-range-utc' : '/academy';
   const accent = ACCENT_MAP[level.accentColor] || '#00e5ff';
-  const locked = !isLevelUnlocked(level.id);
+  const locked = !isLevelUnlocked(level.id, courseId);
   const lp = progress[lesson.id];
   const isPassed = lp?.quiz_passed;
   const nextLessonId = getNextLesson(lesson.id);
@@ -77,7 +81,7 @@ export function AcademyLessonPage() {
         <GraduationCap size={40} className="text-terminal-muted/30 mb-4" />
         <h2 className="text-lg font-bold text-white">Level {level.id} is locked</h2>
         <p className="text-sm text-terminal-muted mt-1">Complete all lessons in Level {level.id - 1} first</p>
-        <Link to="/academy" className="mt-4 text-sm text-neon-cyan hover:underline">Back to Academy</Link>
+        <Link to={academyPath} className="mt-4 text-sm text-neon-cyan hover:underline">Back to Academy</Link>
       </div>
     );
   }
@@ -102,7 +106,7 @@ export function AcademyLessonPage() {
     <div className="page-enter max-w-3xl mx-auto pb-16">
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-2 text-[11px] font-mono-nums text-terminal-muted">
-        <Link to="/academy" className="hover:text-neon-cyan transition-colors">Academy</Link>
+        <Link to={academyPath} className="hover:text-neon-cyan transition-colors">Academy</Link>
         <ChevronRight size={10} />
         <span>Level {level.id}: {level.title}</span>
         <ChevronRight size={10} />
@@ -122,8 +126,9 @@ export function AcademyLessonPage() {
         <p className="mt-2 text-sm text-terminal-muted">{lesson.description}</p>
       </div>
 
-      <CourseVideo chapter={lesson.chapter} />
-      <details className="mb-8 rounded-xl border border-terminal-border p-4"><summary className="cursor-pointer text-sm text-neon-cyan">Original source diagram — stock-reference times</summary><p className="text-xs text-neon-amber my-3">Use the market-specific UTC schedule described in this lesson. This source illustration retains its original example times.</p><img src={`/playbook/${lesson.diagram}.svg`} alt={`Source illustration for ${lesson.title}; timing is adapted in the lesson text`} className="w-full rounded-xl" /></details>
+      {courseId === 'gold-range-utc' && <div className="mb-6 rounded-xl border border-neon-amber/30 p-4 text-sm text-slate-300"><p className="text-neon-amber">The Worlds Simpliest Strategy</p><p className="mt-2">MZITOH FX · MFG 2.2 · transcript-based course. UTC only.</p><Link to="/academy/gold-range-guide" className="inline-block py-3 text-neon-cyan underline">Open the visual guide</Link></div>}
+      {lesson.chapter !== undefined && <CourseVideo chapter={lesson.chapter} />}
+      {lesson.diagram && <details className="mb-8 rounded-xl border border-terminal-border p-4"><summary className="cursor-pointer text-sm text-neon-cyan">Original source diagram — stock-reference times</summary><p className="text-xs text-neon-amber my-3">Use the market-specific UTC schedule described in this lesson. This source illustration retains its original example times.</p><img src={`/playbook/${lesson.diagram}.svg`} alt={`Source illustration for ${lesson.title}; timing is adapted in the lesson text`} className="w-full rounded-xl" /></details>}
       {/* Lesson content */}
       <div className="space-y-8">
         {lesson.sections.map((section, i) => (
@@ -220,7 +225,7 @@ export function AcademyLessonPage() {
                     Next Lesson <ArrowRight size={14} />
                   </Link>
                 )}
-                <Link to="/academy" className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 py-3 text-sm font-semibold text-slate-200">
+                <Link to={academyPath} className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-terminal-border bg-terminal-card/60 py-3 text-sm font-semibold text-slate-200">
                   Back to Academy
                 </Link>
               </div>
@@ -267,7 +272,7 @@ export function AcademyLessonPage() {
         <div className="mt-6">
           <InlineAITutor
             lessonTitle={lesson.title}
-            levelTitle={`Level ${level.id}: ${level.title}`}
+            levelTitle={`${courseId === 'gold-range-utc' ? 'TMPro Range Breakout' : 'Three Strategies'} · Level ${level.id}: ${level.title}`}
             initialPrompt={tutorPrompt}
             onClose={() => { setTutorOpen(false); setTutorPrompt(undefined); }}
           />

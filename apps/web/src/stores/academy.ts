@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
-import { ACADEMY_CURRICULUM } from '@/data/academy-curriculum';
+import { curriculumFor } from '@/data/academy-curriculum';
 
 export interface LessonProgress {
   lesson_id: string;
@@ -32,8 +32,8 @@ interface AcademyState {
   fetchProgress: () => Promise<void>;
   updateLessonStatus: (lessonId: string, levelId: number, status: string) => Promise<void>;
   submitQuiz: (lessonId: string, levelId: number, answers: QuizAnswer[]) => Promise<QuizResult | null>;
-  isLevelUnlocked: (levelId: number) => boolean;
-  getLevelProgress: (levelId: number) => { completed: number; total: number };
+  isLevelUnlocked: (levelId: number, courseId?: string) => boolean;
+  getLevelProgress: (levelId: number, courseId?: string) => { completed: number; total: number };
 }
 
 export const useAcademyStore = create<AcademyState>()((set, get) => ({
@@ -95,17 +95,17 @@ export const useAcademyStore = create<AcademyState>()((set, get) => ({
     return null;
   },
 
-  isLevelUnlocked: (levelId) => {
+  isLevelUnlocked: (levelId, courseId) => {
     if (levelId <= 1) return true;
     const { progress } = get();
-    const prevLevel = ACADEMY_CURRICULUM.find((l) => l.id === levelId - 1);
-    if (!prevLevel) return false;
-    return prevLevel.lessons.every((lesson) => progress[lesson.id]?.quiz_passed);
+    const curriculum = curriculumFor(courseId);
+    if (!curriculum.some(l => l.id === levelId)) return false;
+    return curriculum.filter(l => l.id < levelId).flatMap(l => l.lessons).every(lesson => progress[lesson.id]?.quiz_passed);
   },
 
-  getLevelProgress: (levelId) => {
+  getLevelProgress: (levelId, courseId) => {
     const { progress } = get();
-    const level = ACADEMY_CURRICULUM.find((l) => l.id === levelId);
+    const level = curriculumFor(courseId).find((l) => l.id === levelId);
     if (!level) return { completed: 0, total: 0 };
     const completed = level.lessons.filter((l) => progress[l.id]?.quiz_passed).length;
     return { completed, total: level.lessons.length };

@@ -52,7 +52,7 @@ with sync_playwright() as p:
   errors.clear()
   page.goto(BASE+path,wait_until='networkidle');page.wait_for_timeout(250)
   body=page.inner_text('body')
-  if errors or not body.strip():failed.append((path,list(errors),body[:100]))
-  print('PASS' if not errors and body.strip() else 'FAIL',path,'outage render')
+  if errors or not body.strip() or 'This page could not load' in body:failed.append((path,list(errors),body[:100]))
+  print('PASS' if not errors and body.strip() and 'This page could not load' not in body else 'FAIL',path,'outage render')
  browser.close()
  assert not failed,failed

@@ -1,7 +1,7 @@
 // TradeMetrics Pro Service Worker
 // Caches Academy lessons, static assets, and app shell for offline access
 
-const CACHE_NAME = 'tm-pro-v13';
+const CACHE_NAME = 'tm-pro-v14';
 const APP_SHELL = [
   '/',
   '/academy',

@@ -57,7 +57,7 @@ with sync_playwright() as p:
         print('PASS journal-only role')
         fail = True
         page.get_by_role('button', name='Refresh journal', exact=True).click()
-        section.get_by_role('alert').wait_for()
+        section.get_by_role('alert').filter(has_text='Unable to refresh journal activity').wait_for()
         assert section.get_by_role('cell', name='USDJPY.s', exact=True).count() == 0
         fail = False
         trades[0]['price'] = None

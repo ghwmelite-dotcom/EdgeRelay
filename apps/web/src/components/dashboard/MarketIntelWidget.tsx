@@ -24,6 +24,11 @@ function timeUntil(dateStr: string): string {
 }
 
 export function MarketIntelWidget() {
+  const [, refreshClock] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => refreshClock((tick) => tick + 1), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const [tab, setTab] = useState<'news' | 'calendar'>('news');
   const { newsError, calendarError, headlines, calendarEvents, isLoadingNews, isLoadingCalendar, fetchHeadlines, fetchCalendar } =
     useMarketIntelStore();
@@ -46,7 +51,8 @@ export function MarketIntelWidget() {
       <div className="flex items-center gap-1 mb-4">
         <button
           onClick={() => setTab('news')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+          aria-pressed={tab === 'news'}
+          className={`flex min-h-11 items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
             tab === 'news'
               ? 'bg-neon-cyan/10 text-neon-cyan'
               : 'text-terminal-muted hover:text-slate-300'
@@ -56,7 +62,8 @@ export function MarketIntelWidget() {
         </button>
         <button
           onClick={() => setTab('calendar')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+          aria-pressed={tab === 'calendar'}
+          className={`flex min-h-11 items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
             tab === 'calendar'
               ? 'bg-amber-500/10 text-amber-400'
               : 'text-terminal-muted hover:text-slate-300'
@@ -78,7 +85,7 @@ export function MarketIntelWidget() {
             headlines.map((item) => (
               <a
                 key={item.id}
-                href={item.url || '#'}
+                href={/^https?:\/\//i.test(item.url ?? '') ? item.url ?? undefined : undefined}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block group"
@@ -123,7 +130,7 @@ export function MarketIntelWidget() {
                 </span>
                 <span className="text-[10px] text-neon-cyan font-mono w-8">{event.currency}</span>
                 <span className="text-xs text-slate-300 flex-1 truncate">{event.event_name}</span>
-                <span className="text-[10px] text-terminal-muted shrink-0">
+                <span title={new Date(event.event_time).toUTCString()} className="text-[10px] text-terminal-muted shrink-0">
                   {timeUntil(event.event_time)}
                 </span>
               </div>

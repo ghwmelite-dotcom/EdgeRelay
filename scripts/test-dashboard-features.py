@@ -11,7 +11,7 @@ with sync_playwright() as p:
  state={'state':{'token':token,'isAuthenticated':True,'user':{'id':'dashboard-audit','email':'test@example.invalid','name':'Audit Trader','plan':'pro'}},'version':0}
  page.add_init_script('localStorage.setItem("edgerelay-auth",'+json.dumps(json.dumps(state))+');')
  controls={'mixed':True,'stats_fail':False,'health_fail':False,'link_fail':True,'connected':False,'empty':False,'signals':2,'news_fail':False}
- calls=[]
+ calls=[];held_pulse=[]
  now=int(time.time())
  accounts=[{'id':'master','alias':'Audit Master','role':'master','last_heartbeat':str(now),'signals_today':2,'broker_name':'Test Broker','last_signal_at':None},{'id':'follower','alias':'Audit Follower','role':'follower','last_heartbeat':None,'signals_today':0,'broker_name':'Test Broker','follower_config':{'lot_mode':'mirror','max_total_drawdown_percent':10}}]
  trades=[{'deal_ticket':n+1,'symbol':'USDJPY.s','direction':'sell','deal_entry':'out','volume':.05,'price':156.1,'time':now-n*3600,'profit':-10,'commission':0,'swap':0,'session_tag':'london','duration_seconds':None,'risk_reward_ratio':None} for n in range(12)]
@@ -24,6 +24,10 @@ with sync_playwright() as p:
   if controls['news_fail'] and path in ('market-news/headlines','news/calendar'):
    route.abort('failed');return
   data=None
+  if path=='community-pulse' and controls.get('pulse_hold'):
+   held_pulse.append(route);return
+  if path=='accounts' and controls.get('accounts_fail'):
+   route.abort('failed');return
   if path=='accounts':data=[] if controls['empty'] else accounts
   elif path=='command/health':data={'accounts':[{'account_id':'follower','health':{'drawdown':{'current_percent':2,'used_percent':20},'daily_loss':{'current_percent':1.25}}}]}
   elif path=='signals':data=[] if controls['empty'] else [{'id':'s1','action':'open','order_type':'buy','symbol':'AUDITBUY','price':None,'volume':None,'received_at':'2026-09-18T10:00:00Z'},{'id':'s2','action':'modify','order_type':None,'symbol':'AUDITMOD','price':None,'volume':None,'received_at':'2026-09-18T10:00:00Z'}]
@@ -33,9 +37,12 @@ with sync_playwright() as p:
   elif path.startswith('journal/trades/'):data={'trades':trades if path.endswith('master') else []}
   elif path.startswith('journal/positions/'):data={'snapshot':None,'received_at':None,'stale':True}
   elif path=='market-news/headlines':data={'headlines':[{'id':'cpi','headline':'US CPI Actual 3.2%','source':'FinancialJuice','url':'https://example.invalid/cpi','published_at':'2026-09-18T10:00:00Z','importance':{'category':'Major economic release','reason':'CPI'}}]}
-  elif path=='news/calendar':data={'events':[{'id':'nfp','event_name':'Nonfarm Payrolls','currency':'USD','impact':'high','event_time':'2026-10-02T12:30:00Z'}]}
+  elif path=='news/calendar':data={'events':[{'id':'nfp','event_name':'Nonfarm Payrolls','currency':'USD','impact':'high','event_time':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(now+185))}]}
   elif path=='analytics/ai-insights':data={'insights':[{'id':'i1','severity':'warning','title':'Audit insight','detail':'Synthetic account insight. Test details.'}]}
-  elif path=='community-pulse':data={'enabled':False,'symbols':[]}
+  elif path=='community-pulse':data={'enabled':False} if controls.get('pulse_malformed') else {'enabled':controls.get('sharing',False),'symbols':[]}
+  elif path=='community-pulse/consent':
+   if controls.get('consent_fail'):route.abort('failed');return
+   controls['sharing']=route.request.post_data_json['enabled'];data={'enabled':controls['sharing']}
   elif path=='notifications/telegram/status':data={'connected':controls['connected'],'linked_at':None}
   elif path=='notifications/telegram/link':
    if controls['link_fail']:route.abort('failed');return
@@ -58,6 +65,16 @@ with sync_playwright() as p:
   page.get_by_role('button',name='High-impact Calendar',exact=True).click();page.get_by_text('Nonfarm Payrolls',exact=True).wait_for()
   page.get_by_role('button',name='Major News',exact=True).click();expect(page.get_by_role('link',name='US CPI Actual',exact=False)).to_have_attribute('href','https://example.invalid/cpi')
   print('PASS news/calendar tabs and headline source link')
+  page.get_by_role('button',name='High-impact Calendar',exact=True).click();calendar_row=page.get_by_text('Nonfarm Payrolls',exact=True).locator('..');before_countdown=calendar_row.inner_text();before_news_calls=calls.count('news/calendar');page.clock.fast_forward(61_000);assert calendar_row.inner_text()!=before_countdown;assert calls.count('news/calendar')==before_news_calls
+  page.get_by_role('button',name='Major News',exact=True).click()
+  print('PASS economic countdown advances independently of five-minute fetch')
+  expect(page.get_by_role('link',name='Command Center',exact=True)).to_have_attribute('href','/command-center')
+  page.get_by_text('1 Online / 1 configured',exact=True).wait_for()
+  sidebar=page.locator('aside')
+  sidebar.get_by_role('button',name='Connect',exact=True).click();sidebar.get_by_role('alert').filter(has_text='Unable to create Telegram link').wait_for()
+  controls['link_fail']=False;sidebar.get_by_role('button',name='Connect',exact=True).click();expect(sidebar.get_by_role('link',name='Open Telegram',exact=False)).to_have_attribute('href','https://t.me/edgerelay_bot?start=SYNTHETIC')
+  controls['link_fail']=True
+  print('PASS sidebar accessible destinations, online source count and Telegram error/retry')
   page.get_by_role('button',name='Connect Telegram',exact=True).click();page.get_by_role('alert').filter(has_text='Unable to create Telegram link').wait_for()
   controls['link_fail']=False;page.get_by_role('button',name='Connect Telegram',exact=True).click();expect(page.get_by_role('link',name='Open Telegram',exact=False)).to_have_attribute('href','https://t.me/edgerelay_bot?start=SYNTHETIC')
   controls['connected']=True;page.evaluate('window.dispatchEvent(new Event("focus"))');expect(page.get_by_text('Get instant trade alerts on Telegram',exact=True)).to_have_count(0)
@@ -82,6 +99,20 @@ with sync_playwright() as p:
   page.get_by_role('button',name='High-impact Calendar',exact=True).click();page.get_by_role('alert').filter(has_text='Unable to refresh calendar').wait_for()
   controls['news_fail']=False;page.clock.fast_forward(300_100);expect(page.get_by_role('alert').filter(has_text='Unable to refresh')).to_have_count(0)
   print('PASS negative P/L, periodic refresh, missing-total safeguard, API/news/calendar failure and recovery')
+  controls['accounts_fail']=True;page.clock.fast_forward(30_100);page.get_by_role('alert').filter(has_text='Unable to refresh accounts').wait_for()
+  controls['accounts_fail']=False;page.get_by_role('button',name='Retry accounts',exact=True).click();expect(page.get_by_role('alert').filter(has_text='Unable to refresh accounts')).to_have_count(0)
+  pulse=page.get_by_role('region',name='Community trading pulse',exact=True)
+  controls['consent_fail']=True;pulse.get_by_role('button',name='Opt in to share position directions').click();pulse.get_by_role('alert').filter(has_text='Unable to save').wait_for();expect(pulse.get_by_role('button')).to_have_attribute('aria-pressed','false')
+  controls['consent_fail']=False;pulse.get_by_role('button',name='Opt in to share position directions').click();pulse.get_by_role('button',name='Stop sharing position directions').click();pulse.get_by_role('button',name='Opt in to share position directions').wait_for()
+  controls['pulse_malformed']=True;page.clock.fast_forward(30_100);pulse.get_by_role('alert').filter(has_text='Community data is unavailable').wait_for();expect(page.get_by_role('heading',name='This page could not load')).to_have_count(0)
+  controls['pulse_malformed']=False;page.clock.fast_forward(30_100);expect(pulse.get_by_role('alert')).to_have_count(0)
+  print('PASS account failure/retry, consent failure and recovery, malformed community response stays contained')
+  controls['pulse_hold']=True;page.clock.fast_forward(30_100);page.wait_for_timeout(100);assert held_pulse
+  pulse.get_by_role('button',name='Opt in to share position directions').click();pulse.get_by_role('button',name='Stop sharing position directions').wait_for()
+  for pending in held_pulse:pending.fulfill(json={'data':{'enabled':False,'symbols':[]},'error':None})
+  page.wait_for_timeout(100);expect(pulse.get_by_role('button',name='Stop sharing position directions')).to_have_attribute('aria-pressed','true')
+  controls['pulse_hold']=False;pulse.get_by_role('button',name='Stop sharing position directions').click();pulse.get_by_role('button',name='Opt in to share position directions').wait_for()
+  print('PASS delayed community refresh cannot overwrite a saved sharing choice')
   links=page.locator('a[href]').evaluate_all('(items)=>items.map(x=>({text:x.textContent.trim(),href:x.getAttribute("href")}))')
   expected={'/accounts','/journal','/analytics','/signals','/settings'};assert expected.issubset({x['href'] for x in links})
   page.get_by_role('link',name='View Full History',exact=True).click();page.wait_for_url('**/signals');page.goto(BASE+'/dashboard',wait_until='networkidle')
@@ -89,15 +120,20 @@ with sync_playwright() as p:
   out=Path('.wrangler/dashboard-audit');out.mkdir(parents=True,exist_ok=True)
   page.screenshot(path=str(out/'desktop.png'),full_page=True,animations='disabled')
   page.set_viewport_size({'width':390,'height':844});page.reload(wait_until='networkidle');page.clock.fast_forward(600)
+  assert page.locator('aside').get_attribute('inert') is not None
   page.get_by_role('button',name='Open navigation',exact=True).click();page.clock.fast_forward(600);expect(page.get_by_role('button',name='Open navigation',exact=True)).to_have_attribute('aria-expanded','true')
   page.get_by_role('button',name='Close navigation',exact=True).click();page.clock.fast_forward(600);expect(page.get_by_role('button',name='Open navigation',exact=True)).to_have_attribute('aria-expanded','false')
   page.screenshot(path=str(out/'mobile.png'),full_page=True,animations='disabled')
   assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth+1'),'Mobile horizontal overflow'
   print('PASS mobile navigation open/close and no page overflow')
   controls['empty']=True;page.goto(BASE+'/dashboard',wait_until='networkidle');page.get_by_text('Welcome to TradeMetrics Pro',exact=True).wait_for()
-  page.get_by_role('button',name='Skip this step',exact=True).click();page.get_by_role('button',name='Skip this step',exact=True).click();expect(page.get_by_role('link',name='Open Prop Firm Hub',exact=False)).to_have_attribute('href','/app/prop-firms');page.get_by_role('button',name='Close',exact=True).click();expect(page.get_by_text('Welcome to TradeMetrics Pro',exact=True)).to_have_count(0)
+  page.get_by_role('button',name='Skip this step',exact=True).click();page.get_by_role('button',name='Back',exact=True).click();expect(page.get_by_role('link',name='Set Up Master Account')).to_have_attribute('href','/accounts');page.get_by_role('button',name='Skip this step',exact=True).click();page.get_by_role('button',name='Skip this step',exact=True).click();expect(page.get_by_role('link',name='Open Prop Firm Hub',exact=False)).to_have_attribute('href','/app/prop-firms');page.get_by_role('button',name='Close',exact=True).click();expect(page.get_by_text('Welcome to TradeMetrics Pro',exact=True)).to_have_count(0)
   page.reload(wait_until='networkidle');expect(page.get_by_text('Welcome to TradeMetrics Pro',exact=True)).to_have_count(0)
   print('PASS empty-account state, onboarding steps and persisted dismissal')
+  controls['connected']=False;page.reload(wait_until='networkidle');page.get_by_role('button',name='Dismiss Telegram banner').click();expect(page.get_by_role('button',name='Connect Telegram',exact=True)).to_have_count(0)
+  page.reload(wait_until='networkidle');expect(page.get_by_role('button',name='Connect Telegram',exact=True)).to_have_count(0)
+  page.get_by_role('button',name='Open navigation',exact=True).click();page.keyboard.press('Escape');expect(page.get_by_role('button',name='Open navigation')).to_have_attribute('aria-expanded','false')
+  print('PASS Telegram banner dismissal persists and mobile navigation Escape')
   page.get_by_role('button',name='Open navigation',exact=True).click();page.clock.fast_forward(600)
   page.get_by_role('button',name='Logout',exact=True).click();page.wait_for_url('**/login')
   anonymous=browser.new_page(service_workers='block');anonymous.goto(BASE+'/dashboard',wait_until='networkidle');anonymous.wait_for_url('**/login');anonymous.close()

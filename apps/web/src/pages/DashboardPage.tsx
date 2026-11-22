@@ -487,7 +487,7 @@ function StatCard({ label, value, sub, delay, glowValue, extra, borderClass, ico
 
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const { accounts, fetchAccounts } = useAccountsStore();
+  const { accounts, fetchAccounts, isLoading: accountsLoading, error: accountsError } = useAccountsStore();
   const { healthResults, fetchHealth } = useCommandCenterStore();
   const { checkTelegramStatus } = useNotificationStore();
   const clock = useRealtimeClock();
@@ -586,9 +586,13 @@ export function DashboardPage() {
       {/* ── System Status Bar ────────────────────────────────────── */}
       <SystemStatusBar />
       <StrategyBrief />
+      {accountsError && <div role="alert" className="rounded-xl border border-neon-amber/30 p-4 text-sm text-neon-amber">
+        Unable to refresh accounts. Displayed account details may be out of date.
+        <button type="button" disabled={accountsLoading} onClick={() => void fetchAccounts()} className="ml-3 min-h-11 underline">Retry accounts</button>
+      </div>}
 
       {/* ── Onboarding Wizard (new users) ──────────────────────── */}
-      {showOnboarding && accounts.length === 0 && (
+      {showOnboarding && !accountsLoading && !accountsError && accounts.length === 0 && (
         <OnboardingWizard onDismiss={() => setShowOnboarding(false)} />
       )}
 
@@ -738,7 +742,7 @@ export function DashboardPage() {
           <div className="flex-1 h-px bg-gradient-to-r from-neon-cyan/15 to-transparent" />
           <Badge variant="cyan">
             <Radio size={10} />
-            {masters.length} Active
+            {masters.filter((account) => isConnected(account.last_heartbeat)).length} Online / {masters.length} configured
           </Badge>
         </div>
 

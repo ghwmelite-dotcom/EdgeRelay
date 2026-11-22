@@ -37,7 +37,7 @@ export function LivePositionsWidget({ accountId }: { accountId: string }) {
       </span>}
     </div>
     {!snapshot ? <p className="text-sm text-terminal-muted">
-      {error ? 'Unable to load live positions. Retrying automatically.' : !data ? 'Loading live positions...' : <>Waiting for MT5 live telemetry. Install <Link to="/downloads" className="text-neon-cyan underline">TradeJournal Sync v1.10</Link> and keep the terminal connected. Missing telemetry is not zero P/L.</>}
+      {error ? 'Unable to load live positions. Retrying automatically.' : !data ? 'Loading live positions...' : <>Waiting for MT5 live telemetry. Install <Link to="/downloads" className="text-neon-cyan underline">latest TradeJournal Sync EA</Link> and keep the terminal connected. Missing telemetry is not zero P/L.</>}
     </p> : <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
         {[['Floating P/L', snapshot.floating_profit], ['Equity', snapshot.equity], ['Balance', snapshot.balance]].map(([label, value]) => <div key={String(label)}>

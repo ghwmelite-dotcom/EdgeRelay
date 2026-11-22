@@ -100,12 +100,26 @@ function DataStreamBg() {
 
 export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopNavigation, setDesktopNavigation] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const update = () => setDesktopNavigation(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setSidebarOpen(false); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [sidebarOpen]);
   const { user, logout } = useAuthStore();
   const location = useLocation();
 
   const { telegramConnected, checkTelegramStatus, generateDeepLink, isLinking } =
     useNotificationStore();
   const [sidebarTgLink, setSidebarTgLink] = useState<string | null>(null);
+  const [sidebarTgError, setSidebarTgError] = useState<string | null>(null);
   const [sidebarChecking, setSidebarChecking] = useState(false);
   const sidebarTgLinkRef = useRef<string | null>(null);
 
@@ -148,6 +162,8 @@ export function AppLayout() {
 
       {/* Sidebar */}
       <aside
+        id="app-navigation"
+        ref={(node) => { if (node) node.inert = !desktopNavigation && !sidebarOpen; }}
         className={`
           fixed inset-y-0 left-0 z-40 flex w-64 flex-col
           backdrop-blur-xl bg-terminal-surface/80
@@ -212,8 +228,7 @@ export function AppLayout() {
                     <NavLink
                       key={to}
                       to={to}
-                      aria-label="Close navigation"
-            onClick={() => setSidebarOpen(false)}
+                      onClick={() => setSidebarOpen(false)}
                       className={`
                         flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
                         transition-all duration-200 ease-out
@@ -256,6 +271,7 @@ export function AppLayout() {
                 <span className="text-xs font-semibold text-[#0088cc]">Telegram Alerts</span>
               </div>
               <p className="text-[10px] text-terminal-muted mb-2">Get instant trade alerts</p>
+              {sidebarTgError && <p role="alert" className="text-xs text-neon-amber mb-2">{sidebarTgError}</p>}
               {sidebarTgLink ? (
                 <div className="space-y-1.5">
                   <a
@@ -275,11 +291,12 @@ export function AppLayout() {
               ) : (
                 <button
                   onClick={async () => {
+                    setSidebarTgError(null);
                     const link = await generateDeepLink();
                     if (link) {
                       useNotificationStore.setState({ isLinking: false });
                       setSidebarTgLink(link);
-                    }
+                    } else setSidebarTgError('Unable to create Telegram link. Please retry.');
                   }}
                   disabled={isLinking}
                   className="w-full rounded-lg bg-[#0088cc] py-1.5 text-[11px] font-semibold text-white transition-all hover:bg-[#0099dd] disabled:opacity-50"
@@ -321,6 +338,7 @@ export function AppLayout() {
           <button
             aria-label="Open navigation"
             aria-expanded={sidebarOpen}
+            aria-controls="app-navigation"
             onClick={() => setSidebarOpen(true)}
             className="rounded-xl p-2 text-slate-500 backdrop-blur-sm bg-terminal-card/30 hover:bg-terminal-card/60 hover:text-neon-cyan transition-all duration-200 focus-ring"
           >

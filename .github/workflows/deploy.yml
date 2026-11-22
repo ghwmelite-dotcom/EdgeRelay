@@ -66,6 +66,7 @@ jobs:
           node scripts/test-dashboard-models.cjs
           node scripts/test-extended-platform.cjs
           node scripts/test-three-strategies.cjs
+          node scripts/test-homepage-cache.cjs
 
   deploy-account-relay:
     name: Deploy Account Relay DO

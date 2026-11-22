@@ -1,7 +1,7 @@
 // TradeMetrics Pro Service Worker
 // Caches Academy lessons, static assets, and app shell for offline access
 
-const CACHE_NAME = 'tm-pro-v10';
+const CACHE_NAME = 'tm-pro-v11';
 const APP_SHELL = [
   '/',
   '/academy',
@@ -68,9 +68,11 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.match(/\.(js|css|png|svg|ico|woff2?)$/)) {
     event.respondWith(
       caches.match(request).then((cached) => {
-        if (cached) return cached;
+        const expectedType = url.pathname.endsWith('.js') ? /(?:java|ecma)script/i : url.pathname.endsWith('.css') ? /text\/css/i : null;
+        if (cached && (!expectedType || expectedType.test(cached.headers.get('content-type') || ''))) return cached;
+        if (cached) caches.open(CACHE_NAME).then(cache => cache.delete(request));
         return fetch(request).then((response) => {
-          if (response.ok) {
+          if (response.ok && (!expectedType || expectedType.test(response.headers.get('content-type') || ''))) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }

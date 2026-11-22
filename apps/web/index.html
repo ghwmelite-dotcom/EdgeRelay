@@ -2,10 +2,10 @@
 <html lang="en" class="dark">
   <head>
     <script>
-      if (localStorage.getItem('theme') === 'light') {
+      try { if (localStorage.getItem('theme') === 'light') {
         document.documentElement.classList.remove('dark');
         document.documentElement.classList.add('light');
-      }
+      } } catch { /* Storage may be unavailable; keep the default theme. */ }
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -100,14 +100,18 @@
     <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Telegram WebApp SDK (for /tg Mini App) -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Telegram SDK is loaded only by the Mini App route. -->
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   </head>
   <body class="antialiased">
-    <div id="root"></div>
+    <div id="root"><main style="max-width:42rem;margin:15vh auto;padding:24px;font:18px/1.6 system-ui,sans-serif;color:#e8eff6;background:#0d1219;border-radius:16px">
+      <h1>TradeMetrics Pro</h1><p>Loading your workspace… If the page does not open, reload to try again.</p>
+      <button type="button" onclick="location.reload()" style="font:inherit;padding:12px 20px;cursor:pointer">Reload page</button>
+      <noscript><p>Enable JavaScript to use the trading workspace.</p></noscript>
+    </main></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

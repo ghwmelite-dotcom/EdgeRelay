@@ -2,6 +2,8 @@ import React, { Suspense, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './app.css';
+import { LandingPage } from '@/pages/LandingPage';
+import { PageErrorBoundary } from '@/components/ui/PageErrorBoundary';
 
 import { useAuthStore } from '@/stores/auth';
 import { InstallPrompt } from '@/components/ui/InstallPrompt';
@@ -36,7 +38,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 
 // Lazy-load ALL pages — reduces initial bundle from one monolithic chunk to per-route chunks
-const LandingPage = React.lazy(() => import('@/pages/LandingPage').then(m => ({ default: m.LandingPage })));
+// Keep the public homepage in the startup bundle; it must not depend on a second route fetch.
 const DashboardPage = React.lazy(() => import('@/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AccountsPage = React.lazy(() => import('@/pages/AccountsPage').then(m => ({ default: m.AccountsPage })));
 const SignalLogPage = React.lazy(() => import('@/pages/SignalLogPage').then(m => ({ default: m.SignalLogPage })));
@@ -113,7 +115,7 @@ function ReferralCapture() {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
     if (ref) {
-      localStorage.setItem('referral_code', ref);
+      try { localStorage.setItem('referral_code', ref); } catch { return; }
       // Clean URL without losing the page
       const url = new URL(window.location.href);
       url.searchParams.delete('ref');
@@ -216,7 +218,7 @@ function App() {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <PageErrorBoundary><App /></PageErrorBoundary>
   </React.StrictMode>,
 );
 

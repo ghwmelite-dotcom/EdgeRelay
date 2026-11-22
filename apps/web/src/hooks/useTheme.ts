@@ -14,7 +14,7 @@ export function useTheme() {
       const cl = document.documentElement.classList;
       cl.toggle('light', next === 'light');
       cl.toggle('dark', next === 'dark');
-      localStorage.setItem('theme', next);
+      try { localStorage.setItem('theme', next); } catch { /* Apply the theme even without storage. */ }
       return next;
     });
   }, []);

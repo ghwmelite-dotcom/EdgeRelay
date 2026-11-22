@@ -4,8 +4,8 @@ import { STRATEGIES, MARKET_ADAPTATION, COURSE_VIDEO } from "@edgerelay/shared";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-terminal-bg text-slate-300">
-      <nav className="max-w-6xl mx-auto px-5 py-5 flex items-center gap-5 border-b border-terminal-border">
+    <div className="homepage min-h-screen bg-terminal-bg text-slate-300">
+      <nav className="max-w-6xl mx-auto px-5 py-5 flex flex-wrap items-center gap-3 sm:gap-5 border-b border-terminal-border">
         <Link
           to="/"
           className="font-display text-lg font-bold text-white mr-auto"

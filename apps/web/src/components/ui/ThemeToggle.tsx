@@ -11,7 +11,7 @@ export function ThemeToggle({ className = '' }: ThemeToggleProps) {
   return (
     <button
       onClick={toggle}
-      className={`group relative flex items-center justify-center rounded-xl p-2 transition-all duration-200 hover:bg-neon-cyan/10 focus-ring ${className}`}
+      className={`group relative flex items-center justify-center rounded-xl min-h-11 min-w-11 p-2 transition-all duration-200 hover:bg-neon-cyan/10 focus-ring ${className}`}
       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
     >

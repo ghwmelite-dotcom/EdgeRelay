@@ -1,3 +1,4 @@
+import { loadTelegramSdk } from '@/lib/telegramSdk';
 import { useEffect, useState, useCallback } from 'react';
 import {
   BarChart3,
@@ -107,19 +108,18 @@ export function TelegramMiniAppPage() {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Initialize Telegram WebApp
-  useEffect(() => {
-    const tg = getTelegramWebApp();
-    if (tg) {
-      tg.ready();
-      tg.expand();
-    }
-  }, []);
-
   // Authenticate via Telegram initData
   useEffect(() => {
+    let active = true;
     async function authenticate() {
+      try { await loadTelegramSdk(); } catch {
+        if (active) { setError('Telegram could not load. Check your connection and retry.'); setLoading(false); }
+        return;
+      }
+      if (!active) return;
       const tg = getTelegramWebApp();
+      tg?.ready();
+      tg?.expand();
       const initData = tg?.initData;
 
       if (!initData) {
@@ -146,6 +146,7 @@ export function TelegramMiniAppPage() {
       setLoading(false);
     }
     authenticate();
+    return () => { active = false; };
   }, []);
 
   // Fetch data once authenticated

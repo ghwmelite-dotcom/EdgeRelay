@@ -1050,3 +1050,7 @@ html.light ::-webkit-scrollbar-thumb {
 html.light ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Public homepage: readable supporting text and links in both themes. */
+.homepage { --color-terminal-muted: #8c9eb2; }
+html.light .homepage { --color-terminal-muted: #526478; --color-neon-cyan: #08718d; }

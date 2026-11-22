@@ -20,7 +20,7 @@ def run_case(browser, route_path, volume, price):
     signal = {'id': 'synthetic-signal', 'master_account_id': 'test-master', 'sequence_num': 1, 'action': 'close', 'order_type': None, 'symbol': 'TESTPAIR', 'volume': volume, 'price': price, 'sl': None, 'tp': None, 'received_at': '2026-09-10T12:00:00Z'}
     def respond(route):
         path = route.request.url.split('/v1/')[-1].split('?')[0]
-        data = {'accounts': [], 'trades': [], 'headlines': [], 'events': [], 'assets': [], 'insights': [], 'alerts': [], 'unreadCount': 0}
+        data = {'accounts': [], 'trades': [], 'headlines': [], 'events': [], 'assets': [], 'insights': [], 'alerts': [], 'unreadCount': 0, 'symbols': [], 'enabled': False}
         if path == 'accounts': data = []
         if path == 'signals':
             # Resolve after the initial dashboard paint.
@@ -31,6 +31,7 @@ def run_case(browser, route_path, volume, price):
     page.goto(BASE + route_path, wait_until='networkidle')
     assert not errors, errors
     row = page.locator('tr').filter(has_text='TESTPAIR')
+    row.wait_for(state='visible', timeout=10000)
     assert row.count() == 1, 'Signal row disappeared'
     assert page.url.endswith(route_path), 'Unexpected authentication redirect'
     text = row.inner_text()

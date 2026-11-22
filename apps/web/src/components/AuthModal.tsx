@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Shield } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
@@ -20,6 +20,25 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
   const [validationError, setValidationError] = useState('');
   const { login, register, isLoading, error, clearError } = useAuthStore();
   const navigate = useNavigate();
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    dialog?.querySelector<HTMLInputElement>('input')?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); onClose(); }
+      if (event.key !== 'Tab' || !dialog) return;
+      const items = Array.from(dialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled])'));
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => { document.removeEventListener('keydown', handleKey); previousFocus?.focus({ preventScroll: true }); };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -68,7 +87,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
   const displayError = validationError || error;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-y-auto">
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={mode === 'login' ? 'Sign in' : 'Create account'} className="fixed inset-0 z-[10000] flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/80 backdrop-blur-xl"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores/auth';
 import { AuthModal } from '@/components/AuthModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import {
@@ -689,6 +690,12 @@ const PRODUCT_VIZ: Record<string, () => JSX.Element> = {
 /* ────────────────────────────────────────────────────────────── */
 
 export function LandingPage() {
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const openWorkspace = (mode: 'login' | 'register') => {
+    if (isAuthenticated) navigate('/dashboard');
+    else setAuthModal({ open: true, mode });
+  };
   const [scrolled, setScrolled] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -835,13 +842,13 @@ export function LandingPage() {
 
             <ThemeToggle />
             <button
-              onClick={() => setAuthModal({ open: true, mode: 'login' })}
+              onClick={() => openWorkspace('login')}
               className="hidden text-[12px] font-medium text-terminal-muted transition-colors duration-200 hover:text-neon-cyan xl:inline cursor-pointer"
             >
-              Login
+              {isAuthenticated ? 'Dashboard' : 'Login'}
             </button>
             <button
-              onClick={() => setAuthModal({ open: true, mode: 'register' })}
+              onClick={() => openWorkspace('register')}
               className="btn-premium group relative hidden xl:inline-flex items-center gap-1.5 overflow-hidden rounded-lg bg-neon-cyan px-5 py-2 text-[12px] font-bold text-terminal-bg shadow-[0_0_20px_rgba(0,229,255,0.25)] transition-all hover:shadow-[0_0_32px_rgba(0,229,255,0.45)] cursor-pointer"
             >
               <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,rgba(255,255,255,0.2),transparent)]" />
@@ -896,13 +903,13 @@ export function LandingPage() {
             )}
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => { setAuthModal({ open: true, mode: 'login' }); setMobileMenuOpen(false); }}
+                onClick={() => { openWorkspace('login'); setMobileMenuOpen(false); }}
                 className="flex-1 rounded-lg border border-terminal-border bg-terminal-card/60 py-2.5 text-sm font-semibold text-slate-200 cursor-pointer"
               >
-                Login
+                {isAuthenticated ? 'Dashboard' : 'Login'}
               </button>
               <button
-                onClick={() => { setAuthModal({ open: true, mode: 'register' }); setMobileMenuOpen(false); }}
+                onClick={() => { openWorkspace('register'); setMobileMenuOpen(false); }}
                 className="flex-1 rounded-lg bg-neon-cyan py-2.5 text-sm font-semibold text-terminal-bg cursor-pointer"
               >
                 Launch App
@@ -1002,7 +1009,7 @@ export function LandingPage() {
               style={{ animationDelay: '700ms' }}
             >
               <button
-                onClick={() => setAuthModal({ open: true, mode: 'register' })}
+                onClick={() => openWorkspace('register')}
                 className="btn-premium signal-pulse inline-flex items-center justify-center gap-2 rounded-xl bg-neon-cyan px-10 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)] cursor-pointer"
               >
                 Get Started Free <ArrowRight className="h-4 w-4" />
@@ -2080,6 +2087,7 @@ export function LandingPage() {
               <button
                 key={cat.value}
                 onClick={() => setBlogCategory(cat.value)}
+                aria-pressed={blogCategory === cat.value}
                 className={`rounded-full px-4 py-1.5 font-mono-nums text-[11px] uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                   blogCategory === cat.value
                     ? 'border border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan shadow-[0_0_12px_rgba(0,229,255,0.15)]'
@@ -2274,7 +2282,7 @@ export function LandingPage() {
             While competitors charge $20-100/month, you pay nothing.
           </p>
           <button
-            onClick={() => setAuthModal({ open: true, mode: 'register' })}
+            onClick={() => openWorkspace('register')}
             className="btn-premium signal-pulse animate-fade-in-up mt-10 inline-flex items-center gap-2 rounded-xl bg-neon-cyan px-12 py-4 text-base font-semibold text-terminal-bg shadow-[0_0_32px_rgba(0,229,255,0.4)] transition-all hover:shadow-[0_0_60px_rgba(0,229,255,0.6)] cursor-pointer"
             style={{ animationDelay: '160ms' }}
           >
@@ -2462,7 +2470,7 @@ export function LandingPage() {
               </p>
               <div className="flex flex-col gap-2">
                 {FOOTER_LINKS_RESOURCES.map((l) =>
-                  l.href.startsWith('/') ? (
+                  l.href.startsWith('/') && !l.href.startsWith('/playbook/') ? (
                     <Link
                       key={l.label}
                       to={l.href}

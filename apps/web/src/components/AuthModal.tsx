@@ -93,6 +93,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'register' }: AuthMod
             {/* Close button */}
             <button
               onClick={onClose}
+              aria-label="Close authentication"
               className="absolute top-4 right-4 z-20 rounded-xl p-1.5 text-terminal-muted hover:text-neon-cyan hover:bg-neon-cyan/5 transition-all"
             >
               <X size={18} />
